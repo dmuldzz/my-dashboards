@@ -767,8 +767,14 @@ const P='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='
 
 async function nhl(path,base){
   const url=(base||NHL)+path;
-  try{const r=await fetch(P+encodeURIComponent(url));if(r.ok)return r.json();}catch(e){}
-  try{const r=await fetch(url);if(r.ok)return r.json();}catch(e){}
+  try{
+    const r=await fetch(P+encodeURIComponent(url));
+    if(r.ok) return r.json();
+    if(r.status===404) throw new Error('404');
+  }catch(e){
+    if(e.message==='404') throw e;
+  }
+  // No direct fallback — always use proxy to avoid CORS
   throw new Error('fetch failed: '+path);
 }
 
@@ -1049,7 +1055,7 @@ async function loadThisWeek(){
 // ══════════════════════════════════════
 async function loadTransactions(){
   try{
-    const [a,b]=await Promise.all([nhl(`/transactions/${TODAY}`),nhl(`/transactions/${YDAY}`)]);
+    const [a,b]=await Promise.all([nhl(`/transactions/${TODAY}`).catch(()=>({transactions:[]})),nhl(`/transactions/${YDAY}`).catch(()=>({transactions:[]}))]);
     const fresh=[...(a.transactions||[]),(b.transactions||[])].flat();
     if(fresh.length>SEEN_TXN_COUNT&&!document.getElementById('transactions').classList.contains('active')){
       document.getElementById('txn-badge').classList.add('show');
@@ -1369,7 +1375,7 @@ async function loadPlayoffs(){
 async function loadProspects(){
   const el=document.getElementById('prospect-list');if(!el)return;
   try{
-    const d=await nhl(`/draft/prospects/20252026`);
+    const d=await nhl(`/draft/prospects/20252026`).catch(()=>({prospects:[]}));
     const prospects=(d.prospects||[]).slice(0,20);
     if(!prospects.length) throw new Error('empty');
     el.innerHTML=prospects.map((p,i)=>`
