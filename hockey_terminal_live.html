@@ -1054,17 +1054,22 @@ async function loadThisWeek(){
 // TRANSACTIONS
 // ══════════════════════════════════════
 async function loadTransactions(){
-  try{
-    const [a,b]=await Promise.all([nhl(`/transactions/${TODAY}`).catch(()=>({transactions:[]})),nhl(`/transactions/${YDAY}`).catch(()=>({transactions:[]}))]);
-    const fresh=[...(a.transactions||[]),(b.transactions||[])].flat();
-    if(fresh.length>SEEN_TXN_COUNT&&!document.getElementById('transactions').classList.contains('active')){
-      document.getElementById('txn-badge').classList.add('show');
-    }
-    TXN_ALL=fresh;save('hkt3_txn_seen',TXN_ALL.length);
-    renderHomeTxns();renderFullTxns();setTS('ts-txns');
-  }catch(e){
-    document.getElementById('home-txns').innerHTML='<div class="error-msg">Transactions unavailable. <a href="https://puckpedia.com/transactions" target="_blank" style="color:var(--gold);">PuckPedia →</a></div>';
-  }
+  // NHL transactions API endpoint no longer available
+  // Show direct links to live transaction sources
+  const msg=`<div style="font-size:12px;color:var(--text2);line-height:1.8;">
+    <div style="color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;margin-bottom:8px;">LIVE TRANSACTION SOURCES</div>
+    <a href="https://puckpedia.com/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">↗ PuckPedia — live transactions</a>
+    <a href="https://www.capfriendly.com/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">↗ CapFriendly — signings & trades</a>
+    <a href="https://www.nhl.com/news/tag/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">↗ NHL.com — official transactions</a>
+    <a href="https://www.tsn.ca/nhl/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;">↗ TSN — transaction log</a>
+  </div>`;
+  const homeEl=document.getElementById('home-txns');
+  const fullEl=document.getElementById('txn-full');
+  if(homeEl) homeEl.innerHTML=msg;
+  if(fullEl) fullEl.innerHTML=msg;
+  // Show notification dot since we have "new" info
+  document.getElementById('txn-badge').classList.add('show');
+  setTS('ts-txns');
 }
 
 function txnClass(type){
@@ -1100,26 +1105,47 @@ function renderFullTxns(){
 // ══════════════════════════════════════
 async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed'),biz:document.getElementById('biz-feed')};
+  const RSS_PROXY='https://api.rss2json.com/v1/api.json?rss_url=';
+  const feeds=[
+    {url:'https://www.sportsnet.ca/feed/',label:'Sportsnet'},
+    {url:'https://www.nhl.com/rss/news.xml',label:'NHL.com'},
+  ];
   try{
-    const feeds=await Promise.all([
-      fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockey.json?limit=25&raw_json=1')).then(r=>r.json()).catch(()=>null),
-      fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockeyplayers.json?limit=10&raw_json=1')).then(r=>r.json()).catch(()=>null),
-    ]);
+    const results=await Promise.all(feeds.map(f=>
+      fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(RSS_PROXY+encodeURIComponent(f.url)+'&count=15'))
+        .then(r=>r.json()).catch(()=>null)
+    ));
     let items=[];
-    feeds.forEach(f=>{if(f?.data?.children) items=[...items,...f.data.children.map(c=>c.data)];});
-    items.sort((a,b)=>b.created_utc-a.created_utc);
-    ALL_NEWS_ITEMS=items;
-    const bizTerms=['arena','broadcast','ownership','deal','rights','valuation','sponsor','expansion','technology','cba','nhl pa','commissioner','bettman','legal','court','sale','sold','acquire'];
-    const bizItems=items.filter(i=>{const t=(i.title||'').toLowerCase();return bizTerms.some(bt=>t.includes(bt));});
-    renderNewsItems(items.slice(0,3),els.home,true);
-    renderNewsItems(items,els.feed,false);
-    renderNewsItems(bizItems.length?bizItems:items.slice(0,10),els.biz,false);
+    results.forEach((d,i)=>{
+      if(d?.status==='ok'&&d.items){
+        items=[...items,...d.items.map(item=>({...item,feedLabel:feeds[i].label}))];
+      }
+    });
+    items.sort((a,b)=>new Date(b.pubDate)-new Date(a.pubDate));
+    const hockeyTerms=['nhl','hockey','puck','goalie','leafs','oilers','canucks','canadiens','bruins','rangers','penguins','flames','jets','senators','capitals'];
+    const hockeyItems=items.filter(i=>{const t=(i.title||'').toLowerCase();return hockeyTerms.some(ht=>t.includes(ht));});
+    const finalItems=hockeyItems.length>=5?hockeyItems:items;
+    ALL_NEWS_ITEMS=finalItems.map(item=>({
+      title:item.title||'',
+      url:item.link||item.url||'#',
+      created_utc:new Date(item.pubDate||Date.now()).getTime()/1000,
+      subreddit:item.feedLabel||'NHL',
+      selftext:(item.description||'').replace(/<[^>]+>/g,'').substring(0,200),
+      permalink:item.link||'',
+    }));
+    const bizTerms=['arena','broadcast','ownership','deal','rights','valuation','sponsor','expansion','technology','cba','commissioner','bettman','legal','sale','acquire','media'];
+    const bizItems=ALL_NEWS_ITEMS.filter(i=>{const t=(i.title||'').toLowerCase();return bizTerms.some(bt=>t.includes(bt));});
+    renderNewsItems(ALL_NEWS_ITEMS.slice(0,3),els.home,true);
+    renderNewsItems(ALL_NEWS_ITEMS,els.feed,false);
+    renderNewsItems(bizItems.length?bizItems:ALL_NEWS_ITEMS.slice(0,10),els.biz,false);
     setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
   }catch(e){
-    const msg='<div class="error-msg">Could not load news. <a href="https://www.reddit.com/r/hockey" target="_blank" style="color:var(--gold);">r/hockey →</a></div>';
+    const msg='<div class="error-msg">Could not load news. <a href="https://www.sportsnet.ca/nhl" target="_blank" style="color:var(--gold);">Sportsnet →</a></div>';
     Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
   }
 }
+
+
 
 function guessTag(title){
   const t=(title||'').toLowerCase();
@@ -1392,7 +1418,7 @@ async function loadProspects(){
   }
   // Prospect news
   try{
-    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockeyprospects.json?limit=8&raw_json=1'));
+    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.tsn.ca/rss/news.xml')+'&count=8'));
     const d=await r.json();
     const el2=document.getElementById('prospect-news');
     if(d?.data?.children&&el2){
