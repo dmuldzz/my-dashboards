@@ -1107,8 +1107,9 @@ async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed'),biz:document.getElementById('biz-feed')};
   const RSS_PROXY='https://api.rss2json.com/v1/api.json?rss_url=';
   const feeds=[
-    {url:'https://www.sportsnet.ca/feed/',label:'Sportsnet'},
-    {url:'https://www.nhl.com/rss/news.xml',label:'NHL.com'},
+    {url:'https://www.tsn.ca/rss/tsn.xml',label:'TSN'},
+    {url:'https://rss.cbssports.com/rss/headlines/nhl',label:'CBS Sports'},
+    {url:'https://sportsnaut.com/category/nhl/feed/',label:'Sportsnaut'},
   ];
   try{
     const results=await Promise.all(feeds.map(f=>
@@ -1286,25 +1287,27 @@ async function searchPlayer(){
   const el=document.getElementById('search-results');
   el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
-    // Use NHL suggest endpoint
-    const r=await fetch(`https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=${encodeURIComponent(`https://suggest.svc.nhl.com/svc/suggest/v1/minplayers/${encodeURIComponent(q)}/5`)}`);
+    const suggestUrl='https://suggest.svc.nhl.com/svc/suggest/v1/minplayers/'+encodeURIComponent(q)+'/5';
+    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(suggestUrl));
+    if(!r.ok) throw new Error('Status '+r.status);
     const d=await r.json();
     const suggestions=d.suggestions||[];
-    if(!suggestions.length){el.innerHTML='<div class="section-note">No players found. Try a different name.</div>';return;}
+    if(!suggestions.length){el.innerHTML='<div class="section-note">No players found for "'+q+'". Try a full name like "Connor McDavid".</div>';return;}
     el.innerHTML='';
     for(const s of suggestions.slice(0,3)){
       const parts=s.split('|');
-      const playerId=parts[0],lastName=parts[1],firstName=parts[2],teamAbbrev=parts[11]||'',pos=parts[12]||'',num=parts[13]||'';
+      const playerId=parseInt(parts[0]),lastName=parts[1]||'',firstName=parts[2]||'';
+      const teamAbbrev=parts[11]||'',pos=parts[12]||'',num=parts[13]||'';
+      if(!playerId) continue;
       const div=document.createElement('div');
       div.className='search-result';
-      div.innerHTML=`<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:#fff;margin-bottom:6px;">${firstName} ${lastName} <span style="color:var(--text2);font-size:13px;">#${num} · ${pos} · ${teamAbbrev}</span></div><div class="skel" style="height:10px;width:60%;"></div>`;
+      div.innerHTML='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:16px;color:#fff;margin-bottom:6px;">'+firstName+' '+lastName+' <span style="color:var(--text2);font-size:13px;">#'+num+' · '+pos+' · '+teamAbbrev+'</span></div><div class="skel" style="height:10px;width:60%;margin-bottom:8px;"></div>';
       el.appendChild(div);
-      // Load full player data
-      openPlayerPage(parseInt(playerId),`${firstName} ${lastName}`);
+      openPlayerPage(playerId,firstName+' '+lastName);
       break;
     }
   }catch(e){
-    el.innerHTML=`<div class="error-msg">Search failed. Try searching directly: <a href="https://www.nhl.com/player" target="_blank" style="color:var(--gold);">NHL.com Players →</a></div>`;
+    el.innerHTML='<div class="error-msg">Search failed: '+e.message+'.<br/><a href="https://www.nhl.com/player" target="_blank" style="color:var(--gold);">Search on NHL.com →</a></div>';
   }
 }
 
