@@ -1096,8 +1096,8 @@ async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed'),biz:document.getElementById('biz-feed')};
   try{
     const feeds=await Promise.all([
-      fetch('https://www.reddit.com/r/hockey.json?limit=25&raw_json=1').then(r=>r.json()).catch(()=>null),
-      fetch('https://www.reddit.com/r/hockeyplayers.json?limit=10&raw_json=1').then(r=>r.json()).catch(()=>null),
+      fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockey.json?limit=25&raw_json=1')).then(r=>r.json()).catch(()=>null),
+      fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockeyplayers.json?limit=10&raw_json=1')).then(r=>r.json()).catch(()=>null),
     ]);
     let items=[];
     feeds.forEach(f=>{if(f?.data?.children) items=[...items,...f.data.children.map(c=>c.data)];});
@@ -1386,7 +1386,7 @@ async function loadProspects(){
   }
   // Prospect news
   try{
-    const r=await fetch('https://www.reddit.com/r/hockeyprospects.json?limit=8&raw_json=1');
+    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockeyprospects.json?limit=8&raw_json=1'));
     const d=await r.json();
     const el2=document.getElementById('prospect-news');
     if(d?.data?.children&&el2){
