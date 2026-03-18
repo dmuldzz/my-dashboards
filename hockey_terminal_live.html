@@ -1113,7 +1113,7 @@ async function loadNews(){
   ];
   try{
     const results=await Promise.all(feeds.map(f=>
-      fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(RSS_PROXY+encodeURIComponent(f.url)+'&count=15'))
+      fetch(RSS_PROXY+encodeURIComponent(f.url)+'&count=15&api_key=public')
         .then(r=>r.json()).catch(()=>null)
     ));
     let items=[];
@@ -1299,9 +1299,9 @@ async function searchPlayer(){
   const el=document.getElementById('search-results');
   el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
-    // Use NHL stats REST API — search by name
-    const searchUrl='https://api.nhle.com/stats/rest/en/players?limit=5&cayenneExp=fullName+contains+"'+encodeURIComponent(q)+'"';
-    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(searchUrl));
+    // Search NHL stats REST API — no double encoding
+    const searchUrl='https://api.nhle.com/stats/rest/en/players?limit=5&cayenneExp=fullName+contains+%22'+q.replace(/ /g,'+')+'%22';
+    const r=await fetch(PROXY+encodeURIComponent(searchUrl));
     if(!r.ok) throw new Error('Status '+r.status);
     const d=await r.json();
     const players=(d.data||[]).slice(0,3);
@@ -1314,12 +1314,13 @@ async function searchPlayer(){
       const playerId=p.playerId||p.id;
       const name=(p.firstName||'')+' '+(p.lastName||'');
       const div=document.createElement('div');
-      div.className='search-result';
-      div.style.cssText='background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;cursor:pointer;';
+      div.style.cssText='background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;';
+      div.onmouseover=function(){this.style.borderColor='var(--gold)';};
+      div.onmouseout=function(){this.style.borderColor='var(--border)';};
       div.innerHTML='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:18px;color:#fff;">'+name+'</div>'
-        +'<div style="font-size:12px;color:var(--text2);margin-top:3px;">'+(p.positionCode||'')+(p.teamName?' · '+p.teamName:'')+'</div>'
-        +'<div style="font-size:11px;color:var(--gold);margin-top:4px;">Click to view full stats →</div>';
-      div.onclick=()=>openPlayerPage(playerId,name);
+        +'<div style="font-size:12px;color:var(--text2);margin-top:3px;">'+(p.positionCode||'')+' · '+(p.currentTeamAbbrev||p.teamName||'Free Agent')+'</div>'
+        +'<div style="font-size:11px;color:var(--gold);margin-top:6px;">View full profile →</div>';
+      div.onclick=function(){openPlayerPage(playerId,name);};
       el.appendChild(div);
     }
   }catch(e){
@@ -1420,7 +1421,7 @@ async function loadPlayoffs(){
 async function loadProspects(){
   const el=document.getElementById('prospect-list');if(!el)return;
   try{
-    const d=await nhl(`/draft/prospects/20252026`).catch(()=>({prospects:[]}));
+    const d=await nhl(`/prospects`).catch(()=>({prospects:[]}));
     const prospects=(d.prospects||[]).slice(0,20);
     if(!prospects.length) throw new Error('empty');
     el.innerHTML=prospects.map((p,i)=>`
@@ -1437,7 +1438,7 @@ async function loadProspects(){
   }
   // Prospect news
   try{
-    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.tsn.ca/rss/news.xml')+'&count=8'));
+    const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.tsn.ca/rss/news.xml')+'&count=8&api_key=public');
     const d=await r.json();
     const el2=document.getElementById('prospect-news');
     if(d?.data?.children&&el2){
