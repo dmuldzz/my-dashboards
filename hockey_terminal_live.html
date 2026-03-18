@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hockey Terminal V3</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07090f;--surface:#0d1220;--surface2:#111828;--surface3:#161e2e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8edf5;--text2:#6a7890;--text3:#303a50;
+  --gold:#c9a84c;--gold2:#e8c86a;--gold-dim:rgba(201,168,76,0.12);
+  --teal:#00bcd4;--teal-dim:rgba(0,188,212,0.12);
+  --red:#e03030;--red2:#ff5555;--red-dim:rgba(224,48,48,0.12);
+  --green:#22c55e;--green-dim:rgba(34,197,94,0.12);
+  --purple:#a855f7;--purple-dim:rgba(168,85,247,0.12);
+  --radius:6px;--radius-lg:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--teal);text-decoration:none;}a:hover{text-decoration:underline;}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(90deg,#0a0e1c 0%,#0f1a30 50%,#0a0e1c 100%);border-bottom:2px solid var(--gold);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:200;}
+.logo-wrap{display:flex;align-items:center;gap:14px;}
+.logo-icon{width:38px;height:38px;border-radius:50%;background:#0a0e1c;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;letter-spacing:0.5px;color:#fff;}
+.logo-text span{color:var(--gold);}
+.logo-sub{font-family:'Barlow',sans-serif;font-weight:400;font-size:10px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;display:block;margin-top:-2px;}
+.topbar-center{display:flex;gap:5px;}
+.nb{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;padding:4px 11px;text-transform:uppercase;}
+.nb-gold{background:var(--gold);color:#07090f;}
+.nb-teal{background:var(--teal);color:#07090f;}
+.nb-red{background:var(--red);color:#fff;}
+.topbar-right{display:flex;align-items:center;gap:14px;}
+.live-ind{display:flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;color:var(--red2);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--red2);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.15;}}
+.clock{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);}
+
+/* TICKER */
+.ticker-wrap{background:var(--surface);border-bottom:1px solid var(--border);height:32px;display:flex;align-items:center;overflow:hidden;}
+.ticker-label{background:var(--gold);color:#07090f;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;padding:0 14px;height:100%;display:flex;align-items:center;flex-shrink:0;text-transform:uppercase;}
+.ticker-inner{display:flex;animation:scroll 60s linear infinite;white-space:nowrap;}
+.ticker-inner:hover{animation-play-state:paused;}
+.tick{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--text2);padding:0 18px;border-right:1px solid var(--border);height:32px;display:flex;align-items:center;gap:8px;}
+.tick-score{color:var(--text);font-weight:700;}
+.tick-live{color:var(--red2);animation:blink 1s infinite;}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+/* TABS */
+.tabs-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 1.5rem;overflow-x:auto;position:relative;}
+.tab{padding:11px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:13px;letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color 0.15s;position:relative;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-badge{position:absolute;top:6px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red2);display:none;}
+.tab-badge.show{display:block;}
+
+/* MAIN */
+.main{padding:1.5rem;max-width:1400px;margin:0 auto;}
+.section{display:none;}.section.active{display:block;}
+
+/* OVERLAY / MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:2rem;overflow-y:auto;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-top:2px solid var(--gold);width:100%;max-width:860px;position:relative;margin:auto;}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:1.5rem;}
+
+/* LABELS */
+.slabel{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:10px;}
+.slabel::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.3),transparent);}
+
+/* GRIDS */
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-main{display:grid;grid-template-columns:2fr 1fr;gap:14px;}
+.grid-main-r{display:grid;grid-template-columns:1fr 2fr;gap:14px;}
+
+/* CLICKABLE STAT CARDS */
+.stat-card{background:linear-gradient(135deg,var(--surface2) 0%,var(--surface) 100%);border:1px solid var(--border);border-top:2px solid var(--gold);padding:1rem 1.2rem;transition:border-color 0.15s,transform 0.1s;}
+.stat-card.clickable{cursor:pointer;}
+.stat-card.clickable:hover{border-color:var(--gold);border-top-color:var(--gold2);transform:translateY(-1px);}
+.sc-label{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
+.sc-val{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:30px;color:#fff;line-height:1;}
+.sc-val.sm{font-size:18px;padding-top:4px;}
+.sc-sub{font-family:'Barlow',sans-serif;font-size:11px;color:var(--text2);margin-top:4px;}
+.sc-hint{font-size:9px;color:var(--gold);margin-top:4px;letter-spacing:0.5px;font-family:'Barlow Condensed',sans-serif;}
+.sc-ts{font-size:9px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);padding:1.1rem 1.3rem;margin-bottom:12px;}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.card-title .ct-right{font-size:10px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;font-family:'DM Mono',monospace;}
+.live-badge{font-size:9px;background:var(--red-dim);color:var(--red2);border:1px solid rgba(224,48,48,0.25);padding:2px 6px;letter-spacing:1px;font-weight:700;}
+.api-badge{font-size:9px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.2);padding:2px 6px;letter-spacing:1px;font-weight:700;}
+.ts{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;}
+
+/* SKELETON */
+.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:skel 1.5s infinite;height:14px;margin-bottom:8px;border-radius:3px;}
+@keyframes skel{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* PERFORMER */
+.perf{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.perf:last-child{border-bottom:none;}
+.perf-pts{width:38px;height:38px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:#07090f;flex-shrink:0;}
+.perf-pts.g{background:var(--teal);}
+.perf-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:#fff;cursor:pointer;}
+.perf-name:hover{color:var(--gold);text-decoration:underline;}
+.perf-meta{font-size:11px;color:var(--text2);margin-top:1px;}
+.perf-stat{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);margin-left:auto;}
+.perf-stat.g{color:var(--teal);}
+
+/* GAME CARDS */
+.game-card{background:var(--surface2);border:1px solid var(--border);padding:10px 14px;margin-bottom:8px;}
+.game-card.live{border-left:3px solid var(--red2);}
+.game-card.final{border-left:3px solid var(--text3);}
+.game-card.pre{border-left:3px solid var(--gold);}
+.game-row{display:flex;align-items:center;gap:10px;}
+.game-team{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--text);flex:1;display:flex;align-items:center;gap:8px;}
+.team-logo-img{width:22px;height:22px;object-fit:contain;}
+.game-score{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:#fff;min-width:36px;text-align:center;}
+.game-score.winner{color:var(--gold);}
+.game-divider{height:1px;background:var(--border);margin:6px 0;}
+.game-status-bar{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+.game-status{font-size:11px;font-family:'DM Mono',monospace;}
+.status-live{color:var(--red2);font-weight:500;}
+.status-final{color:var(--text3);}
+.status-pre{color:var(--gold);}
+.game-venue{font-size:10px;color:var(--text3);}
+
+/* STANDINGS */
+.div-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+.div-tab{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border:1px solid var(--border);color:var(--text3);cursor:pointer;background:none;transition:all 0.15s;}
+.div-tab:hover{color:var(--text2);border-color:var(--border2);}
+.div-tab.active{background:var(--gold);color:#07090f;border-color:var(--gold);}
+.std-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
+.std-row:last-child{border-bottom:none;}
+.std-row:hover{background:var(--surface2);}
+.std-rank{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:16px;text-align:center;}
+.std-logo{width:20px;height:20px;object-fit:contain;flex-shrink:0;}
+.std-name{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;color:var(--text);flex:1;}
+.std-pts{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--gold);min-width:28px;text-align:right;}
+.std-rec{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);min-width:56px;text-align:right;}
+.std-gp{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);min-width:24px;text-align:right;}
+.std-header{display:flex;align-items:center;gap:8px;padding:0 0 4px;border-bottom:1px solid var(--border2);margin-bottom:2px;}
+.std-hcol{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);}
+
+/* NEWS */
+.news-item{padding:11px 0;border-bottom:1px solid var(--border);}
+.news-item:last-child{border-bottom:none;}
+.news-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.news-src{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);}
+.news-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+.news-tag{font-size:10px;padding:1px 6px;font-weight:600;letter-spacing:0.5px;}
+.tag-trade{background:var(--red-dim);color:var(--red2);}
+.tag-injury{background:var(--gold-dim);color:var(--gold);}
+.tag-rumour{background:var(--purple-dim);color:var(--purple);}
+.tag-contract{background:var(--green-dim);color:var(--green);}
+.tag-biz{background:var(--teal-dim);color:var(--teal);}
+.tag-general{background:var(--surface2);color:var(--text2);}
+.news-hl{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:3px;}
+.news-hl a{color:#fff;}
+.news-hl a:hover{color:var(--gold);text-decoration:none;}
+.news-sum{font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* TRANSACTIONS */
+.txn-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.txn-item:last-child{border-bottom:none;}
+.txn-type{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;padding:3px 8px;flex-shrink:0;min-width:70px;text-align:center;}
+.txn-trade{background:var(--red-dim);color:var(--red2);border:1px solid rgba(224,48,48,0.2);}
+.txn-sign{background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.txn-waiver{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.2);}
+.txn-recall{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(0,188,212,0.2);}
+.txn-other{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.txn-text{font-size:13px;color:var(--text);line-height:1.5;}
+.txn-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;}
+
+/* THIS WEEK SIDEBAR */
+.week-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.week-item:last-child{border-bottom:none;}
+.week-day{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--gold);min-width:36px;}
+.week-games{flex:1;}
+.week-game{font-size:12px;color:var(--text2);line-height:1.6;}
+.week-game.marquee{color:var(--text);font-weight:500;}
+
+/* INJURY */
+.inj-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.inj-item:last-child{border-bottom:none;}
+.inj-status{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;padding:2px 7px;min-width:50px;text-align:center;}
+.inj-ir{background:var(--red-dim);color:var(--red2);border:1px solid rgba(224,48,48,0.2);}
+.inj-dtd{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,0.2);}
+.inj-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--text);cursor:pointer;}
+.inj-name:hover{color:var(--gold);}
+.inj-meta{font-size:11px;color:var(--text2);}
+.inj-desc{font-size:11px;color:var(--text3);margin-top:1px;font-style:italic;}
+
+/* PLAYOFF BRACKET */
+.bracket-round{display:flex;flex-direction:column;gap:16px;}
+.bracket-series{background:var(--surface2);border:1px solid var(--border);padding:10px 14px;}
+.bracket-team{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);}
+.bracket-team:last-child{border-bottom:none;}
+.bracket-team-name{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;flex:1;}
+.bracket-wins{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--gold);}
+.bracket-status{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px;}
+.bracket-elim{opacity:0.4;}
+
+/* ON THIS DAY */
+.otd-item{padding:12px 0;border-bottom:1px solid var(--border);}
+.otd-item:last-child{border-bottom:none;}
+.otd-year{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--gold);line-height:1;}
+.otd-text{font-size:13px;color:var(--text);margin-top:4px;line-height:1.5;}
+.otd-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+.otd-type{font-size:10px;padding:2px 7px;font-weight:600;letter-spacing:0.5px;margin-top:4px;display:inline-block;}
+
+/* PLAYER SEARCH */
+.search-bar{display:flex;gap:8px;margin-bottom:1.2rem;}
+.search-result{background:var(--surface2);border:1px solid var(--border);padding:1.2rem 1.4rem;margin-bottom:8px;}
+.player-header{display:flex;align-items:center;gap:16px;margin-bottom:1rem;}
+.player-headshot{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);background:var(--surface3);}
+.player-info-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:24px;color:#fff;}
+.player-info-meta{font-size:12px;color:var(--text2);margin-top:3px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-top:1rem;}
+.stat-box{background:var(--surface);border:1px solid var(--border);padding:8px 10px;text-align:center;}
+.stat-box-val{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--gold);}
+.stat-box-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+/* TEAM PAGE */
+.team-header{display:flex;align-items:center;gap:16px;margin-bottom:1.2rem;padding:1rem 1.4rem;background:var(--surface2);border:1px solid var(--border);}
+.team-logo-lg{width:60px;height:60px;object-fit:contain;}
+.team-name-lg{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:26px;color:#fff;}
+.team-record{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);margin-top:3px;}
+.roster-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.roster-row:last-child{border-bottom:none;}
+.roster-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);width:24px;}
+.roster-name{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;color:var(--text);flex:1;cursor:pointer;}
+.roster-name:hover{color:var(--gold);}
+.roster-pos{font-size:11px;color:var(--text2);min-width:24px;}
+
+/* FORMS */
+input[type=text],select,textarea{font-family:'Barlow',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;transition:border-color 0.15s;}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+select option{background:var(--surface2);}
+.btn{font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:0.5px;padding:7px 16px;border:1px solid var(--border2);background:none;color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.15s;}
+.btn:hover{background:var(--surface2);color:var(--text);}
+.btn-gold{background:var(--gold);color:#07090f;border-color:var(--gold);}
+.btn-gold:hover{background:var(--gold2);}
+.btn-sm{font-size:11px;padding:3px 9px;}
+.btn-danger{border-color:var(--red-dim);color:var(--red2);}
+.btn-danger:hover{background:var(--red-dim);}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:1rem 0;}
+.section-note{font-size:12px;color:var(--text3);padding:16px 0;text-align:center;font-style:italic;}
+.info-bar{font-size:12px;color:var(--text2);background:var(--surface2);border-left:3px solid var(--gold);padding:9px 13px;margin-bottom:1rem;line-height:1.5;}
+.error-msg{font-size:12px;color:var(--red2);padding:10px 0;}
+.ql-grid{display:flex;flex-direction:column;gap:8px;}
+.ql-item{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.ql-item::before{content:'↗';color:var(--gold);font-size:11px;}
+
+/* THREE STARS */
+.stars-wrap{display:flex;gap:10px;}
+.star-card{flex:1;background:var(--surface2);border:1px solid var(--border);padding:10px 12px;text-align:center;}
+.star-num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--gold);line-height:1;}
+.star-name{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:#fff;margin-top:4px;cursor:pointer;}
+.star-name:hover{color:var(--gold);}
+.star-detail{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* MSF SETUP */
+.msf-setup{background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--teal);padding:1rem 1.3rem;margin-bottom:1rem;}
+.msf-setup h3{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--teal);margin-bottom:6px;}
+
+@media(max-width:900px){.grid-main,.grid-main-r,.grid-2{grid-template-columns:1fr;}.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:1fr 1fr;}.stars-wrap{flex-direction:column;}}
+@media(max-width:600px){.grid-4{grid-template-columns:1fr 1fr;}.grid-3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo-wrap">
+    <div class="logo-icon">🏒</div>
+    <div>
+      <div class="logo-text"><span>HOCKEY</span> TERMINAL <span style="font-size:11px;color:var(--text3);font-weight:400;letter-spacing:1px;">V3</span></div>
+      <span class="logo-sub">NHL · AHL · PWHL · Juniors · International</span>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <span class="nb nb-gold">NHL</span>
+    <span class="nb nb-teal">Live</span>
+    <span class="nb nb-red" id="live-count-badge" style="display:none;">0 Live</span>
+  </div>
+  <div class="topbar-right">
+    <div class="live-ind"><div class="live-dot"></div>ON AIR</div>
+    <div class="clock" id="clock"></div>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-label">Scores</div>
+  <div class="ticker-inner" id="ticker-inner"><div class="tick" style="color:var(--text3);">Loading...</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab active" onclick="showTab('home')">🏠 Home</button>
+  <button class="tab" onclick="showTab('scores')">🎯 Scores</button>
+  <button class="tab" onclick="showTab('news')">📰 News & Rumours</button>
+  <button class="tab" onclick="showTab('standings')">🏆 Standings</button>
+  <button class="tab" onclick="showTab('transactions')">🔄 Transactions<div class="tab-badge" id="txn-badge"></div></button>
+  <button class="tab" onclick="showTab('injuries')">🏥 Injuries</button>
+  <button class="tab" onclick="showTab('prospects')">🌟 Prospects</button>
+  <button class="tab" onclick="showTab('playoffs')">🏆 Playoffs</button>
+  <button class="tab" onclick="showTab('business')">💼 Business</button>
+  <button class="tab" onclick="showTab('onthisday')">📅 On This Day</button>
+  <button class="tab" onclick="showTab('search')">🔍 Player Search</button>
+  <button class="tab" onclick="showTab('watchlist')">📋 Watchlist</button>
+</div>
+
+<!-- TEAM PAGE MODAL -->
+<div class="overlay" id="team-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('team-modal')">✕ Close</button>
+    <div class="modal-body" id="team-modal-body"><div class="skel"></div></div>
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div class="overlay" id="player-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('player-modal')">✕ Close</button>
+    <div class="modal-body" id="player-modal-body"><div class="skel"></div></div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ═══════════ HOME ═══════════ -->
+<div id="home" class="section active">
+  <div class="slabel">Dashboard — <span id="home-date" style="font-weight:400;color:var(--text2);text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;font-size:11px;"></span></div>
+  <div class="grid-4">
+    <div class="stat-card clickable" onclick="goToScores('yday')" title="View yesterday's results">
+      <div class="sc-label">Games Yesterday</div>
+      <div class="sc-val" id="h-yday">—</div>
+      <div class="sc-sub" id="h-yday-sub">NHL</div>
+      <div class="sc-hint">↗ View results</div>
+      <div class="sc-ts" id="ts-scores"></div>
+    </div>
+    <div class="stat-card clickable" id="top-perf-tile" onclick="openTopPerformerProfile()" title="View player profile">
+      <div class="sc-label">Top Performer</div>
+      <div class="sc-val sm" id="h-top-name">—</div>
+      <div class="sc-sub" id="h-top-pts">Loading...</div>
+      <div class="sc-hint">↗ View player page</div>
+    </div>
+    <div class="stat-card clickable" onclick="goToScores('today')" title="View tonight's games">
+      <div class="sc-label">Games Tonight</div>
+      <div class="sc-val" id="h-tonight">—</div>
+      <div class="sc-sub" id="h-tonight-sub">Loading...</div>
+      <div class="sc-hint">↗ View schedule</div>
+    </div>
+    <div class="stat-card clickable" onclick="goToScores('live')" title="View live games" style="border-top-color:var(--teal);">
+      <div class="sc-label">Live Right Now</div>
+      <div class="sc-val" id="h-live">—</div>
+      <div class="sc-sub">games in progress</div>
+      <div class="sc-hint">↗ View live scores</div>
+    </div>
+  </div>
+
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-title">Yesterday's Top Performers <span class="api-badge">NHL API</span><span class="ts" id="ts-performers"></span></div>
+        <div id="home-performers"><div class="skel"></div><div class="skel" style="width:75%;"></div><div class="skel" style="width:55%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Three Stars — Last Night <span class="api-badge">NHL API</span></div>
+        <div id="home-stars"><div class="skel"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tonight's Schedule <span class="api-badge">NHL API</span></div>
+        <div id="home-schedule"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Standings <span class="api-badge">NHL API</span><span class="ts" id="ts-standings"></span></div>
+        <div class="div-tabs" id="home-div-tabs">
+          <button class="div-tab active" onclick="switchHomeDivision('Atlantic',this)">ATL</button>
+          <button class="div-tab" onclick="switchHomeDivision('Metropolitan',this)">MET</button>
+          <button class="div-tab" onclick="switchHomeDivision('Central',this)">CEN</button>
+          <button class="div-tab" onclick="switchHomeDivision('Pacific',this)">PAC</button>
+          <button class="div-tab" onclick="switchHomeDivision('wildcard',this)">WC</button>
+        </div>
+        <div class="std-header">
+          <div style="width:16px;"></div><div style="flex:1;"></div>
+          <div class="std-hcol" style="min-width:56px;text-align:right;">W-L-OT</div>
+          <div class="std-hcol" style="min-width:24px;text-align:right;">GP</div>
+          <div class="std-hcol" style="min-width:28px;text-align:right;">PTS</div>
+        </div>
+        <div id="home-standings"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;font-family:'DM Mono',monospace;">Click any team to view team page</div>
+      </div>
+      <div class="card">
+        <div class="card-title">This Week in Hockey <span class="api-badge">NHL API</span></div>
+        <div id="this-week"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Latest News <span class="live-badge">LIVE</span><span class="ts" id="ts-news"></span></div>
+        <div id="home-news"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Transactions <span class="api-badge">NHL API</span></div>
+        <div id="home-txns"><div class="skel"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCORES ═══════════ -->
+<div id="scores" class="section">
+  <div class="slabel">Scores & Schedule</div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+    <button class="btn btn-gold" id="btn-yday" onclick="showScoresView('yday')">Yesterday's Results</button>
+    <button class="btn" id="btn-today" onclick="showScoresView('today')">Today's Games</button>
+    <button class="btn" style="margin-left:auto;font-size:11px;" onclick="loadAllData()">↻ Refresh</button>
+    <span class="ts" id="ts-scores-page"></span>
+  </div>
+  <div id="view-yday"><div class="grid-3" id="grid-yday"><div class="skel"></div><div class="skel"></div></div></div>
+  <div id="view-today" style="display:none;"><div class="grid-3" id="grid-today"><div class="skel"></div><div class="skel"></div></div></div>
+  <div class="divider"></div>
+  <div class="slabel">Other Leagues</div>
+  <div class="grid-3">
+    <div class="card"><div class="card-title">AHL</div><div class="ql-grid"><a href="https://theahl.com/scores" target="_blank" class="ql-item">AHL Scores</a><a href="https://theahl.com/standings" target="_blank" class="ql-item">AHL Standings</a></div></div>
+    <div class="card"><div class="card-title">PWHL</div><div class="ql-grid"><a href="https://www.thepwhl.com/en/scores" target="_blank" class="ql-item">PWHL Scores</a><a href="https://www.thepwhl.com/en/standings" target="_blank" class="ql-item">PWHL Standings</a></div></div>
+    <div class="card"><div class="card-title">Junior & College</div><div class="ql-grid"><a href="https://www.ontariohockeyleague.com/scores" target="_blank" class="ql-item">OHL</a><a href="https://www.whl.ca/scores" target="_blank" class="ql-item">WHL</a><a href="https://www.lhjmq.qc.ca" target="_blank" class="ql-item">QMJHL</a><a href="https://www.uscollegehockey.com/scoreboard" target="_blank" class="ql-item">NCAA</a></div></div>
+  </div>
+</div>
+
+<!-- ═══════════ NEWS ═══════════ -->
+<div id="news" class="section">
+  <div class="slabel">News & Rumours</div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+    <select id="news-filter" onchange="filterNews()" style="font-size:12px;padding:6px 10px;"><option value="all">All</option><option value="trade">Trades</option><option value="rumour">Rumours</option><option value="injury">Injuries</option><option value="contract">Contracts</option></select>
+    <button class="btn" onclick="loadNews()" style="font-size:11px;">↻ Refresh</button>
+    <span class="ts" id="ts-news-tab"></span>
+  </div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;"><div id="news-feed"><div class="skel"></div><div class="skel" style="width:80%;"></div></div></div>
+    <div>
+      <div class="card"><div class="card-title">Trusted Sources</div><div class="ql-grid">
+        <a href="https://www.dailyfaceoff.com/rumors" target="_blank" class="ql-item">Daily Faceoff Rumours</a>
+        <a href="https://www.tsn.ca/nhl" target="_blank" class="ql-item">TSN NHL</a>
+        <a href="https://www.sportsnet.ca/nhl" target="_blank" class="ql-item">Sportsnet NHL</a>
+        <a href="https://www.nhl.com/news" target="_blank" class="ql-item">NHL.com</a>
+        <a href="https://theathletic.com/nhl" target="_blank" class="ql-item">The Athletic</a>
+        <a href="https://www.reddit.com/r/hockey" target="_blank" class="ql-item">r/hockey</a>
+        <a href="https://www.nhltraderumors.us" target="_blank" class="ql-item">NHL Trade Rumors</a>
+        <a href="https://puckpedia.com/transactions" target="_blank" class="ql-item">PuckPedia</a>
+      </div></div>
+      <div class="card"><div class="card-title">Research Notes</div>
+        <textarea id="news-note-input" placeholder="Note a rumour or story..." style="width:100%;min-height:80px;margin-bottom:8px;"></textarea>
+        <button class="btn btn-gold" onclick="saveNote('news')" style="width:100%;">Save</button>
+        <div id="news-saved-notes" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ STANDINGS ═══════════ -->
+<div id="standings" class="section">
+  <div class="slabel">NHL Standings <span style="font-weight:400;color:var(--text2);text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;font-size:11px;">Click any team to open team page</span></div>
+  <div class="div-tabs" id="full-div-tabs">
+    <button class="div-tab active" onclick="switchFullDivision('Atlantic',this)">Atlantic</button>
+    <button class="div-tab" onclick="switchFullDivision('Metropolitan',this)">Metropolitan</button>
+    <button class="div-tab" onclick="switchFullDivision('Central',this)">Central</button>
+    <button class="div-tab" onclick="switchFullDivision('Pacific',this)">Pacific</button>
+    <button class="div-tab" onclick="switchFullDivision('wildcard',this)">Wild Card</button>
+    <button class="div-tab" onclick="switchFullDivision('league',this)">Full League</button>
+  </div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;">
+      <div class="std-header">
+        <div style="width:16px;"></div><div style="width:24px;"></div>
+        <div style="flex:1;"><span class="std-hcol">Team</span></div>
+        <div class="std-hcol" style="min-width:56px;text-align:right;">W-L-OT</div>
+        <div class="std-hcol" style="min-width:24px;text-align:right;">GP</div>
+        <div class="std-hcol" style="min-width:28px;text-align:right;">PTS</div>
+      </div>
+      <div id="full-standings"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+    </div>
+    <div>
+      <div class="card"><div class="card-title">Other Standings</div><div class="ql-grid">
+        <a href="https://theahl.com/standings" target="_blank" class="ql-item">AHL</a>
+        <a href="https://www.thepwhl.com/en/standings" target="_blank" class="ql-item">PWHL</a>
+        <a href="https://www.ontariohockeyleague.com/standings" target="_blank" class="ql-item">OHL</a>
+        <a href="https://www.whl.ca/standings" target="_blank" class="ql-item">WHL</a>
+        <a href="https://www.lhjmq.qc.ca/en/stats/standings" target="_blank" class="ql-item">QMJHL</a>
+        <a href="https://www.uscollegehockey.com/standings" target="_blank" class="ql-item">NCAA</a>
+        <a href="https://www.iihf.com/en/standings" target="_blank" class="ql-item">IIHF World Rankings</a>
+      </div></div>
+      <div class="card"><div class="card-title">Playoff Picture</div><div id="playoff-snap"><div class="skel"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TRANSACTIONS ═══════════ -->
+<div id="transactions" class="section">
+  <div class="slabel">Official Transactions <span style="font-weight:400;color:var(--text2);text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;font-size:11px;">via NHL API · verified</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+    <select id="txn-filter" onchange="renderFullTxns()" style="font-size:12px;padding:6px 10px;"><option value="all">All Types</option><option value="TRADE">Trades</option><option value="SIGN">Signings</option><option value="WAIVER">Waivers</option><option value="RECALL">Recalls</option></select>
+    <button class="btn" onclick="loadTransactions()" style="font-size:11px;">↻ Refresh</button>
+    <span class="ts" id="ts-txns"></span>
+  </div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;"><div id="txn-full"><div class="skel"></div><div class="skel" style="width:80%;"></div></div></div>
+    <div>
+      <div class="card"><div class="card-title">Sources</div><div class="ql-grid">
+        <a href="https://puckpedia.com/transactions" target="_blank" class="ql-item">PuckPedia</a>
+        <a href="https://www.capfriendly.com/transactions" target="_blank" class="ql-item">CapFriendly</a>
+        <a href="https://www.nhl.com/news/tag/transactions" target="_blank" class="ql-item">NHL.com Transactions</a>
+      </div></div>
+      <div class="card"><div class="card-title">Cap & Contracts</div><div class="ql-grid">
+        <a href="https://puckpedia.com/salary-cap" target="_blank" class="ql-item">PuckPedia Cap Space</a>
+        <a href="https://puckpedia.com/teams" target="_blank" class="ql-item">Team Breakdowns</a>
+        <a href="https://www.capfriendly.com/teams" target="_blank" class="ql-item">CapFriendly Teams</a>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ INJURIES ═══════════ -->
+<div id="injuries" class="section">
+  <div class="slabel">Injury Report</div>
+  <div class="msf-setup" id="msf-setup-bar">
+    <h3>MySportsFeeds — Free Setup Required</h3>
+    <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px;">Injury data comes from MySportsFeeds, which is free for personal use. Sign up at <a href="https://www.mysportsfeeds.com/pricing" target="_blank">mysportsfeeds.com</a>, then enter your credentials below.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <input type="text" id="msf-user" placeholder="Username" style="width:160px;"/>
+      <input type="text" id="msf-pass" placeholder="Password" style="width:160px;" id="msf-pass-inp"/>
+      <button class="btn btn-gold" onclick="saveMSFCreds()">Save & Load</button>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+    <select id="inj-filter" onchange="filterInjuries()" style="font-size:12px;padding:6px 10px;"><option value="all">All</option><option value="IR">IR</option><option value="DTD">Day-to-Day</option></select>
+    <select id="inj-team-filter" onchange="filterInjuries()" style="font-size:12px;padding:6px 10px;"><option value="all">All Teams</option></select>
+    <button class="btn" onclick="loadInjuries()" style="font-size:11px;">↻ Refresh</button>
+    <span class="ts" id="ts-injuries"></span>
+  </div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;"><div id="injury-list"><div class="skel"></div><div class="skel" style="width:80%;"></div></div></div>
+    <div>
+      <div class="card"><div class="card-title">About Injury Data</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6;">MySportsFeeds provides daily injury updates for NHL players including IR placements, day-to-day designations, and return timelines. Free for personal/hobbyist use with a registered account.</p>
+        <div style="margin-top:10px;" class="ql-grid">
+          <a href="https://www.mysportsfeeds.com" target="_blank" class="ql-item">MySportsFeeds</a>
+          <a href="https://www.nhl.com/injuries" target="_blank" class="ql-item">NHL.com Injuries</a>
+          <a href="https://www.tsn.ca/nhl/injuries" target="_blank" class="ql-item">TSN Injury Report</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PROSPECTS ═══════════ -->
+<div id="prospects" class="section">
+  <div class="slabel">Prospects & Draft</div>
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-title">2025 NHL Draft Prospects <span class="api-badge">NHL API</span></div>
+        <div id="prospect-list"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prospect News <span class="live-badge">LIVE</span></div>
+        <div id="prospect-news"><div class="skel"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="card-title">Draft Calendar</div><div id="draft-cal"></div></div>
+      <div class="card"><div class="card-title">Resources</div><div class="ql-grid">
+        <a href="https://www.nhl.com/prospects" target="_blank" class="ql-item">NHL.com Prospects</a>
+        <a href="https://www.eliteprospects.com/draft/nhl-entry-draft/2025" target="_blank" class="ql-item">EliteProspects 2025</a>
+        <a href="https://www.chl.ca" target="_blank" class="ql-item">CHL</a>
+        <a href="https://theathletic.com/nhl/draft" target="_blank" class="ql-item">The Athletic Draft</a>
+        <a href="https://www.tsn.ca/nhl/draft" target="_blank" class="ql-item">TSN Draft</a>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PLAYOFFS ═══════════ -->
+<div id="playoffs" class="section">
+  <div class="slabel">Playoff Bracket <span style="font-weight:400;color:var(--text2);text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;font-size:11px;">via NHL API · live during playoffs</span></div>
+  <div id="playoff-content"><div class="skel"></div></div>
+</div>
+
+<!-- ═══════════ BUSINESS ═══════════ -->
+<div id="business" class="section">
+  <div class="slabel">Business of Hockey</div>
+  <div class="info-bar">Covers ownership moves, broadcast deals, arena projects, technology companies in hockey, CBA and legal news, franchise valuations, sponsorships, and executive decisions across the league.</div>
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-title">Business News Feed <span class="live-badge">LIVE</span><span class="ts" id="ts-biz"></span></div>
+        <div id="biz-feed"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="card-title">Business Sources</div><div class="ql-grid">
+        <a href="https://www.sportico.com/leagues/hockey" target="_blank" class="ql-item">Sportico Hockey</a>
+        <a href="https://www.bnnbloomberg.ca/sports" target="_blank" class="ql-item">BNN Bloomberg Sports</a>
+        <a href="https://www.forbes.com/nhl-valuations/" target="_blank" class="ql-item">Forbes NHL Valuations</a>
+        <a href="https://www.sportsnet.ca/nhl" target="_blank" class="ql-item">Sportsnet Business</a>
+        <a href="https://www.tsn.ca/nhl" target="_blank" class="ql-item">TSN NHL Business</a>
+        <a href="https://www.nhl.com/news" target="_blank" class="ql-item">NHL Official News</a>
+        <a href="https://theathletic.com/nhl" target="_blank" class="ql-item">The Athletic</a>
+      </div></div>
+      <div class="card"><div class="card-title">Key Topics</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text2);">
+          <div>💰 Ownership & Valuations</div>
+          <div>📺 Broadcast & Streaming Rights</div>
+          <div>🏟 Arena Deals & Construction</div>
+          <div>💻 Hockey Technology Companies</div>
+          <div>⚖️ CBA & Legal News</div>
+          <div>🤝 Sponsorships & Partnerships</div>
+          <div>🌍 Expansion & Relocation</div>
+          <div>👔 Executive Hires & Firings</div>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">Business Notes</div>
+        <textarea id="biz-note-input" placeholder="Business observations, deal tracking..." style="width:100%;min-height:80px;margin-bottom:8px;"></textarea>
+        <button class="btn btn-gold" onclick="saveNote('biz')" style="width:100%;">Save</button>
+        <div id="biz-saved-notes" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ON THIS DAY ═══════════ -->
+<div id="onthisday" class="section">
+  <div class="slabel">On This Day in Hockey</div>
+  <div class="info-bar">Historical games pulled from the NHL API. Significant events are curated and verified from public records. Curated events are clearly marked.</div>
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-title">Significant Events <span class="api-badge">Curated + Verified</span></div>
+        <div id="otd-events"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Games Played on This Date <span class="api-badge">NHL API</span></div>
+        <div id="otd-games"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="card-title">Historical Resources</div><div class="ql-grid">
+        <a href="https://www.hockeyreference.com" target="_blank" class="ql-item">Hockey Reference</a>
+        <a href="https://www.nhl.com/history" target="_blank" class="ql-item">NHL History</a>
+        <a href="https://www.hhof.com" target="_blank" class="ql-item">Hockey Hall of Fame</a>
+        <a href="https://records.nhl.com" target="_blank" class="ql-item">NHL Records</a>
+        <a href="https://www.hockeydb.com" target="_blank" class="ql-item">Hockey DB</a>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PLAYER SEARCH ═══════════ -->
+<div id="search" class="section">
+  <div class="slabel">Player Search</div>
+  <div class="search-bar">
+    <input type="text" id="player-search-input" placeholder="Search NHL player name (e.g. Connor McDavid)..." style="flex:1;" onkeydown="if(event.key==='Enter')searchPlayer()"/>
+    <button class="btn btn-gold" onclick="searchPlayer()">Search</button>
+  </div>
+  <div id="search-results"><div class="section-note">Search for any current or recent NHL player above. Stats pulled live from the NHL API.</div></div>
+</div>
+
+<!-- ═══════════ WATCHLIST ═══════════ -->
+<div id="watchlist" class="section">
+  <div class="slabel">My Watchlist</div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;">
+    <input type="text" id="wl-input" placeholder="Player, team, or prospect..." style="width:180px;" onkeydown="if(event.key==='Enter')addWL()"/>
+    <select id="wl-type" style="font-size:12px;"><option>Player</option><option>Team</option><option>Prospect</option><option>Coach/Staff</option></select>
+    <button class="btn btn-gold" onclick="addWL()">+ Add</button>
+  </div>
+  <div class="grid-main-r">
+    <div id="wl-list"></div>
+    <div>
+      <div class="card"><div class="card-title">Season Notes</div>
+        <textarea id="wl-notes" placeholder="Trade thoughts, predictions, storylines..." style="width:100%;min-height:120px;" oninput="save('hkt3_notes',this.value)"></textarea>
+      </div>
+      <div class="card"><div class="card-title">Cup Predictions</div>
+        <textarea id="wl-preds" placeholder="Stanley Cup pick, awards, bold takes..." style="width:100%;min-height:90px;" oninput="save('hkt3_preds',this.value)"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<script>
+// ══════════════════════════════════════
+// CORE UTILITIES
+// ══════════════════════════════════════
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
+
+function timeSince(dateStr){
+  const s=Math.floor((Date.now()-new Date(dateStr).getTime())/1000);
+  if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
+}
+function nowStr(){return new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function setTS(id){const el=document.getElementById(id);if(el)el.textContent='Updated '+nowStr();}
+
+const NOW=new Date();
+const TODAY=NOW.toISOString().split('T')[0];
+const YDAY=new Date(NOW-86400000).toISOString().split('T')[0];
+document.getElementById('home-date').textContent=NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// Clock
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';}
+setInterval(tick,1000);tick();
+
+// Format time
+function fmtTime(utcStr){
+  if(!utcStr)return '—';
+  return new Date(utcStr).toLocaleTimeString('en-CA',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Toronto'});
+}
+
+// ══════════════════════════════════════
+// TABS
+// ══════════════════════════════════════
+const TAB_IDS=['home','scores','news','standings','transactions','injuries','prospects','playoffs','business','onthisday','search','watchlist'];
+function showTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  TAB_IDS.forEach((s,i)=>{if(s===id)document.querySelectorAll('.tab')[i]?.classList.add('active');});
+  if(id==='transactions') document.getElementById('txn-badge').classList.remove('show');
+  if(id==='onthisday') loadOnThisDay();
+}
+
+function goToScores(view){showTab('scores');showScoresView(view==='live'?'today':view);}
+function showScoresView(v){
+  document.getElementById('view-yday').style.display=v==='yday'?'block':'none';
+  document.getElementById('view-today').style.display=v==='today'?'block':'none';
+  document.getElementById('btn-yday').className='btn'+(v==='yday'?' btn-gold':'');
+  document.getElementById('btn-today').className='btn'+(v==='today'?' btn-gold':'');
+  if(v==='live'){
+    // scroll to live games
+    setTimeout(()=>{const el=document.querySelector('.game-card.live');if(el)el.scrollIntoView({behavior:'smooth'});},100);
+  }
+}
+
+// Modals
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ══════════════════════════════════════
+// NHL API — Personal Vercel Proxy
+// ══════════════════════════════════════
+const NHL='https://api-web.nhle.com/v1';
+const NHL_STATS='https://api.nhle.com/stats/rest';
+const P='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=';
+
+async function nhl(path,base){
+  const url=(base||NHL)+path;
+  try{const r=await fetch(P+encodeURIComponent(url));if(r.ok)return r.json();}catch(e){}
+  try{const r=await fetch(url);if(r.ok)return r.json();}catch(e){}
+  throw new Error('fetch failed: '+path);
+}
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let STANDINGS=[];
+let YDAY_GAMES=[];
+let TODAY_GAMES=[];
+let TXN_ALL=[];
+let TOP_PERFORMER={name:'',playerId:null,pts:0};
+let INJ_ALL=[];
+let SEEN_TXN_COUNT=load('hkt3_txn_seen',0);
+let ALL_NEWS_ITEMS=[];
+
+// ══════════════════════════════════════
+// STANDINGS
+// ══════════════════════════════════════
+async function loadStandings(){
+  try{
+    const d=await nhl('/standings/now');
+    STANDINGS=d.standings||[];
+    renderHomeStandings('Atlantic');
+    renderFullStandings('Atlantic');
+    renderPlayoffSnap();
+    setTS('ts-standings');
+  }catch(e){
+    ['home-standings','full-standings'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<div class="error-msg">Could not load standings. <a href="https://www.nhl.com/standings" target="_blank" style="color:var(--gold);">NHL.com →</a></div>';
+    });
+  }
+}
+
+function getDiv(name){
+  if(name==='wildcard') return STANDINGS.filter(t=>t.wildcardSequence>0||t.conferenceSequence<=3).sort((a,b)=>b.points-a.points);
+  if(name==='league') return [...STANDINGS].sort((a,b)=>b.points-a.points);
+  return STANDINGS.filter(t=>t.divisionName===name);
+}
+
+function stdRowHTML(t,rank){
+  const logo=t.teamLogo?`<img src="${t.teamLogo}" class="std-logo" onerror="this.style.display='none'"/>`:'';
+  const abbrev=t.teamAbbrev?.default||t.teamCommonName?.default||'—';
+  const name=t.teamName?.default||t.teamCommonName?.default||'—';
+  return `<div class="std-row" onclick="openTeamPage('${abbrev}','${name.replace(/'/g,"\\'")}')">
+    <span class="std-rank">${rank}</span>${logo}
+    <span class="std-name">${name}</span>
+    <span class="std-rec">${t.wins}-${t.losses}-${t.otLosses}</span>
+    <span class="std-gp">${t.gamesPlayed}</span>
+    <span class="std-pts">${t.points}</span>
+  </div>`;
+}
+
+function renderHomeStandings(div){
+  const el=document.getElementById('home-standings');
+  if(!el) return;
+  const teams=getDiv(div).slice(0,6);
+  el.innerHTML=teams.length?teams.map((t,i)=>stdRowHTML(t,i+1)).join(''):'<div class="section-note">No data</div>';
+}
+
+function renderFullStandings(div){
+  const el=document.getElementById('full-standings');
+  if(!el) return;
+  const teams=getDiv(div);
+  el.innerHTML=teams.length?teams.map((t,i)=>stdRowHTML(t,i+1)).join(''):'<div class="section-note">No data</div>';
+}
+
+function switchHomeDivision(div,btn){
+  document.querySelectorAll('#home-div-tabs .div-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderHomeStandings(div);
+}
+function switchFullDivision(div,btn){
+  document.querySelectorAll('#full-div-tabs .div-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderFullStandings(div);
+}
+
+function renderPlayoffSnap(){
+  const east=STANDINGS.filter(t=>t.conferenceName==='Eastern').sort((a,b)=>b.points-a.points).slice(0,8);
+  const west=STANDINGS.filter(t=>t.conferenceName==='Western').sort((a,b)=>b.points-a.points).slice(0,8);
+  const conf=(label,teams)=>`
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:1px;color:var(--text3);text-transform:uppercase;margin-bottom:6px;">${label}</div>
+    ${teams.map((t,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;" onclick="openTeamPage('${t.teamAbbrev?.default||''}','${(t.teamName?.default||'').replace(/'/g,"\\'")}')">
+      <span style="color:${i<3?'var(--gold)':'var(--green)'};font-family:'DM Mono',monospace;font-size:10px;min-width:12px;">${i<3?'D':'W'}</span>
+      <span style="flex:1;color:var(--text);">${t.teamName?.default||t.teamCommonName?.default}</span>
+      <span style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;">${t.points}pts</span>
+    </div>`).join('')}`;
+  const el=document.getElementById('playoff-snap');
+  if(el) el.innerHTML=conf('Eastern',east)+'<div style="margin:8px 0;"></div>'+conf('Western',west);
+}
+
+// ══════════════════════════════════════
+// SCORES
+// ══════════════════════════════════════
+async function loadScores(){
+  try{
+    const [yd,td]=await Promise.all([nhl(`/score/${YDAY}`),nhl(`/score/${TODAY}`)]);
+    YDAY_GAMES=yd.games||[];
+    TODAY_GAMES=td.games||[];
+    renderTicker();renderHomeSchedule();renderScoresGrids();
+    updateTopBar();updateHomeStats();setTS('ts-scores');setTS('ts-scores-page');
+    await Promise.all([loadTopPerformers(),loadThreeStars()]);
+  }catch(e){
+    document.getElementById('home-schedule').innerHTML='<div class="error-msg">Could not load. <a href="https://www.nhl.com/scores" target="_blank" style="color:var(--gold);">NHL.com →</a></div>';
+  }
+}
+
+function updateTopBar(){
+  const live=TODAY_GAMES.filter(g=>g.gameState==='LIVE'||g.gameState==='CRIT');
+  const ct=document.getElementById('live-count-badge');
+  if(live.length){ct.textContent=live.length+' Live';ct.style.display='';}else ct.style.display='none';
+}
+
+function updateHomeStats(){
+  document.getElementById('h-yday').textContent=YDAY_GAMES.length||'0';
+  document.getElementById('h-yday-sub').textContent='NHL · '+new Date(YDAY).toLocaleDateString('en-CA',{month:'short',day:'numeric'});
+  document.getElementById('h-tonight').textContent=TODAY_GAMES.length||'0';
+  const live=TODAY_GAMES.filter(g=>g.gameState==='LIVE'||g.gameState==='CRIT').length;
+  document.getElementById('h-tonight-sub').textContent=live>0?`${live} live now`:`First puck ${fmtTime(TODAY_GAMES[0]?.startTimeUTC)||'TBD'}`;
+  document.getElementById('h-live').textContent=live;
+}
+
+function gameCardHTML(g){
+  const state=g.gameState;
+  const isLive=state==='LIVE'||state==='CRIT';
+  const isFinal=state==='OFF'||state==='FINAL';
+  const away=g.awayTeam,home=g.homeTeam;
+  const aScore=away.score??'—',hScore=home.score??'—';
+  const aWin=isFinal&&away.score>home.score,hWin=isFinal&&home.score>away.score;
+  let statusTxt='',sc='status-pre';
+  if(isLive){statusTxt=`LIVE · ${g.period?.ordinalNum||''} ${g.clock?.timeRemaining||''}`;sc='status-live';}
+  else if(isFinal){statusTxt='Final'+(g.gameOutcome?.lastPeriodType==='OT'?' (OT)':g.gameOutcome?.lastPeriodType==='SO'?' (SO)':'');sc='status-final';}
+  else{statusTxt=fmtTime(g.startTimeUTC);sc='status-pre';}
+  const aLogo=away.logo?`<img src="${away.logo}" class="team-logo-img" onerror="this.style.display='none'"/>`:'';
+  const hLogo=home.logo?`<img src="${home.logo}" class="team-logo-img" onerror="this.style.display='none'"/>`:'';
+  const aAbbrev=away.abbrev||away.commonName?.default||'—';
+  const hAbbrev=home.abbrev||home.commonName?.default||'—';
+  return `<div class="game-card ${isLive?'live':isFinal?'final':'pre'}">
+    <div class="game-row"><div class="game-team" onclick="openTeamPage('${aAbbrev}','${aAbbrev}')" style="cursor:pointer;">${aLogo}${aAbbrev}</div><div class="game-score ${aWin?'winner':''}">${aScore}</div></div>
+    <div class="game-divider"></div>
+    <div class="game-row"><div class="game-team" onclick="openTeamPage('${hAbbrev}','${hAbbrev}')" style="cursor:pointer;">${hLogo}${hAbbrev}</div><div class="game-score ${hWin?'winner':''}">${hScore}</div></div>
+    <div class="game-status-bar"><span class="game-status ${sc}">${statusTxt}</span><span class="game-venue">${g.venue?.default||''}</span></div>
+  </div>`;
+}
+
+function renderTicker(){
+  const all=[...YDAY_GAMES,...TODAY_GAMES];
+  if(!all.length){document.getElementById('ticker-inner').innerHTML='<div class="tick" style="color:var(--text3);">No games found</div>';return;}
+  const items=all.map(g=>{
+    const isLive=g.gameState==='LIVE'||g.gameState==='CRIT';
+    const isFinal=g.gameState==='OFF'||g.gameState==='FINAL';
+    const away=g.awayTeam,home=g.homeTeam;
+    let st=isFinal?`<span style="color:var(--text3);font-size:10px;"> Final</span>`:isLive?`<span class="tick-live"> LIVE</span>`:`<span style="color:var(--gold);font-size:10px;"> ${fmtTime(g.startTimeUTC)}</span>`;
+    return `<div class="tick">${away.abbrev} <span class="tick-score">${away.score??'—'}–${home.score??'—'}</span> ${home.abbrev}${st}</div>`;
+  });
+  const doubled=[...items,...items].join('');
+  document.getElementById('ticker-inner').innerHTML=doubled;
+}
+
+function renderHomeSchedule(){
+  const el=document.getElementById('home-schedule');if(!el)return;
+  el.innerHTML=TODAY_GAMES.length?TODAY_GAMES.slice(0,5).map(g=>gameCardHTML(g)).join(''):'<div class="section-note">No games today.</div>';
+}
+
+function renderScoresGrids(){
+  const yg=document.getElementById('grid-yday'),tg=document.getElementById('grid-today');
+  if(yg) yg.innerHTML=YDAY_GAMES.length?YDAY_GAMES.map(g=>gameCardHTML(g)).join(''):'<div class="section-note">No games yesterday.</div>';
+  if(tg) tg.innerHTML=TODAY_GAMES.length?TODAY_GAMES.map(g=>gameCardHTML(g)).join(''):'<div class="section-note">No games today.</div>';
+}
+
+// ══════════════════════════════════════
+// TOP PERFORMERS (parallel fetch)
+// ══════════════════════════════════════
+async function loadTopPerformers(){
+  const el=document.getElementById('home-performers');if(!el)return;
+  try{
+    const boxFetches=YDAY_GAMES.slice(0,10).map(g=>g.id?nhl(`/gamecenter/${g.id}/boxscore`).catch(()=>null):Promise.resolve(null));
+    const boxes=await Promise.all(boxFetches);
+    const performers=[],goalies=[];
+    boxes.forEach((box,gi)=>{
+      if(!box) return;
+      const g=YDAY_GAMES[gi];
+      const pbs=box?.playerByGameStats;if(!pbs) return;
+      const skaters=[...(pbs.homeTeam?.forwards||[]),(pbs.homeTeam?.defense||[]),(pbs.awayTeam?.forwards||[]),(pbs.awayTeam?.defense||[])].flat();
+      skaters.forEach(p=>{
+        const pts=(p.goals||0)+(p.assists||0);
+        if(pts>=3) performers.push({name:p.name?.default||'—',playerId:p.playerId,team:p.teamAbbrev||'',pts,goals:p.goals||0,assists:p.assists||0,pos:p.position||'',gameId:g.id,gameCenterLink:g.gameCenterLink});
+      });
+      [...(pbs.homeTeam?.goalies||[]),(pbs.awayTeam?.goalies||[])].flat().forEach(p=>{
+        if((p.saveShotsAgainst||0)>=45) goalies.push({name:p.name?.default||'—',playerId:p.playerId,team:p.teamAbbrev||'',saves:p.saveShotsAgainst||0,pos:'G',gameId:g.id});
+      });
+    });
+    performers.sort((a,b)=>b.pts-a.pts);
+    if(performers.length){
+      TOP_PERFORMER={name:performers[0].name,playerId:performers[0].playerId,pts:performers[0].pts};
+      document.getElementById('h-top-name').textContent=performers[0].name.split(' ').pop();
+      document.getElementById('h-top-pts').textContent=`${performers[0].pts} pts · ${performers[0].goals}G ${performers[0].assists}A`;
+    }
+    const html=[
+      ...performers.slice(0,5).map(p=>`
+        <div class="perf">
+          <div class="perf-pts">${p.pts}</div>
+          <div>
+            <div class="perf-name" onclick="openPlayerPage(${p.playerId},'${p.name.replace(/'/g,"\\'")}')">${p.name}</div>
+            <div class="perf-meta">${p.team} · ${p.pos}</div>
+          </div>
+          <div class="perf-stat">${p.goals}G ${p.assists}A</div>
+        </div>`),
+      ...goalies.slice(0,2).map(p=>`
+        <div class="perf">
+          <div class="perf-pts g">${p.saves}</div>
+          <div>
+            <div class="perf-name" onclick="openPlayerPage(${p.playerId},'${p.name.replace(/'/g,"\\'")}')">${p.name}</div>
+            <div class="perf-meta">${p.team} · Goalie</div>
+          </div>
+          <div class="perf-stat g">${p.saves} SV</div>
+        </div>`)
+    ].join('');
+    el.innerHTML=html||'<div class="section-note">No players with 3+ points yesterday.</div>';
+    setTS('ts-performers');
+  }catch(e){el.innerHTML='<div class="error-msg">Could not load. Check CORS proxy.</div>';}
+}
+
+function openTopPerformerProfile(){
+  if(TOP_PERFORMER.playerId) openPlayerPage(TOP_PERFORMER.playerId,TOP_PERFORMER.name);
+  else window.open('https://www.nhl.com/stats','_blank');
+}
+
+// ══════════════════════════════════════
+// THREE STARS
+// ══════════════════════════════════════
+async function loadThreeStars(){
+  const el=document.getElementById('home-stars');if(!el)return;
+  try{
+    for(const g of [...YDAY_GAMES].reverse()){
+      try{
+        const rr=await nhl(`/gamecenter/${g.id}/right-rail`);
+        const stars=rr?.threeStars;
+        if(stars&&stars.length){
+          el.innerHTML=`<div class="stars-wrap">${stars.slice(0,3).map((s,i)=>`
+            <div class="star-card">
+              <div class="star-num">${['★','★★','★★★'][i]}</div>
+              <div class="star-name" onclick="openPlayerPage(${s.playerId},'${(s.name?.default||'').replace(/'/g,"\\'")}')">${s.name?.default||s.firstName?.default+' '+s.lastName?.default||'—'}</div>
+              <div class="star-detail">${s.teamAbbrev||''} · ${s.position||''}</div>
+              <div class="star-detail" style="color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;margin-top:4px;">${s.goals??0}G ${s.assists??0}A</div>
+            </div>`).join('')}</div>`;return;
+        }
+      }catch(e){}
+    }
+    el.innerHTML='<div class="section-note">Stars not yet available.</div>';
+  }catch(e){el.innerHTML='<div class="error-msg">Could not load three stars.</div>';}
+}
+
+// ══════════════════════════════════════
+// THIS WEEK
+// ══════════════════════════════════════
+async function loadThisWeek(){
+  const el=document.getElementById('this-week');if(!el)return;
+  try{
+    const d=await nhl(`/schedule/now`);
+    const week=d.gameWeek||[];
+    if(!week.length){el.innerHTML='<div class="section-note">No schedule data.</div>';return;}
+    el.innerHTML=week.slice(0,7).map(day=>{
+      const games=day.games||[];
+      const date=new Date(day.date);
+      const dayLabel=date.toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'});
+      const gameLines=games.map(g=>{
+        const a=g.awayTeam?.abbrev||'',h=g.homeTeam?.abbrev||'';
+        const time=fmtTime(g.startTimeUTC);
+        return `<div class="week-game">${a} @ ${h} · ${time}</div>`;
+      }).join('');
+      return `<div class="week-item"><div class="week-day">${dayLabel}</div><div class="week-games">${gameLines||'<span style="color:var(--text3);font-size:11px;">No games</span>'}</div></div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="error-msg">Could not load weekly schedule.</div>';}
+}
+
+// ══════════════════════════════════════
+// TRANSACTIONS
+// ══════════════════════════════════════
+async function loadTransactions(){
+  try{
+    const [a,b]=await Promise.all([nhl(`/transactions/${TODAY}`),nhl(`/transactions/${YDAY}`)]);
+    const fresh=[...(a.transactions||[]),(b.transactions||[])].flat();
+    if(fresh.length>SEEN_TXN_COUNT&&!document.getElementById('transactions').classList.contains('active')){
+      document.getElementById('txn-badge').classList.add('show');
+    }
+    TXN_ALL=fresh;save('hkt3_txn_seen',TXN_ALL.length);
+    renderHomeTxns();renderFullTxns();setTS('ts-txns');
+  }catch(e){
+    document.getElementById('home-txns').innerHTML='<div class="error-msg">Transactions unavailable. <a href="https://puckpedia.com/transactions" target="_blank" style="color:var(--gold);">PuckPedia →</a></div>';
+  }
+}
+
+function txnClass(type){
+  if(!type)return 'txn-other';const t=type.toUpperCase();
+  if(t.includes('TRADE'))return 'txn-trade';
+  if(t.includes('SIGN')||t.includes('CONTRACT'))return 'txn-sign';
+  if(t.includes('WAIVER'))return 'txn-waiver';
+  if(t.includes('RECALL')||t.includes('ASSIGN'))return 'txn-recall';
+  return 'txn-other';
+}
+
+function txnHTML(t){
+  const label=(t.typeName||t.typeDescription||'Move').toUpperCase().replace('_',' ').substring(0,12);
+  const desc=t.description||t.transactionDescription||'Transaction recorded';
+  return `<div class="txn-item"><span class="txn-type ${txnClass(t.typeName)}">${label}</span><div><div class="txn-text">${desc}</div><div class="txn-date">${t.date||t.transactionDate||'—'}</div></div></div>`;
+}
+
+function renderHomeTxns(){
+  const el=document.getElementById('home-txns');if(!el)return;
+  el.innerHTML=TXN_ALL.length?TXN_ALL.slice(0,4).map(t=>txnHTML(t)).join(''):'<div class="section-note">No recent transactions.</div>';
+}
+
+function renderFullTxns(){
+  const f=document.getElementById('txn-filter')?.value||'all';
+  let data=TXN_ALL;
+  if(f!=='all') data=data.filter(t=>(t.typeName||'').toUpperCase().includes(f)||(t.typeDescription||'').toUpperCase().includes(f));
+  const el=document.getElementById('txn-full');if(!el)return;
+  el.innerHTML=data.length?data.map(t=>txnHTML(t)).join(''):'<div class="section-note">No transactions match this filter.</div>';
+}
+
+// ══════════════════════════════════════
+// NEWS — Reddit native JSON (no proxy needed)
+// ══════════════════════════════════════
+async function loadNews(){
+  const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed'),biz:document.getElementById('biz-feed')};
+  try{
+    const feeds=await Promise.all([
+      fetch('https://www.reddit.com/r/hockey.json?limit=25&raw_json=1').then(r=>r.json()).catch(()=>null),
+      fetch('https://www.reddit.com/r/hockeyplayers.json?limit=10&raw_json=1').then(r=>r.json()).catch(()=>null),
+    ]);
+    let items=[];
+    feeds.forEach(f=>{if(f?.data?.children) items=[...items,...f.data.children.map(c=>c.data)];});
+    items.sort((a,b)=>b.created_utc-a.created_utc);
+    ALL_NEWS_ITEMS=items;
+    const bizTerms=['arena','broadcast','ownership','deal','rights','valuation','sponsor','expansion','technology','cba','nhl pa','commissioner','bettman','legal','court','sale','sold','acquire'];
+    const bizItems=items.filter(i=>{const t=(i.title||'').toLowerCase();return bizTerms.some(bt=>t.includes(bt));});
+    renderNewsItems(items.slice(0,3),els.home,true);
+    renderNewsItems(items,els.feed,false);
+    renderNewsItems(bizItems.length?bizItems:items.slice(0,10),els.biz,false);
+    setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
+  }catch(e){
+    const msg='<div class="error-msg">Could not load news. <a href="https://www.reddit.com/r/hockey" target="_blank" style="color:var(--gold);">r/hockey →</a></div>';
+    Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
+  }
+}
+
+function guessTag(title){
+  const t=(title||'').toLowerCase();
+  if(t.includes('trade')||t.includes('traded'))return{cls:'tag-trade',label:'Trade'};
+  if(t.includes('sign')||t.includes('contract')||t.includes('extension'))return{cls:'tag-contract',label:'Contract'};
+  if(t.includes('injur')||t.includes('day-to-day')||t.includes(' ir '))return{cls:'tag-injury',label:'Injury'};
+  if(t.includes('rumour')||t.includes('rumor')||t.includes('report')||t.includes('per '))return{cls:'tag-rumour',label:'Rumour'};
+  if(t.includes('arena')||t.includes('broadcast')||t.includes('ownership')||t.includes('deal'))return{cls:'tag-biz',label:'Business'};
+  return{cls:'tag-general',label:'NHL'};
+}
+
+function renderNewsItems(items,el,compact){
+  if(!el)return;
+  if(!items.length){el.innerHTML='<div class="section-note">No news loaded.</div>';return;}
+  el.innerHTML=items.slice(0,compact?4:20).map(item=>{
+    const tag=guessTag(item.title);
+    const ago=timeSince(new Date(item.created_utc*1000));
+    const src=(item.subreddit?'r/'+item.subreddit:'NHL');
+    const summary=compact?'':`<div class="news-sum">${(item.selftext||item.url||'').substring(0,160)}${(item.selftext||'').length>160?'…':''}</div>`;
+    const link=item.url||('https://reddit.com'+item.permalink);
+    return `<div class="news-item">
+      <div class="news-meta"><span class="news-src">${src}</span><span class="news-time">${ago}</span><span class="news-tag ${tag.cls}">${tag.label}</span></div>
+      <div class="news-hl"><a href="${link}" target="_blank">${item.title||'—'}</a></div>
+      ${summary}
+    </div>`;
+  }).join('');
+}
+
+function filterNews(){
+  const f=document.getElementById('news-filter').value;
+  const filtered=f==='all'?ALL_NEWS_ITEMS:ALL_NEWS_ITEMS.filter(i=>guessTag(i.title).label.toLowerCase()===f);
+  renderNewsItems(filtered,document.getElementById('news-feed'),false);
+}
+
+// ══════════════════════════════════════
+// TEAM PAGE
+// ══════════════════════════════════════
+async function openTeamPage(abbrev,name){
+  const modal=document.getElementById('team-modal');
+  const body=document.getElementById('team-modal-body');
+  modal.classList.add('open');
+  body.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
+  try{
+    const [roster,schedule,standings]=await Promise.all([
+      nhl(`/roster/${abbrev}/current`),
+      nhl(`/club-schedule/${abbrev}/week/now`),
+      Promise.resolve(STANDINGS.find(t=>t.teamAbbrev?.default===abbrev||t.teamCommonName?.default===name)||null),
+    ]);
+    const tm=standings;
+    const logoUrl=tm?.teamLogo||`https://assets.nhle.com/logos/nhl/svg/${abbrev}_light.svg`;
+    const record=tm?`${tm.wins}-${tm.losses}-${tm.otLosses} · ${tm.points} pts`:'—';
+    const forwards=roster?.forwards||[];
+    const defense=roster?.defensemen||[];
+    const goalies=roster?.goalies||[];
+    const games=(schedule?.games||[]).slice(0,5);
+
+    const rosterSection=(title,players)=>players.length?`
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--gold);margin:1rem 0 6px;text-transform:uppercase;">${title}</div>
+      ${players.map(p=>`<div class="roster-row">
+        <span class="roster-num">${p.sweaterNumber||'—'}</span>
+        <span class="roster-name" onclick="openPlayerPage(${p.id},'${(p.firstName?.default||'')+' '+(p.lastName?.default||'')}')">${p.firstName?.default||''} ${p.lastName?.default||''}</span>
+        <span class="roster-pos">${p.positionCode||''}</span>
+      </div>`).join('')}`:'';
+
+    const scheduleSection=games.length?`
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--gold);margin:1rem 0 6px;text-transform:uppercase;">Upcoming / Recent Games</div>
+      ${games.map(g=>gameCardHTML(g)).join('')}`:'';
+
+    body.innerHTML=`
+      <div class="team-header">
+        <img src="${logoUrl}" class="team-logo-lg" onerror="this.style.display='none'"/>
+        <div><div class="team-name-lg">${name}</div><div class="team-record">${record}</div></div>
+        <div style="margin-left:auto;"><a href="https://puckpedia.com/team/${abbrev.toLowerCase()}" target="_blank" class="btn btn-sm">Cap Space ↗</a></div>
+      </div>
+      ${scheduleSection}
+      <div class="grid-2" style="margin-top:1rem;">
+        <div>${rosterSection('Forwards',forwards)}</div>
+        <div>${rosterSection('Defence',defense)}${rosterSection('Goalies',goalies)}</div>
+      </div>`;
+  }catch(e){
+    body.innerHTML=`<div class="error-msg">Could not load team data.</div><div style="margin-top:8px;"><a href="https://www.nhl.com/team/${abbrev.toLowerCase()}" target="_blank" style="color:var(--gold);">View ${name} on NHL.com →</a></div>`;
+  }
+}
+
+// ══════════════════════════════════════
+// PLAYER PAGE
+// ══════════════════════════════════════
+async function openPlayerPage(playerId,name){
+  if(!playerId){window.open(`https://www.nhl.com/player/${(name||'').toLowerCase().replace(/\s+/g,'-')}`, '_blank');return;}
+  const modal=document.getElementById('player-modal');
+  const body=document.getElementById('player-modal-body');
+  modal.classList.add('open');
+  body.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
+  try{
+    const [info,stats]=await Promise.all([
+      nhl(`/player/${playerId}/landing`),
+      nhl(`/player/${playerId}/game-log/now`),
+    ]);
+    const p=info;
+    const cs=p.featuredStats?.regularSeason?.subSeason;
+    const headshot=p.headshot||`https://assets.nhle.com/mugs/nhl/60x60/${playerId}.png`;
+    const statBoxes=p.position==='G'?[
+      {val:cs?.wins??'—',label:'W'},{val:cs?.losses??'—',label:'L'},{val:cs?.savePctg?.toFixed(3)||'—',label:'SV%'},{val:cs?.goalsAgainstAverage?.toFixed(2)||'—',label:'GAA'},{val:cs?.shutouts??'—',label:'SO'},
+    ]:[
+      {val:cs?.goals??'—',label:'G'},{val:cs?.assists??'—',label:'A'},{val:cs?.points??'—',label:'PTS'},{val:cs?.gamesPlayed??'—',label:'GP'},{val:cs?.plusMinus??'—',label:'+/-'},
+    ];
+    const recentGames=(stats?.gameLog||[]).slice(0,5);
+    body.innerHTML=`
+      <div class="player-header">
+        <img src="${headshot}" class="player-headshot" onerror="this.style.background='var(--surface3)'"/>
+        <div>
+          <div class="player-info-name">${p.firstName?.default||''} ${p.lastName?.default||''}</div>
+          <div class="player-info-meta">#${p.sweaterNumber||'—'} · ${p.position||'—'} · ${p.currentTeamAbbrev||'—'}</div>
+          <div class="player-info-meta" style="margin-top:2px;">${p.birthCity?.default||''}, ${p.birthCountry||''} · ${p.heightInInches?Math.floor(p.heightInInches/12)+"'"+p.heightInInches%12+'"':''} · ${p.weightInPounds||''}lbs</div>
+        </div>
+        <div style="margin-left:auto;"><a href="https://www.nhl.com/player/${playerId}" target="_blank" class="btn btn-sm">NHL.com ↗</a></div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--gold);margin-bottom:8px;text-transform:uppercase;">2024–25 Season Stats</div>
+      <div class="stat-grid">${statBoxes.map(s=>`<div class="stat-box"><div class="stat-box-val">${s.val}</div><div class="stat-box-label">${s.label}</div></div>`).join('')}</div>
+      ${recentGames.length?`
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--gold);margin:1rem 0 8px;text-transform:uppercase;">Recent Games</div>
+        ${recentGames.map(g=>`<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--text3);font-family:'DM Mono',monospace;min-width:80px;">${g.gameDate||'—'}</span>
+          <span style="color:var(--text2);">vs ${g.opponentAbbrev||'—'}</span>
+          <span style="color:var(--gold);font-family:'DM Mono',monospace;margin-left:auto;">${p.position==='G'?(g.saveShotsAgainst||0)+' SV':(g.goals||0)+'G '+(g.assists||0)+'A'}</span>
+        </div>`).join('')}`:''}`;
+  }catch(e){
+    body.innerHTML=`<div class="error-msg">Could not load player data.</div><a href="https://www.nhl.com/player/${playerId}" target="_blank" style="color:var(--gold);">View on NHL.com →</a>`;
+  }
+}
+
+// ══════════════════════════════════════
+// PLAYER SEARCH
+// ══════════════════════════════════════
+async function searchPlayer(){
+  const q=document.getElementById('player-search-input').value.trim();
+  if(!q)return;
+  const el=document.getElementById('search-results');
+  el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
+  try{
+    // Use NHL suggest endpoint
+    const r=await fetch(`https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=${encodeURIComponent(`https://suggest.svc.nhl.com/svc/suggest/v1/minplayers/${encodeURIComponent(q)}/5`)}`);
+    const d=await r.json();
+    const suggestions=d.suggestions||[];
+    if(!suggestions.length){el.innerHTML='<div class="section-note">No players found. Try a different name.</div>';return;}
+    el.innerHTML='';
+    for(const s of suggestions.slice(0,3)){
+      const parts=s.split('|');
+      const playerId=parts[0],lastName=parts[1],firstName=parts[2],teamAbbrev=parts[11]||'',pos=parts[12]||'',num=parts[13]||'';
+      const div=document.createElement('div');
+      div.className='search-result';
+      div.innerHTML=`<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:#fff;margin-bottom:6px;">${firstName} ${lastName} <span style="color:var(--text2);font-size:13px;">#${num} · ${pos} · ${teamAbbrev}</span></div><div class="skel" style="height:10px;width:60%;"></div>`;
+      el.appendChild(div);
+      // Load full player data
+      openPlayerPage(parseInt(playerId),`${firstName} ${lastName}`);
+      break;
+    }
+  }catch(e){
+    el.innerHTML=`<div class="error-msg">Search failed. Try searching directly: <a href="https://www.nhl.com/player" target="_blank" style="color:var(--gold);">NHL.com Players →</a></div>`;
+  }
+}
+
+// ══════════════════════════════════════
+// INJURIES (MySportsFeeds)
+// ══════════════════════════════════════
+const MSF_CREDS=load('hkt3_msf',{user:'',pass:''});
+function saveMSFCreds(){
+  const user=document.getElementById('msf-user').value.trim();
+  const pass=document.getElementById('msf-pass-inp')?.value.trim()||document.getElementById('msf-pass').value.trim();
+  save('hkt3_msf',{user,pass});loadInjuries();
+}
+
+async function loadInjuries(){
+  const el=document.getElementById('injury-list');if(!el)return;
+  const creds=load('hkt3_msf',{user:'',pass:''});
+  if(!creds.user||!creds.pass){
+    el.innerHTML='<div class="section-note">Enter MySportsFeeds credentials above to load live injury data.</div>';return;
+  }
+  el.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
+  try{
+    const auth=btoa(`${creds.user}:${creds.pass}`);
+    const url=`https://api.mysportsfeeds.com/v2.1/pull/nhl/2024-2025-regular/player_injuries.json`;
+    const r=await fetch(`https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=${encodeURIComponent(url)}`,{headers:{Authorization:`Basic ${auth}`,'Accept':'application/json'}});
+    if(!r.ok) throw new Error('Auth failed: '+r.status);
+    const d=await r.json();
+    const injuries=(d.injuries||[]);
+    INJ_ALL=injuries;populateTeamFilter();filterInjuries();
+    document.getElementById('msf-setup-bar').style.display='none';setTS('ts-injuries');
+  }catch(e){
+    el.innerHTML=`<div class="error-msg">Could not load injury data. Check your credentials.<br/><a href="https://www.nhl.com/injuries" target="_blank" style="color:var(--gold);">NHL.com Injuries →</a></div>`;
+  }
+}
+
+function populateTeamFilter(){
+  const sel=document.getElementById('inj-team-filter');if(!sel)return;
+  const teams=[...new Set(INJ_ALL.map(i=>i.team?.abbreviation||'').filter(Boolean))].sort();
+  sel.innerHTML='<option value="all">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+function filterInjuries(){
+  const status=document.getElementById('inj-filter')?.value||'all';
+  const team=document.getElementById('inj-team-filter')?.value||'all';
+  let data=INJ_ALL;
+  if(status!=='all') data=data.filter(i=>(i.playingStatus||'').includes(status));
+  if(team!=='all') data=data.filter(i=>i.team?.abbreviation===team);
+  const el=document.getElementById('injury-list');if(!el)return;
+  if(!data.length){el.innerHTML='<div class="section-note">No injuries match this filter.</div>';return;}
+  el.innerHTML=data.map(i=>{
+    const p=i.player,isDTD=(i.playingStatus||'').includes('DTD');
+    const pid=p?.id;
+    return `<div class="inj-item">
+      <span class="inj-status ${isDTD?'inj-dtd':'inj-ir'}">${isDTD?'D-T-D':'IR'}</span>
+      <div>
+        <div class="inj-name" onclick="${pid?`openPlayerPage(${pid},'${(p.firstName||'')+' '+(p.lastName||'')}')`:''}">${p?.firstName||''} ${p?.lastName||'—'}</div>
+        <div class="inj-meta">${i.team?.abbreviation||''} · ${p?.primaryPosition||''}</div>
+        <div class="inj-desc">${i.description||i.injuryType||'Injury'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// PLAYOFFS
+// ══════════════════════════════════════
+async function loadPlayoffs(){
+  const el=document.getElementById('playoff-content');if(!el)return;
+  try{
+    const d=await nhl(`/playoff-bracket/${NOW.getFullYear()}`);
+    const rounds=d.rounds||[];
+    if(!rounds.length) throw new Error('empty');
+    el.innerHTML=rounds.map(round=>`
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title">Round ${round.roundNumber} — ${round.names?.name||''}</div>
+        <div class="grid-2">${(round.series||[]).map(s=>{
+          const teams=s.matchupTeams||[];
+          return `<div class="bracket-series">${teams.map(t=>`
+            <div class="bracket-team ${t.isEliminated?'bracket-elim':''}">
+              <span class="bracket-team-name">${t.team?.commonName?.default||'TBD'}</span>
+              <span class="bracket-wins">${t.seriesWins??0}</span>
+            </div>`).join('')}
+            <div class="bracket-status">${s.seriesStatus?.description||s.seriesCode||''}</div>
+          </div>`;
+        }).join('')}</div>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML=`<div class="info-bar">Playoff bracket data loads automatically during the postseason via the NHL API.<br/><br/>The 2025 NHL Playoffs begin in April. Once the bracket is set, this section will populate with live series data, wins, and series status.<br/><br/><a href="https://www.nhl.com/playoffs" target="_blank" style="color:var(--gold);">NHL Playoffs → NHL.com</a></div>`;
+  }
+}
+
+// ══════════════════════════════════════
+// PROSPECTS
+// ══════════════════════════════════════
+async function loadProspects(){
+  const el=document.getElementById('prospect-list');if(!el)return;
+  try{
+    const d=await nhl(`/draft/prospects/20252026`);
+    const prospects=(d.prospects||[]).slice(0,20);
+    if(!prospects.length) throw new Error('empty');
+    el.innerHTML=prospects.map((p,i)=>`
+      <div class="prospect-row">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:var(--gold);width:28px;flex-shrink:0;">${i+1}</div>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:#fff;">${p.fullName||p.name||'—'}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px;">${p.position||''} · ${p.birthCity?.default||''}, ${p.birthCountry||''}</div>
+          ${p.amateurTeam?.name?.default?`<div style="font-size:11px;color:var(--text2);background:var(--surface2);border-left:2px solid var(--teal);padding:3px 8px;margin-top:4px;">${p.amateurLeague?.name?.default||''} — ${p.amateurTeam.name.default}</div>`:''}
+        </div>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML=`<div class="info-bar">NHL prospect rankings populate during draft season.<br/><a href="https://www.eliteprospects.com/draft/nhl-entry-draft/2025" target="_blank" style="color:var(--gold);">EliteProspects 2025 →</a></div>`;
+  }
+  // Prospect news
+  try{
+    const r=await fetch('https://www.reddit.com/r/hockeyprospects.json?limit=8&raw_json=1');
+    const d=await r.json();
+    const el2=document.getElementById('prospect-news');
+    if(d?.data?.children&&el2){
+      el2.innerHTML=d.data.children.map(c=>c.data).slice(0,6).map(item=>`
+        <div class="news-item">
+          <div class="news-meta"><span class="news-src">r/hockeyprospects</span><span class="news-time">${timeSince(new Date(item.created_utc*1000))}</span></div>
+          <div class="news-hl"><a href="https://reddit.com${item.permalink}" target="_blank">${item.title}</a></div>
+        </div>`).join('');
+    }
+  }catch(e){}
+  // Draft calendar
+  const dcal=document.getElementById('draft-cal');
+  if(dcal) dcal.innerHTML=[
+    {date:'May 7',event:'Draft Lottery',color:'var(--red2)',key:true},
+    {date:'May 8–11',event:'Combine · Buffalo',color:'var(--gold)',key:false},
+    {date:'Jun 1',event:'Qualifying Offer Deadline',color:'var(--text2)',key:false},
+    {date:'Jun 27–28',event:'2025 Entry Draft · Las Vegas',color:'var(--gold)',key:true},
+    {date:'Jul 1',event:'Free Agency Opens 12pm ET',color:'var(--green)',key:true},
+  ].map(e=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+    <span style="font-family:'DM Mono',monospace;font-size:11px;color:${e.color};min-width:52px;">${e.date}</span>
+    <span style="font-size:13px;color:var(--text2);">${e.event}${e.key?` <span style="font-size:9px;background:var(--red-dim);color:var(--red2);padding:1px 5px;margin-left:4px;font-weight:700;">KEY</span>`:''}</span>
+  </div>`).join('');
+}
+
+// ══════════════════════════════════════
+// ON THIS DAY — Hybrid Option C
+// ══════════════════════════════════════
+const OTD_DATABASE={
+  '01-01':[{year:1975,text:'The New Year\'s Day blizzard forces postponement of several NHL games across the Northeast.',type:'Historical',src:'NHL Records'}],
+  '01-06':[{year:1976,text:'Darryl Sittler scores 6 goals and 4 assists for 10 points against the Bruins — still the NHL single-game points record.',type:'Record',src:'NHL Records'}],
+  '02-07':[{year:1976,text:'Darryl Sittler scores 5 goals against Philadelphia goalie Bernie Parent.',type:'Performance',src:'NHL.com'}],
+  '03-15':[{year:1997,text:'Wayne Gretzky, traded to St. Louis Blues from the LA Kings earlier in the season, continues his final productive run before retirement.',type:'Historical',src:'NHL Records'},{year:1952,text:'Detroit Red Wings clinch the Stanley Cup against the Montreal Canadiens in what would be a dynasty era.',type:'Historical',src:'HHOF'}],
+  '03-23':[{year:1994,text:'Wayne Gretzky breaks Gordie Howe\'s all-time NHL goals record of 801, scoring his 802nd goal.',type:'Record',src:'NHL.com'}],
+  '04-01':[{year:1978,text:'The NHL Board of Governors approves expansion, admitting the Edmonton Oilers, Hartford Whalers, Quebec Nordiques, and Winnipeg Jets from the WHA.',type:'Business',src:'NHL Archives'}],
+  '05-10':[{year:1979,text:'Montreal Canadiens defeat the New York Rangers to win their fourth consecutive Stanley Cup.',type:'Championship',src:'HHOF'}],
+  '06-09':[{year:2007,text:'Anaheim Ducks defeat the Ottawa Senators in Game 5 to win the Stanley Cup — the first Pacific Division team to win the championship.',type:'Championship',src:'NHL.com'}],
+  '07-01':[{year:2001,text:'Peter Forsberg signs a 3-year, $30M contract with Colorado in what was then one of the richest deals in NHL history.',type:'Contract',src:'NHLPA'}],
+  '08-09':[{year:1988,text:'Wayne Gretzky is traded from the Edmonton Oilers to the Los Angeles Kings in the most significant trade in hockey history.',type:'Trade',src:'NHL Records'}],
+  '09-12':[{year:1972,text:'Team Canada defeats the Soviet Union in Game 8 of the Summit Series on Paul Henderson\'s iconic goal with 34 seconds remaining.',type:'International',src:'IIHF'}],
+  '10-04':[{year:2005,text:'The NHL begins the 2005-06 season after a full season lockout, introducing the shootout and other rule changes.',type:'Historical',src:'NHL.com'}],
+  '11-03':[{year:1957,text:'Gordie Howe becomes the first NHL player to score 400 career goals.',type:'Record',src:'HHOF'}],
+  '12-11':[{year:1985,text:'Wayne Gretzky scores his 500th NHL career goal at just 24 years old.',type:'Record',src:'NHL Records'}],
+};
+
+async function loadOnThisDay(){
+  const evEl=document.getElementById('otd-events');
+  const gEl=document.getElementById('otd-games');
+  if(!evEl||!gEl) return;
+
+  // Curated events for today
+  const monthDay=`${String(NOW.getMonth()+1).padStart(2,'0')}-${String(NOW.getDate()).padStart(2,'0')}`;
+  const events=OTD_DATABASE[monthDay]||[];
+  const todayFormatted=NOW.toLocaleDateString('en-CA',{month:'long',day:'numeric'});
+  const typeColors={Record:'var(--gold)',Trade:'var(--red2)',Championship:'var(--green)',International:'var(--teal)',Performance:'var(--purple)',Business:'var(--teal)',Historical:'var(--text2)'};
+
+  if(events.length){
+    evEl.innerHTML=events.map(e=>`
+      <div class="otd-item">
+        <div class="otd-year">${e.year}</div>
+        <div class="otd-text">${e.text}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <span class="otd-type" style="background:${typeColors[e.type]||'var(--text3)'}22;color:${typeColors[e.type]||'var(--text2)'};border:1px solid ${typeColors[e.type]||'var(--text3)'}44;">${e.type}</span>
+          <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">Source: ${e.src} · Curated</span>
+        </div>
+      </div>`).join('');
+  } else {
+    evEl.innerHTML=`<div class="section-note">No major events recorded for ${todayFormatted} in our database yet. Check <a href="https://www.hockeyreference.com" target="_blank" style="color:var(--gold);">Hockey Reference →</a></div>`;
+  }
+
+  // Historical games from NHL API
+  gEl.innerHTML='<div class="skel"></div>';
+  try{
+    const years=[NOW.getFullYear()-1,NOW.getFullYear()-2,NOW.getFullYear()-3,NOW.getFullYear()-5,NOW.getFullYear()-10];
+    const results=await Promise.all(years.map(y=>{
+      const dateStr=`${y}-${String(NOW.getMonth()+1).padStart(2,'0')}-${String(NOW.getDate()).padStart(2,'0')}`;
+      return nhl(`/score/${dateStr}`).catch(()=>null);
+    }));
+    const histGames=[];
+    results.forEach((d,yi)=>{
+      if(!d?.games) return;
+      d.games.forEach(g=>{
+        const a=g.awayTeam,h=g.homeTeam;
+        if(g.gameState==='OFF'||g.gameState==='FINAL'){
+          histGames.push({year:years[yi],away:a.abbrev||a.commonName?.default,awayScore:a.score,home:h.abbrev||h.commonName?.default,homeScore:h.score,outcome:g.gameOutcome?.lastPeriodType});
+        }
+      });
+    });
+    if(!histGames.length){gEl.innerHTML='<div class="section-note">No historical game data for today\'s date in past seasons.</div>';return;}
+    gEl.innerHTML=histGames.map(g=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);">
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);min-width:36px;">${g.year}</span>
+        <span style="flex:1;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:var(--text);">${g.away} @ ${g.home}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:#fff;">${g.awayScore}–${g.homeScore}</span>
+        <span style="font-size:10px;color:var(--text3);">${g.outcome==='OT'?'OT':g.outcome==='SO'?'SO':'REG'}</span>
+      </div>`).join('');
+  }catch(e){gEl.innerHTML='<div class="error-msg">Could not load historical games.</div>';}
+}
+
+// ══════════════════════════════════════
+// NOTES
+// ══════════════════════════════════════
+function saveNote(type){
+  const inputId=type+'Note';let val='';
+  const el=document.getElementById(type+'-note-input');
+  if(el){val=el.value.trim();if(!val)return;}
+  let notes=load('hkt3_notes_'+type,[]);
+  notes.unshift({text:val,date:new Date().toLocaleDateString('en-CA'),id:Date.now()});
+  save('hkt3_notes_'+type,notes);renderNotes(type);
+  if(el)el.value='';
+}
+function deleteNote(type,id){let n=load('hkt3_notes_'+type,[]);n=n.filter(x=>x.id!==id);save('hkt3_notes_'+type,n);renderNotes(type);}
+function renderNotes(type){
+  const el=document.getElementById(type+'-saved-notes');if(!el)return;
+  const notes=load('hkt3_notes_'+type,[]);
+  el.innerHTML=notes.map(n=>`<div style="padding:8px;background:var(--surface2);margin-bottom:6px;border-left:2px solid var(--gold);">
+    <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:3px;">${n.date} <span onclick="deleteNote('${type}',${n.id})" style="cursor:pointer;color:var(--red2);margin-left:8px;">✕</span></div>
+    <div style="font-size:12px;color:var(--text2);">${n.text}</div>
+  </div>`).join('');
+}
+['news','biz'].forEach(t=>renderNotes(t));
+
+// ══════════════════════════════════════
+// WATCHLIST
+// ══════════════════════════════════════
+let WL=load('hkt3_wl',[]);
+function renderWL(){
+  const el=document.getElementById('wl-list');if(!el)return;
+  if(!WL.length){el.innerHTML='<div class="section-note">Nothing added yet.</div>';return;}
+  const colors={Player:'var(--gold)',Team:'var(--teal)',Prospect:'var(--green)','Coach/Staff':'var(--purple)'};
+  el.innerHTML=WL.map(w=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;" id="wl-${w.id}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:#fff;">${w.name}</div>
+        <span style="font-size:10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;padding:2px 8px;background:${colors[w.type]||'var(--gold)'}22;color:${colors[w.type]||'var(--gold)'};border:1px solid ${colors[w.type]||'var(--gold)'}44;">${w.type}</span>
+      </div>
+      ${w.note?`<div style="font-size:12px;color:var(--text2);background:var(--surface);border-left:2px solid var(--gold);padding:6px 10px;margin-bottom:8px;">${w.note}</div>`:''}
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" onclick="editWLNote(${w.id})">✏ note</button>
+        <button class="btn btn-sm btn-danger" onclick="removeWL(${w.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+function addWL(){
+  const n=document.getElementById('wl-input').value.trim();const t=document.getElementById('wl-type').value;
+  if(!n)return;if(WL.find(w=>w.name.toLowerCase()===n.toLowerCase())){alert('Already in watchlist.');return;}
+  WL.push({name:n,type:t,note:'',id:Date.now()});save('hkt3_wl',WL);renderWL();document.getElementById('wl-input').value='';
+}
+function removeWL(id){if(!confirm('Remove?'))return;WL=WL.filter(w=>w.id!==id);save('hkt3_wl',WL);renderWL();}
+function editWLNote(id){
+  const w=WL.find(x=>x.id===id);if(!w)return;
+  const el=document.getElementById(`wl-${id}`);
+  el.querySelector('.wl-edit')?.remove();
+  const div=document.createElement('div');div.className='wl-edit';
+  div.innerHTML=`<textarea style="font-family:'Barlow',sans-serif;font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border2);padding:7px 10px;width:100%;min-height:55px;outline:none;display:block;margin-bottom:6px;transition:border-color 0.15s;" id="wln-${id}" placeholder="Notes on ${w.name}...">${w.note}</textarea>
+    <div style="display:flex;gap:6px;margin-bottom:8px;"><button class="btn btn-gold btn-sm" onclick="saveWLNote(${id})">Save</button><button class="btn btn-sm" onclick="renderWL()">Cancel</button></div>`;
+  el.querySelector('div:last-child').insertAdjacentElement('beforebegin',div);
+}
+function saveWLNote(id){
+  const v=document.getElementById(`wln-${id}`)?.value.trim()||'';
+  const w=WL.find(x=>x.id===id);if(!w)return;
+  w.note=v;save('hkt3_wl',WL);renderWL();
+}
+renderWL();
+document.getElementById('wl-notes').value=load('hkt3_notes','');
+document.getElementById('wl-preds').value=load('hkt3_preds','');
+
+// ══════════════════════════════════════
+// INIT & AUTO-REFRESH
+// ══════════════════════════════════════
+async function loadAllData(){
+  await Promise.all([loadStandings(),loadScores(),loadTransactions(),loadNews(),loadProspects(),loadPlayoffs(),loadThisWeek()]);
+  if(load('hkt3_msf',{user:'',pass:''}).user) loadInjuries();
+}
+
+loadAllData();
+// Live scores refresh every 30s
+setInterval(async()=>{await loadScores();},30000);
+// News refresh every 5 mins
+setInterval(()=>{loadNews();},300000);
+// Standings refresh every 5 mins
+setInterval(()=>{loadStandings();loadTransactions();},300000);
+</script>
+</body>
+</html>
