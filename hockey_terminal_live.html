@@ -1246,7 +1246,19 @@ async function openPlayerPage(playerId,name){
       nhl(`/player/${playerId}/game-log/now`),
     ]);
     const p=info;
-    const cs=p.featuredStats?.regularSeason?.subSeason;
+    // Use current season stats — try featuredStats first, fall back to last in careerStats
+    const allSeasons=p.featuredStats?.regularSeason;
+    // Get the most recent season from careerStats if available
+    const careerArr=p.careerTotals?.regularSeason;
+    let cs=p.featuredStats?.regularSeason?.subSeason;
+    // Check if featuredStats is current season (20252026)
+    const currentSeasonId=20252026;
+    if(p.featuredStats?.season && p.featuredStats.season!==currentSeasonId){
+      // Look for current season in career stats
+      const seasons=p.seasonTotals||[];
+      const cur=seasons.find(s=>s.season===currentSeasonId&&s.gameTypeId===2);
+      if(cur) cs=cur;
+    }
     const headshot=p.headshot||`https://assets.nhle.com/mugs/nhl/60x60/${playerId}.png`;
     const statBoxes=p.position==='G'?[
       {val:cs?.wins??'—',label:'W'},{val:cs?.losses??'—',label:'L'},{val:cs?.savePctg?.toFixed(3)||'—',label:'SV%'},{val:cs?.goalsAgainstAverage?.toFixed(2)||'—',label:'GAA'},{val:cs?.shutouts??'—',label:'SO'},
@@ -1287,24 +1299,28 @@ async function searchPlayer(){
   const el=document.getElementById('search-results');
   el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
-    const suggestUrl='https://suggest.svc.nhl.com/svc/suggest/v1/minplayers/'+encodeURIComponent(q)+'/5';
-    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(suggestUrl));
+    // Use NHL stats REST API — search by name
+    const searchUrl='https://api.nhle.com/stats/rest/en/players?limit=5&cayenneExp=fullName+contains+"'+encodeURIComponent(q)+'"';
+    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(searchUrl));
     if(!r.ok) throw new Error('Status '+r.status);
     const d=await r.json();
-    const suggestions=d.suggestions||[];
-    if(!suggestions.length){el.innerHTML='<div class="section-note">No players found for "'+q+'". Try a full name like "Connor McDavid".</div>';return;}
+    const players=(d.data||[]).slice(0,3);
+    if(!players.length){
+      el.innerHTML='<div class="section-note">No players found for "'+q+'". Try a full name like "Connor McDavid".</div>';
+      return;
+    }
     el.innerHTML='';
-    for(const s of suggestions.slice(0,3)){
-      const parts=s.split('|');
-      const playerId=parseInt(parts[0]),lastName=parts[1]||'',firstName=parts[2]||'';
-      const teamAbbrev=parts[11]||'',pos=parts[12]||'',num=parts[13]||'';
-      if(!playerId) continue;
+    for(const p of players){
+      const playerId=p.playerId||p.id;
+      const name=(p.firstName||'')+' '+(p.lastName||'');
       const div=document.createElement('div');
       div.className='search-result';
-      div.innerHTML='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:16px;color:#fff;margin-bottom:6px;">'+firstName+' '+lastName+' <span style="color:var(--text2);font-size:13px;">#'+num+' · '+pos+' · '+teamAbbrev+'</span></div><div class="skel" style="height:10px;width:60%;margin-bottom:8px;"></div>';
+      div.style.cssText='background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;cursor:pointer;';
+      div.innerHTML='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:18px;color:#fff;">'+name+'</div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-top:3px;">'+(p.positionCode||'')+(p.teamName?' · '+p.teamName:'')+'</div>'
+        +'<div style="font-size:11px;color:var(--gold);margin-top:4px;">Click to view full stats →</div>';
+      div.onclick=()=>openPlayerPage(playerId,name);
       el.appendChild(div);
-      openPlayerPage(playerId,firstName+' '+lastName);
-      break;
     }
   }catch(e){
     el.innerHTML='<div class="error-msg">Search failed: '+e.message+'.<br/><a href="https://www.nhl.com/player" target="_blank" style="color:var(--gold);">Search on NHL.com →</a></div>';
