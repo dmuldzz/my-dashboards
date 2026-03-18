@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Forex Learning Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --surface: #141417;
+  --surface2: #1c1c21;
+  --surface3: #222228;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0efe8;
+  --text2: #8a897f;
+  --text3: #4a4944;
+  --accent: #e8c84a;
+  --accent2: #f0d96e;
+  --accent-dim: rgba(232,200,74,0.12);
+  --accent-dim2: rgba(232,200,74,0.06);
+  --green: #4ade80;
+  --green-dim: rgba(74,222,128,0.12);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.12);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96,165,250,0.12);
+  --orange: #fb923c;
+  --orange-dim: rgba(251,146,60,0.12);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* LAYOUT */
+.app { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 4px; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 10; }
+.main { margin-left: 220px; flex: 1; padding: 2rem 2rem 4rem; max-width: calc(100vw - 220px); }
+
+/* SIDEBAR */
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; color: var(--accent); letter-spacing: -0.5px; padding: 0 0.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+.logo span { color: var(--text2); font-weight: 400; display: block; font-size: 11px; margin-top: 2px; letter-spacing: 0.3px; font-family: 'DM Sans', sans-serif; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius); font-size: 13px; color: var(--text2); cursor: pointer; transition: all 0.15s; border: none; background: none; width: 100%; text-align: left; font-family: 'DM Sans', sans-serif; }
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); background: var(--accent-dim); font-weight: 500; }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 1rem 0.5rem 0.4rem; font-weight: 500; }
+
+.sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+.phase-badge { background: var(--accent-dim); border: 1px solid rgba(232,200,74,0.2); border-radius: var(--radius); padding: 10px 12px; }
+.phase-badge .ph-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); font-weight: 500; margin-bottom: 4px; }
+.phase-badge .ph-name { font-size: 12px; color: var(--text); font-weight: 500; }
+
+/* SECTIONS */
+.section { display: none; }
+.section.active { display: block; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.8px; color: var(--text); }
+.page-header p { font-size: 14px; color: var(--text2); margin-top: 6px; }
+
+/* HERO STATS */
+.hero { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+.hero-main { background: var(--accent); border-radius: var(--radius-xl); padding: 1.8rem; position: relative; overflow: hidden; grid-column: 1; }
+.hero-main::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+.hero-main::after { content: ''; position: absolute; bottom: -20px; left: 40px; width: 80px; height: 80px; border-radius: 50%; background: rgba(0,0,0,0.08); }
+.hero-main .hl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: rgba(0,0,0,0.5); margin-bottom: 8px; }
+.hero-main .hv { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 52px; color: #0d0d0f; line-height: 1; letter-spacing: -2px; }
+.hero-main .hs { font-size: 13px; color: rgba(0,0,0,0.55); margin-top: 6px; font-weight: 500; }
+.hero-streak { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 1.8rem; display: flex; flex-direction: column; justify-content: space-between; }
+.hero-streak .hl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 8px; }
+.hero-streak .hv { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 52px; color: var(--text); line-height: 1; letter-spacing: -2px; }
+.hero-streak .hs { font-size: 13px; color: var(--text2); margin-top: 6px; }
+.streak-fire { font-size: 28px; margin-bottom: 0.5rem; }
+
+/* STAT CARDS */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.stat { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.1rem 1.2rem; }
+.stat .sl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); margin-bottom: 6px; font-weight: 500; }
+.stat .sv { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 26px; color: var(--text); }
+.stat .ss { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+/* PROGRESS BAR */
+.prog-wrap { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.2rem 1.4rem; margin-bottom: 1.5rem; }
+.prog-wrap .pw-label { font-size: 13px; color: var(--text2); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.prog-wrap .pw-label span { font-family: 'DM Mono', monospace; color: var(--accent); font-size: 14px; font-weight: 500; }
+.prog-bar { height: 8px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+/* CARD */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+.card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 1rem; letter-spacing: -0.2px; }
+.card-sub { font-size: 12px; color: var(--text2); margin-top: -8px; margin-bottom: 1rem; }
+
+/* CONCEPT TRACKER */
+.cat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; cursor: pointer; border-bottom: 1px solid var(--border); }
+.cat-header:last-of-type { border-bottom: none; }
+.cat-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--text); }
+.cat-meta { display: flex; align-items: center; gap: 10px; }
+.cat-prog { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text2); }
+.cat-chevron { color: var(--text3); font-size: 12px; transition: transform 0.2s; }
+.cat-chevron.open { transform: rotate(90deg); }
+.cat-body { display: none; padding: 10px 0 4px; }
+.cat-body.open { display: block; }
+
+.concept-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.concept-row:last-child { border-bottom: none; }
+.concept-check { margin-top: 3px; accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px; flex-shrink: 0; }
+.concept-body { flex: 1; }
+.concept-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.concept-name.learned { color: var(--text3); text-decoration: line-through; }
+.concept-note { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; background: var(--surface2); border-radius: 6px; padding: 6px 10px; border-left: 2px solid var(--border2); }
+.concept-note-input { font-size: 12px; color: var(--text); background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 10px; width: 100%; margin-top: 4px; font-family: 'DM Sans', sans-serif; resize: none; min-height: 50px; outline: none; transition: border-color 0.15s; }
+.concept-note-input:focus { border-color: var(--accent); }
+.conf-stars { display: flex; gap: 3px; margin-top: 6px; }
+.star { font-size: 14px; cursor: pointer; color: var(--text3); transition: color 0.1s; user-select: none; }
+.star.lit { color: var(--accent); }
+.concept-actions { display: flex; gap: 6px; margin-top: 6px; }
+.mini-btn { font-size: 11px; padding: 3px 8px; border-radius: 5px; border: 1px solid var(--border2); background: none; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
+.mini-btn:hover { background: var(--surface3); color: var(--text); }
+.mini-btn.del { border-color: var(--red-dim); color: var(--red); }
+.mini-btn.del:hover { background: var(--red-dim); }
+
+.add-concept-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-concept-row input { flex: 1; font-size: 13px; padding: 8px 12px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; }
+.add-concept-row input:focus { border-color: var(--accent); }
+
+/* WEAKEST */
+.weak-box { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: var(--radius-lg); padding: 1rem 1.2rem; margin-bottom: 1.5rem; }
+.weak-box .wl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--orange); font-weight: 600; margin-bottom: 4px; }
+.weak-box .wv { font-size: 14px; font-weight: 500; color: var(--text); }
+.weak-box .ws { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* STUDY LOG */
+.study-entry { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.study-entry:last-child { border-bottom: none; }
+.study-meta { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.study-topic { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.study-notes { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+/* TRADE LOG (future) */
+.future-banner { background: var(--surface2); border: 1px dashed var(--border2); border-radius: var(--radius-lg); padding: 2.5rem; text-align: center; }
+.future-banner .fb-icon { font-size: 36px; margin-bottom: 1rem; }
+.future-banner h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 8px; color: var(--text); }
+.future-banner p { font-size: 13px; color: var(--text2); line-height: 1.6; max-width: 360px; margin: 0 auto; }
+.future-milestone { display: inline-block; margin-top: 1rem; background: var(--accent-dim); border: 1px solid rgba(232,200,74,0.2); border-radius: 20px; padding: 6px 16px; font-size: 12px; color: var(--accent); font-weight: 500; }
+
+/* FORMS */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.full { grid-column: 1 / -1; }
+input[type=text], input[type=date], input[type=number], select, textarea {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 9px 12px;
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  background: var(--surface2); color: var(--text); width: 100%; outline: none; transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+select option { background: var(--surface2); }
+textarea { resize: vertical; min-height: 70px; }
+.btn { font-family: 'DM Sans', sans-serif; padding: 9px 20px; border: 1px solid var(--border2); border-radius: var(--radius); background: none; color: var(--text2); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.btn:hover { background: var(--surface2); color: var(--text); }
+.btn-primary { background: var(--accent); color: #0d0d0f; border-color: var(--accent); font-weight: 600; }
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+
+/* ROADMAP */
+.roadmap-item { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.roadmap-item:last-child { border-bottom: none; }
+.rm-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; flex-shrink: 0; }
+.rm-num.done { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.rm-num.cur { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(232,200,74,0.25); }
+.rm-num.locked { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+.rm-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; font-family: 'Syne', sans-serif; }
+.rm-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.rm-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle; font-weight: 500; }
+.rm-badge.done { background: var(--green-dim); color: var(--green); }
+.rm-badge.cur { background: var(--accent-dim); color: var(--accent); }
+.rm-badge.locked { background: var(--surface2); color: var(--text3); }
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; font-size: 13px; border-collapse: collapse; }
+th { text-align: left; font-weight: 500; color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+.win { color: var(--green); font-weight: 500; }
+.loss { color: var(--red); font-weight: 500; }
+.be { color: var(--orange); font-weight: 500; }
+.del-btn { cursor: pointer; color: var(--text3); font-size: 11px; margin-left: 6px; }
+.del-btn:hover { color: var(--red); }
+
+/* CONF BADGE */
+.conf-badge { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.conf-5 { background: var(--green-dim); color: var(--green); }
+.conf-4 { background: var(--blue-dim); color: var(--blue); }
+.conf-3 { background: var(--accent-dim); color: var(--accent); }
+.conf-2 { background: var(--orange-dim); color: var(--orange); }
+.conf-1 { background: var(--red-dim); color: var(--red); }
+.conf-0 { background: var(--surface2); color: var(--text3); }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; max-width: 100vw; padding: 1rem; }
+  .hero { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .full { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">FOREX JOURNAL<span>Learning Dashboard</span></div>
+  <div class="nav-section">Overview</div>
+  <button class="nav-item active" onclick="showTab('home')"><span class="nav-icon">⚡</span> Dashboard</button>
+  <button class="nav-item" onclick="showTab('roadmap')"><span class="nav-icon">🗺</span> Roadmap</button>
+  <div class="nav-section">Learning</div>
+  <button class="nav-item" onclick="showTab('concepts')"><span class="nav-icon">📚</span> Concept Tracker</button>
+  <button class="nav-item" onclick="showTab('study')"><span class="nav-icon">✏️</span> Study Log</button>
+  <div class="nav-section">Trading</div>
+  <button class="nav-item" onclick="showTab('trades')"><span class="nav-icon">📈</span> Trade Log</button>
+  <div class="sidebar-footer">
+    <div class="phase-badge">
+      <div class="ph-label">Current Phase</div>
+      <div class="ph-name">Phase 2 — Structure &amp; Confluence</div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HOME -->
+  <div id="home" class="section active">
+    <div class="page-header">
+      <h1 id="home-greeting">Good morning.</h1>
+      <p id="home-date"></p>
+    </div>
+    <div class="hero">
+      <div class="hero-main">
+        <div class="hl">Overall Progress</div>
+        <div class="hv" id="home-progress">0%</div>
+        <div class="hs">toward trading-ready</div>
+      </div>
+      <div class="hero-streak">
+        <div class="streak-fire">🔥</div>
+        <div>
+          <div class="hl">Study streak</div>
+          <div class="hv" id="home-streak">0</div>
+          <div class="hs">days in a row</div>
+        </div>
+      </div>
+    </div>
+    <div id="weak-section"></div>
+    <div class="stats">
+      <div class="stat"><div class="sl">Concepts learned</div><div class="sv" id="s-learned">0</div><div class="ss">checked off</div></div>
+      <div class="stat"><div class="sl">Avg confidence</div><div class="sv" id="s-conf">—</div><div class="ss">across all topics</div></div>
+      <div class="stat"><div class="sl">Study sessions</div><div class="sv" id="s-sessions">0</div><div class="ss">logged</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Phase 2 Focus — This Week</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;" id="focus-tasks"></div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div id="roadmap" class="section">
+    <div class="page-header"><h1>Your Roadmap</h1><p>5 phases from beginner to live trader — you are in Phase 2.</p></div>
+    <div class="card">
+      <div class="roadmap-item"><div class="rm-num done">1</div><div><div class="rm-title">Foundations <span class="rm-badge done">Complete</span></div><div class="rm-desc">Candlestick patterns, risk management basics, introduction to TJR confluences. You've covered these — solid base built.</div></div></div>
+      <div class="roadmap-item"><div class="rm-num cur">2</div><div><div class="rm-title">Structure &amp; Confluence Mastery <span class="rm-badge cur">In Progress</span></div><div class="rm-desc">Market structure (BOS/CHoCH), deep TJR confluence stacking, session timing (London/NY), supply &amp; demand zones, higher timeframe bias. Target: 4–6 weeks.</div></div></div>
+      <div class="roadmap-item"><div class="rm-num locked">3</div><div><div class="rm-title">Entry Model Development <span class="rm-badge locked">Locked</span></div><div class="rm-desc">Build a personal entry checklist (HTF bias → structure → confluence → trigger). Paper trade 30+ setups consistently.</div></div></div>
+      <div class="roadmap-item"><div class="rm-num locked">4</div><div><div class="rm-title">Backtesting &amp; Refinement <span class="rm-badge locked">Locked</span></div><div class="rm-desc">Backtest 50–100 historical setups. Track which confluence combinations produce the highest win rate. Refine your model.</div></div></div>
+      <div class="roadmap-item"><div class="rm-num locked">5</div><div><div class="rm-title">Live Trading — Micro Lots <span class="rm-badge locked">Locked</span></div><div class="rm-desc">Transition after 60%+ paper win rate over 30+ trades. Strict 1% risk per trade. No exceptions.</div></div></div>
+    </div>
+  </div>
+
+  <!-- CONCEPT TRACKER -->
+  <div id="concepts" class="section">
+    <div class="page-header"><h1>Concept Tracker</h1><p>Rate your confidence, add your own notes and definitions, and check topics off as you master them.</p></div>
+    <div class="prog-wrap">
+      <div class="pw-label">Overall knowledge progress <span id="prog-pct">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div id="concept-categories"></div>
+  </div>
+
+  <!-- STUDY LOG -->
+  <div id="study" class="section">
+    <div class="page-header"><h1>Study Log</h1><p>Record what you studied each day to build your streak and track time invested.</p></div>
+    <div class="card">
+      <div class="card-title">Log a session</div>
+      <div class="form-grid">
+        <input type="date" id="s-date"/>
+        <input type="number" id="s-mins" placeholder="Minutes studied"/>
+        <input type="text" id="s-topic" placeholder="Topic (e.g. BOS vs CHoCH)" class="full"/>
+        <textarea id="s-notes" placeholder="Key takeaways, definitions, questions to revisit..." class="full"></textarea>
+        <div class="full"><button class="btn btn-primary" onclick="logStudy()">Add session</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">History</div>
+      <div id="study-history"><div style="color:var(--text3); font-size:13px; padding:12px 0; font-style:italic;">No sessions logged yet. Start tracking today.</div></div>
+    </div>
+  </div>
+
+  <!-- TRADES -->
+  <div id="trades" class="section">
+    <div class="page-header"><h1>Trade Log</h1><p>Locked until you're ready for paper trading — keep building your knowledge first.</p></div>
+    <div class="future-banner">
+      <div class="fb-icon">🔒</div>
+      <h3>Trade Log — Coming Soon</h3>
+      <p>Once you've completed Phase 2 and built your entry model, you'll unlock paper trading here. Every trade will be logged with your pair, result, R:R, confluences, and notes.</p>
+      <div class="future-milestone">Unlocks at Phase 3</div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ── STORAGE ──
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+function load(k, d) { try { const v = localStorage.getItem(k); return v !== null ? JSON.parse(v) : d; } catch(e){ return d; } }
+
+// ── NAVIGATION ──
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx = ['home','roadmap','concepts','study','trades'].indexOf(id);
+  document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
+  if (id === 'home') updateHome();
+  if (id === 'concepts') renderConcepts();
+}
+
+// ── GREETING ──
+const now = new Date();
+const hr = now.getHours();
+const greet = hr < 12 ? 'Good morning.' : hr < 17 ? 'Good afternoon.' : 'Good evening.';
+document.getElementById('home-greeting').textContent = greet;
+document.getElementById('home-date').textContent = now.toLocaleDateString('en-CA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+const todayStr = now.toISOString().split('T')[0];
+document.getElementById('s-date').value = todayStr;
+
+// ── FOCUS TASKS ──
+const FOCUS = [
+  'Study BOS vs CHoCH on 1H charts',
+  'Mark HTF bias on 3 pairs',
+  'Identify supply & demand zones on EURUSD daily',
+  'Watch London open & note price behaviour',
+  'Stack 2 TJR confluences on a practice setup',
+  'Review 1 concept from the tracker',
+];
+document.getElementById('focus-tasks').innerHTML = FOCUS.map(t => `
+  <div style="display:flex; align-items:center; gap:8px; background:var(--surface2); border-radius:8px; padding:10px 12px;">
+    <span style="color:var(--accent); font-size:14px;">→</span>
+    <span style="font-size:13px; color:var(--text2);">${t}</span>
+  </div>`).join('');
+
+// ── CONCEPTS DATA ──
+const DEFAULT_CATS = [
+  { id: 'basics', name: 'Forex Basics', concepts: [
+    { id: 'pip', name: 'What is a pip & how to calculate pip value', learned: false, conf: 0, note: '' },
+    { id: 'lots', name: 'Lot sizes (standard, mini, micro)', learned: false, conf: 0, note: '' },
+    { id: 'spread', name: 'Spread — what it is and how it affects entries', learned: false, conf: 0, note: '' },
+    { id: 'leverage', name: 'Leverage — how it works and the risks', learned: false, conf: 0, note: '' },
+    { id: 'margin', name: 'Margin & margin calls', learned: false, conf: 0, note: '' },
+    { id: 'pairs', name: 'Major, minor, and exotic pairs', learned: false, conf: 0, note: '' },
+  ]},
+  { id: 'candles', name: 'Chart Patterns & Candlesticks', concepts: [
+    { id: 'doji', name: 'Doji — indecision & significance', learned: false, conf: 0, note: '' },
+    { id: 'engulf', name: 'Bullish & bearish engulfing patterns', learned: false, conf: 0, note: '' },
+    { id: 'hammer', name: 'Hammer & shooting star', learned: false, conf: 0, note: '' },
+    { id: 'pinbar', name: 'Pin bar — how to read wicks', learned: false, conf: 0, note: '' },
+    { id: 'ob', name: 'Order blocks — how to identify them', learned: false, conf: 0, note: '' },
+    { id: 'fvg', name: 'Fair Value Gap (FVG) — what it means', learned: false, conf: 0, note: '' },
+  ]},
+  { id: 'tjr', name: 'TJR Confluences & ICT Concepts', concepts: [
+    { id: 'tjr-def', name: 'What TJR confluences are & how to stack them', learned: false, conf: 0, note: '' },
+    { id: 'ict-ote', name: 'ICT OTE (Optimal Trade Entry) levels', learned: false, conf: 0, note: '' },
+    { id: 'liquidity', name: 'Liquidity grabs — buy-side & sell-side', learned: false, conf: 0, note: '' },
+    { id: 'mitigation', name: 'Mitigation blocks & breaker blocks', learned: false, conf: 0, note: '' },
+    { id: 'imbalance', name: 'Price imbalance & how price fills gaps', learned: false, conf: 0, note: '' },
+    { id: 'pd-arrays', name: 'Premium & discount arrays', learned: false, conf: 0, note: '' },
+  ]},
+  { id: 'risk', name: 'Risk Management Rules', concepts: [
+    { id: 'risk-pct', name: '1% rule — risking max 1% per trade', learned: false, conf: 0, note: '' },
+    { id: 'rr', name: 'Risk:Reward ratios & why 1:2 minimum matters', learned: false, conf: 0, note: '' },
+    { id: 'sl', name: 'Stop loss placement — structure-based vs fixed', learned: false, conf: 0, note: '' },
+    { id: 'tp', name: 'Take profit — partial exits vs full TP', learned: false, conf: 0, note: '' },
+    { id: 'drawdown', name: 'Drawdown — how to handle losing streaks', learned: false, conf: 0, note: '' },
+  ]},
+  { id: 'structure', name: 'Market Structure', concepts: [
+    { id: 'bos', name: 'Break of Structure (BOS)', learned: false, conf: 0, note: '' },
+    { id: 'choch', name: 'Change of Character (CHoCH)', learned: false, conf: 0, note: '' },
+    { id: 'htf', name: 'Higher timeframe bias — how to identify it', learned: false, conf: 0, note: '' },
+    { id: 'sd', name: 'Supply & demand zones — how to draw them', learned: false, conf: 0, note: '' },
+    { id: 'swing', name: 'Swing highs & lows — identifying trend direction', learned: false, conf: 0, note: '' },
+    { id: 'sr', name: 'Support & resistance vs supply & demand', learned: false, conf: 0, note: '' },
+  ]},
+  { id: 'sessions', name: 'Session Timing & Economics', concepts: [
+    { id: 'london', name: 'London session — hours & typical behaviour', learned: false, conf: 0, note: '' },
+    { id: 'ny', name: 'New York session & London/NY overlap', learned: false, conf: 0, note: '' },
+    { id: 'asia', name: 'Asian session — low volatility range building', learned: false, conf: 0, note: '' },
+    { id: 'news', name: 'High-impact news events (NFP, CPI, interest rates)', learned: false, conf: 0, note: '' },
+    { id: 'killzones', name: 'ICT Kill zones — optimal trading times', learned: false, conf: 0, note: '' },
+  ]},
+];
+
+let cats = load('fx_cats', DEFAULT_CATS);
+let openCats = load('fx_open_cats', {});
+
+function saveCats() { save('fx_cats', cats); }
+
+function renderConcepts() {
+  const el = document.getElementById('concept-categories');
+  el.innerHTML = cats.map((cat, ci) => {
+    const total = cat.concepts.length;
+    const learned = cat.concepts.filter(c => c.learned).length;
+    const isOpen = openCats[cat.id] !== false;
+    return `
+    <div class="card" style="margin-bottom:10px; padding: 0 1.4rem;">
+      <div class="cat-header" onclick="toggleCat('${cat.id}')">
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-meta">
+          <span class="cat-prog">${learned}/${total}</span>
+          <span class="cat-chevron ${isOpen?'open':''}">▶</span>
+        </div>
+      </div>
+      <div class="cat-body ${isOpen?'open':''}" id="catbody-${cat.id}">
+        ${cat.concepts.map((c, coi) => renderConceptRow(ci, coi, c)).join('')}
+        <div class="add-concept-row" style="margin-bottom:12px;">
+          <input type="text" placeholder="Add your own concept..." id="new-concept-${cat.id}" onkeydown="if(event.key==='Enter') addConcept('${cat.id}', '${ci}')"/>
+          <button class="btn btn-primary" style="white-space:nowrap; padding:8px 14px;" onclick="addConcept('${cat.id}', ${ci})">+ Add</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateProgress();
+}
+
+function renderConceptRow(ci, coi, c) {
+  const stars = [1,2,3,4,5].map(s => `<span class="star ${c.conf >= s ? 'lit' : ''}" onclick="setConf(${ci},${coi},${s})" title="${s}/5">★</span>`).join('');
+  return `<div class="concept-row" id="crow-${ci}-${coi}">
+    <input type="checkbox" class="concept-check" ${c.learned?'checked':''} onchange="toggleLearned(${ci},${coi},this.checked)"/>
+    <div class="concept-body">
+      <div class="concept-name ${c.learned?'learned':''}">${c.name}</div>
+      <div class="conf-stars">${stars}</div>
+      ${c.note ? `<div class="concept-note">${c.note}</div>` : ''}
+      <div class="concept-actions">
+        <button class="mini-btn" onclick="editNote(${ci},${coi})">✏ note</button>
+        <span class="conf-badge conf-${c.conf}">${c.conf > 0 ? c.conf+'/5' : 'unrated'}</span>
+        <button class="mini-btn del" onclick="deleteConcept(${ci},${coi})">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleCat(id) {
+  openCats[id] = !openCats[id];
+  if (openCats[id] === undefined) openCats[id] = false;
+  save('fx_open_cats', openCats);
+  renderConcepts();
+}
+
+function toggleLearned(ci, coi, val) {
+  cats[ci].concepts[coi].learned = val;
+  saveCats(); updateProgress(); updateHome();
+  document.getElementById(`crow-${ci}-${coi}`).outerHTML = renderConceptRow(ci, coi, cats[ci].concepts[coi]);
+  updateProgress();
+}
+
+function setConf(ci, coi, val) {
+  cats[ci].concepts[coi].conf = val;
+  saveCats(); updateProgress(); updateHome();
+  document.getElementById(`crow-${ci}-${coi}`).outerHTML = renderConceptRow(ci, coi, cats[ci].concepts[coi]);
+  updateProgress();
+}
+
+function editNote(ci, coi) {
+  const existing = cats[ci].concepts[coi].note;
+  const ta = document.createElement('div');
+  ta.innerHTML = `<textarea class="concept-note-input" id="noteinput-${ci}-${coi}" placeholder="Write your definition or notes...">${existing}</textarea>
+    <div style="display:flex; gap:6px; margin-top:4px;">
+      <button class="mini-btn btn-primary" style="background:var(--accent);color:#0d0d0f;border-color:var(--accent);font-weight:600;" onclick="saveNote(${ci},${coi})">Save</button>
+      <button class="mini-btn" onclick="renderConcepts()">Cancel</button>
+    </div>`;
+  const actions = document.querySelector(`#crow-${ci}-${coi} .concept-actions`);
+  const existingNote = document.querySelector(`#crow-${ci}-${coi} .concept-note`);
+  if (existingNote) existingNote.remove();
+  actions.insertAdjacentElement('beforebegin', ta);
+}
+
+function saveNote(ci, coi) {
+  const val = document.getElementById(`noteinput-${ci}-${coi}`)?.value.trim() || '';
+  cats[ci].concepts[coi].note = val;
+  saveCats(); renderConcepts();
+}
+
+function deleteConcept(ci, coi) {
+  if (!confirm('Delete this concept?')) return;
+  cats[ci].concepts.splice(coi, 1);
+  saveCats(); renderConcepts();
+}
+
+function addConcept(catId, ci) {
+  const inp = document.getElementById(`new-concept-${catId}`);
+  const name = inp.value.trim();
+  if (!name) return;
+  cats[ci].concepts.push({ id: 'custom-' + Date.now(), name, learned: false, conf: 0, note: '' });
+  saveCats(); renderConcepts();
+}
+
+function updateProgress() {
+  const all = cats.flatMap(c => c.concepts);
+  const total = all.length;
+  const learned = all.filter(c => c.learned).length;
+  const pct = total ? Math.round(learned / total * 100) : 0;
+  const el = document.getElementById('prog-fill');
+  const pt = document.getElementById('prog-pct');
+  if (el) el.style.width = pct + '%';
+  if (pt) pt.textContent = pct + '%';
+}
+
+// ── STUDY LOG ──
+let sessions = load('fx_study', []);
+
+function logStudy() {
+  const date = document.getElementById('s-date').value;
+  const mins = parseInt(document.getElementById('s-mins').value) || 0;
+  const topic = document.getElementById('s-topic').value.trim();
+  const notes = document.getElementById('s-notes').value.trim();
+  if (!date || !topic) { alert('Please fill in date and topic.'); return; }
+  sessions.unshift({ date, mins, topic, notes, id: Date.now() });
+  save('fx_study', sessions);
+  renderStudy(); updateHome();
+  document.getElementById('s-mins').value = '';
+  document.getElementById('s-topic').value = '';
+  document.getElementById('s-notes').value = '';
+}
+
+function deleteStudy(id) {
+  if (!confirm('Delete this session?')) return;
+  sessions = sessions.filter(s => s.id !== id);
+  save('fx_study', sessions); renderStudy(); updateHome();
+}
+
+function renderStudy() {
+  const el = document.getElementById('study-history');
+  if (!sessions.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px 0;font-style:italic;">No sessions logged yet. Start tracking today.</div>'; return; }
+  el.innerHTML = sessions.map(s => `<div class="study-entry">
+    <div class="study-meta">
+      <span>${s.date}</span>
+      ${s.mins ? `<span style="background:var(--accent-dim);color:var(--accent);padding:1px 7px;border-radius:4px;font-size:10px;">${s.mins} min</span>` : ''}
+      <span class="del-btn" onclick="deleteStudy(${s.id})">✕ delete</span>
+    </div>
+    <div class="study-topic">${s.topic}</div>
+    ${s.notes ? `<div class="study-notes">${s.notes}</div>` : ''}
+  </div>`).join('');
+}
+renderStudy();
+
+// ── HOME UPDATE ──
+function calcStreak() {
+  const dates = [...new Set(sessions.map(s => s.date))].sort().reverse();
+  let streak = 0, cur = new Date(todayStr);
+  for (const d of dates) {
+    const dd = new Date(d);
+    const diff = Math.round((cur - dd) / 86400000);
+    if (diff <= 1) { streak++; cur = dd; } else break;
+  }
+  return streak;
+}
+
+function updateHome() {
+  const all = cats.flatMap(c => c.concepts);
+  const total = all.length;
+  const learned = all.filter(c => c.learned).length;
+  const pct = total ? Math.round(learned / total * 100) : 0;
+  document.getElementById('home-progress').textContent = pct + '%';
+  document.getElementById('home-streak').textContent = calcStreak();
+  document.getElementById('s-learned').textContent = learned;
+  const rated = all.filter(c => c.conf > 0);
+  const avgConf = rated.length ? (rated.reduce((a, c) => a + c.conf, 0) / rated.length).toFixed(1) : '—';
+  document.getElementById('s-conf').textContent = avgConf === '—' ? '—' : avgConf + '/5';
+  document.getElementById('s-sessions').textContent = sessions.length;
+
+  // Weakest category
+  const weakBox = document.getElementById('weak-section');
+  const catScores = cats.map(cat => {
+    const concepts = cat.concepts;
+    if (!concepts.length) return null;
+    const rated = concepts.filter(c => c.conf > 0);
+    const avgScore = rated.length ? rated.reduce((a, c) => a + c.conf, 0) / rated.length : 0;
+    const learnedPct = concepts.filter(c => c.learned).length / concepts.length;
+    return { name: cat.name, score: avgScore, learnedPct, total: concepts.length };
+  }).filter(Boolean);
+  const weak = catScores.sort((a, b) => a.score - b.score || a.learnedPct - b.learnedPct)[0];
+  if (weak && weak.score < 3) {
+    weakBox.innerHTML = `<div class="weak-box">
+      <div class="wl">⚠ Needs attention</div>
+      <div class="wv">${weak.name}</div>
+      <div class="ws">Lowest confidence category — focus your next study session here.</div>
+    </div>`;
+  } else {
+    weakBox.innerHTML = '';
+  }
+}
+updateHome();
+renderConcepts();
+</script>
+</body>
+</html>
