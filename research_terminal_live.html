@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Research Terminal V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050a07;--surface:#090e0b;--surface2:#0e1510;--surface3:#141e16;--surface4:#1a2a1c;
+  --border:rgba(52,211,153,0.09);--border2:rgba(52,211,153,0.18);
+  --text:#e0ede4;--text2:#567060;--text3:#263028;
+  --em:#34d399;--em2:#6ee7b7;--em-dim:rgba(52,211,153,0.08);--em-dim2:rgba(52,211,153,0.04);
+  --red:#f87171;--red-dim:rgba(248,113,113,0.1);
+  --amber:#fbbf24;--amber-dim:rgba(251,191,36,0.1);
+  --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);
+  --purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);
+  --up:#34d399;--dn:#f87171;
+  --radius:6px;--radius-lg:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--em);text-decoration:none;}a:hover{text-decoration:underline;}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border2);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;position:sticky;top:0;z-index:200;}
+.logo{font-family:'Playfair Display',serif;font-weight:700;font-size:20px;color:var(--text);letter-spacing:-0.3px;}
+.logo span{color:var(--em);font-style:italic;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;display:block;margin-top:-1px;}
+.topbar-center{display:flex;gap:6px;}
+.mpill{font-family:'DM Mono',monospace;font-size:11px;padding:4px 10px;border:1px solid var(--border2);color:var(--text2);transition:all 0.3s;}
+.mpill.up{color:var(--up);border-color:rgba(52,211,153,0.25);background:var(--em-dim);}
+.mpill.dn{color:var(--dn);border-color:rgba(248,113,113,0.2);background:var(--red-dim);}
+.mpill.loading{color:var(--text3);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.live-chip{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;color:var(--em);letter-spacing:1px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--em);animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.clock{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);}
+.api-key-btn{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text3);background:none;border:1px solid var(--border);padding:3px 9px;cursor:pointer;transition:all 0.15s;}
+.api-key-btn:hover{border-color:var(--border2);color:var(--text2);}
+.api-key-btn.set{color:var(--em);border-color:var(--border2);}
+
+/* TICKER */
+.ticker-wrap{background:var(--surface);border-bottom:1px solid var(--border);height:30px;display:flex;align-items:center;overflow:hidden;}
+.ticker-label{background:var(--em);color:#050a07;font-family:'Playfair Display',serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:0 14px;height:100%;display:flex;align-items:center;flex-shrink:0;}
+.ticker-scroll{display:flex;animation:scroll 50s linear infinite;white-space:nowrap;}
+.ticker-scroll:hover{animation-play-state:paused;}
+.tick{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);padding:0 18px;border-right:1px solid var(--border);height:30px;display:flex;align-items:center;gap:8px;}
+.tick .up{color:var(--up);}.tick .dn{color:var(--dn);}
+@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+/* TABS */
+.tabs-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;padding:0 1.8rem;overflow-x:auto;position:relative;}
+.tab{padding:11px 18px;font-family:'DM Sans',sans-serif;font-weight:400;font-size:13px;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color 0.15s;letter-spacing:0.2px;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--em);border-bottom-color:var(--em);}
+.tab-badge{position:absolute;top:6px;width:6px;height:6px;border-radius:50%;background:var(--red);display:none;}
+.tab-badge.show{display:block;}
+
+/* API KEY MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-top:2px solid var(--em);padding:2rem;max-width:440px;width:90%;}
+.modal h2{font-family:'Playfair Display',serif;font-size:20px;color:var(--text);margin-bottom:8px;}
+.modal p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;}
+.modal ol{font-size:13px;color:var(--text2);line-height:2;padding-left:1.2rem;margin-bottom:12px;}
+.modal input{width:100%;font-family:'DM Mono',monospace;font-size:13px;padding:9px 12px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);margin-bottom:10px;outline:none;}
+.modal input:focus{border-color:var(--em);}
+
+/* MAIN */
+.main{padding:1.6rem 1.8rem;max-width:1400px;margin:0 auto;}
+.section{display:none;}.section.active{display:block;}
+
+/* SECTION LABEL */
+.slabel{font-family:'Playfair Display',serif;font-weight:400;font-style:italic;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--em);margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;}
+.slabel::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent);}
+
+/* GRIDS */
+.grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.grid-main{display:grid;grid-template-columns:2fr 1fr;gap:14px;}
+.grid-main-r{display:grid;grid-template-columns:1fr 2fr;gap:14px;}
+
+/* STAT CARDS */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-top:1px solid var(--border2);padding:1.1rem 1.3rem;transition:border-color 0.2s;}
+.stat-card.clickable{cursor:pointer;}
+.stat-card.clickable:hover{border-color:var(--border2);}
+.sc-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.sc-val{font-family:'Playfair Display',serif;font-weight:700;font-size:28px;color:var(--text);line-height:1;letter-spacing:-0.5px;}
+.sc-val.sm{font-size:18px;padding-top:4px;}
+.sc-chg{font-family:'DM Mono',monospace;font-size:12px;margin-top:4px;}
+.sc-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+.sc-ts{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px;}
+.up{color:var(--up);}.dn{color:var(--dn);}.neu{color:var(--text2);}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);padding:1.2rem 1.4rem;margin-bottom:12px;}
+.card-title{font-family:'Playfair Display',serif;font-weight:600;font-size:13px;color:var(--em);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.card-title .ct-right{font-size:10px;color:var(--text3);font-weight:400;font-family:'DM Mono',monospace;font-style:normal;}
+.live-badge{font-size:9px;background:var(--em-dim);color:var(--em);border:1px solid rgba(52,211,153,0.2);padding:2px 6px;letter-spacing:1px;font-family:'DM Mono',monospace;}
+.curated-badge{font-size:9px;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.2);padding:2px 6px;letter-spacing:1px;font-family:'DM Mono',monospace;}
+.ts{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;}
+
+/* SKELETON */
+.skel{background:linear-gradient(90deg,var(--surface2) 25%,var(--surface3) 50%,var(--surface2) 75%);background-size:200% 100%;animation:skel 1.5s infinite;height:13px;margin-bottom:7px;border-radius:2px;}
+@keyframes skel{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* HEATMAP */
+.heatmap{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.hm-cell{padding:9px 11px;border:1px solid var(--border);transition:opacity 0.15s;cursor:default;}
+.hm-cell:hover{opacity:0.8;}
+.hm-sector{font-size:10px;color:var(--text2);margin-bottom:3px;}
+.hm-chg{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;}
+.hm-up{background:rgba(52,211,153,0.07);}.hm-up .hm-chg{color:var(--up);}
+.hm-dn{background:rgba(248,113,113,0.07);}.hm-dn .hm-chg{color:var(--dn);}
+.hm-neu{background:var(--surface2);}.hm-neu .hm-chg{color:var(--text2);}
+
+/* NEWS */
+.news-item{padding:11px 0;border-bottom:1px solid var(--border);}
+.news-item:last-child{border-bottom:none;}
+.news-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.news-src{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--em);}
+.news-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+.news-tag{font-size:10px;padding:1px 6px;font-weight:500;}
+.tag-trade{background:var(--red-dim);color:var(--red);}
+.tag-contract{background:var(--em-dim);color:var(--em);}
+.tag-macro{background:var(--purple-dim);color:var(--purple);}
+.tag-biz{background:var(--blue-dim);color:var(--blue);}
+.tag-general{background:var(--surface2);color:var(--text2);}
+.news-hl{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:4px;}
+.news-hl a{color:var(--text);}
+.news-hl a:hover{color:var(--em);text-decoration:none;}
+.news-sum{font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* WATCHLIST */
+.wl-item{background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;transition:border-color 0.15s;}
+.wl-item:hover{border-color:var(--border2);}
+.wl-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
+.wl-ticker{font-family:'Playfair Display',serif;font-weight:700;font-size:18px;color:var(--text);}
+.wl-name{font-size:11px;color:var(--text2);margin-top:2px;}
+.wl-price{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;text-align:right;}
+.wl-chg{font-family:'DM Mono',monospace;font-size:12px;margin-top:2px;text-align:right;}
+.wl-note{font-size:12px;color:var(--text2);background:var(--surface);border-left:2px solid var(--em);padding:6px 10px;margin:8px 0;line-height:1.5;}
+.wl-note-input{font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border2);padding:7px 10px;width:100%;font-family:'DM Sans',sans-serif;resize:none;min-height:55px;outline:none;display:block;margin-bottom:6px;transition:border-color 0.15s;}
+.wl-note-input:focus{border-color:var(--em);}
+.wl-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.wl-analyst{font-size:11px;color:var(--text2);background:var(--surface3);padding:4px 8px;margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;}
+
+/* ALERT BANNER */
+.alert-banner{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-left:3px solid var(--amber);padding:10px 14px;margin-bottom:12px;display:none;}
+.alert-banner.show{display:block;}
+.alert-item{font-size:13px;color:var(--amber);margin-bottom:4px;}
+.alert-item:last-child{margin-bottom:0;}
+
+/* BIG MONEY */
+.bm-item{padding:10px 0;border-bottom:1px solid var(--border);}
+.bm-item:last-child{border-bottom:none;}
+.bm-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.bm-who{font-size:13px;font-weight:500;color:var(--text);}
+.bm-type{font-size:10px;padding:2px 7px;font-weight:500;font-family:'DM Mono',monospace;}
+.type-buy{background:var(--em-dim);color:var(--em);}
+.type-sell{background:var(--red-dim);color:var(--red);}
+.type-hold{background:var(--amber-dim);color:var(--amber);}
+.type-new{background:var(--blue-dim);color:var(--blue);}
+.bm-detail{font-size:12px;color:var(--text2);line-height:1.5;}
+.bm-date{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px;}
+
+/* TRANSACTIONS/INSIDER */
+.txn-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.txn-item:last-child{border-bottom:none;}
+.txn-type{font-size:9px;font-family:'DM Mono',monospace;font-weight:500;letter-spacing:0.5px;padding:3px 7px;flex-shrink:0;min-width:56px;text-align:center;}
+.txn-buy{background:var(--em-dim);color:var(--em);}
+.txn-sell{background:var(--red-dim);color:var(--red);}
+.txn-text{font-size:12px;color:var(--text);line-height:1.5;flex:1;}
+.txn-meta{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;}
+
+/* ECON CALENDAR */
+.econ-item{display:flex;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);}
+.econ-item:last-child{border-bottom:none;}
+.econ-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);min-width:72px;padding-top:2px;}
+.econ-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.imp-high{background:var(--red);}
+.imp-med{background:var(--amber);}
+.imp-low{background:var(--text3);}
+.econ-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.econ-detail{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;}
+
+/* STOCK SUGGESTION WIDGET */
+.suggestion-widget{background:var(--surface);border:1px solid var(--border2);border-top:2px solid var(--em);padding:1.3rem 1.5rem;margin-bottom:12px;}
+.sw-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.sw-title{font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--em);}
+.sw-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+.sw-tabs{display:flex;gap:4px;margin-bottom:1rem;}
+.sw-tab{font-size:11px;padding:4px 12px;border:1px solid var(--border);color:var(--text3);background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.sw-tab.active{background:var(--em-dim);color:var(--em);border-color:var(--border2);}
+.sw-section{display:none;}.sw-section.active{display:block;}
+.mover-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.mover-item:last-child{border-bottom:none;}
+.mover-rank{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);width:16px;}
+.mover-ticker{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);}
+.mover-name{font-size:11px;color:var(--text2);}
+.mover-chg{font-family:'DM Mono',monospace;font-size:12px;margin-left:auto;}
+.ai-briefing{font-size:13px;color:var(--text2);line-height:1.7;padding:8px 0;}
+.ai-briefing strong{color:var(--text);font-weight:500;}
+.ai-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;}
+.ai-spinner{width:14px;height:14px;border:1px solid var(--border2);border-top-color:var(--em);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* EARNINGS */
+.earn-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.earn-item:last-child{border-bottom:none;}
+.earn-ticker{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);min-width:56px;}
+.earn-name{font-size:11px;color:var(--text2);flex:1;}
+.earn-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--em);min-width:80px;text-align:right;}
+.earn-eps{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);}
+.earn-when{font-size:10px;color:var(--text3);}
+
+/* PRICE ALERTS */
+.alert-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.alert-row:last-child{border-bottom:none;}
+.alert-ticker{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);min-width:60px;}
+.alert-target{font-family:'DM Mono',monospace;font-size:12px;color:var(--amber);}
+.alert-current{font-family:'DM Mono',monospace;font-size:12px;color:var(--text2);}
+.alert-triggered{color:var(--up);}
+
+/* FORMS */
+input[type=text],input[type=number],select,textarea{font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);outline:none;transition:border-color 0.15s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--em);}
+select option{background:var(--surface2);}
+.btn{font-family:'DM Sans',sans-serif;padding:7px 16px;border:1px solid var(--border2);background:none;color:var(--text2);font-size:13px;cursor:pointer;transition:all 0.15s;}
+.btn:hover{background:var(--surface2);color:var(--text);}
+.btn-em{background:var(--em);color:#050a07;border-color:var(--em);font-weight:500;}
+.btn-em:hover{background:var(--em2);}
+.btn-sm{font-size:11px;padding:3px 9px;}
+.btn-danger{border-color:var(--red-dim);color:var(--red);}
+.btn-danger:hover{background:var(--red-dim);}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:1rem 0;}
+.section-note{font-size:12px;color:var(--text3);padding:16px 0;text-align:center;font-style:italic;}
+.info-bar{font-size:12px;color:var(--text2);background:var(--surface2);border-left:3px solid var(--amber);padding:9px 13px;margin-bottom:1rem;line-height:1.5;}
+.error-msg{font-size:12px;color:var(--red);padding:8px 0;}
+.ql-grid{display:flex;flex-direction:column;gap:8px;}
+.ql-item{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.ql-item::before{content:'↗';color:var(--em);font-size:11px;}
+.disclaimer{font-size:10px;color:var(--text3);font-style:italic;margin-top:8px;line-height:1.5;}
+
+@media(max-width:900px){.grid-main,.grid-main-r,.grid-2{grid-template-columns:1fr;}.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:1fr 1fr;}.heatmap{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:600px){.grid-4{grid-template-columns:1fr 1fr;}.grid-3{grid-template-columns:1fr;}.topbar-center{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal">
+    <h2>Finnhub API Key</h2>
+    <p>Stock prices, earnings, insider trades, and congressional trades require a free Finnhub API key.</p>
+    <ol>
+      <li>Go to <a href="https://finnhub.io/register" target="_blank">finnhub.io/register</a></li>
+      <li>Create a free account</li>
+      <li>Copy your API key from the dashboard</li>
+    </ol>
+    <input type="text" id="api-key-input" placeholder="Paste your Finnhub API key..." autocomplete="off"/>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-em" style="flex:1;" onclick="saveApiKey()">Save & Launch</button>
+      <button class="btn" onclick="closeApiModal()">Skip</button>
+    </div>
+    <p style="font-size:10px;color:var(--text3);margin-top:8px;">Saved only in your browser. Never leaves your device.</p>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <div class="logo">Research <span>Terminal</span></div>
+    <span class="logo-sub">Personal Investment Intelligence</span>
+  </div>
+  <div class="topbar-center" id="top-pills">
+    <div class="mpill loading" id="pill-spy">S&P 500 —</div>
+    <div class="mpill loading" id="pill-btc">BTC —</div>
+    <div class="mpill loading" id="pill-eth">ETH —</div>
+    <div class="mpill loading" id="pill-gold">Gold —</div>
+    <div class="mpill loading" id="pill-tsx">USD/CAD —</div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-chip"><div class="live-dot"></div>Live</div>
+    <div class="clock" id="clock"></div>
+    <button class="api-key-btn" id="api-key-btn" onclick="document.getElementById('api-modal').classList.add('open')">⚙ API Key</button>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-label">Markets</div>
+  <div class="ticker-scroll" id="ticker-scroll"><div class="tick" style="color:var(--text3);">Loading market data...</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab active" onclick="showTab('home')">Overview</button>
+  <button class="tab" onclick="showTab('watchlist')">Watchlist</button>
+  <button class="tab" onclick="showTab('news')">News & Rumours</button>
+  <button class="tab" onclick="showTab('bigmoney')">Big Money</button>
+  <button class="tab" onclick="showTab('earnings')">Earnings</button>
+  <button class="tab" onclick="showTab('calendar')">Calendar</button>
+  <button class="tab" onclick="showTab('alerts')">Alerts</button>
+  <button class="tab" onclick="showTab('research')">Research Notes</button>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner" id="alert-banner" style="margin:0.5rem 1.8rem 0;"></div>
+
+<div class="main">
+
+<!-- ═══ HOME ═══ -->
+<div id="home" class="section active">
+  <div class="slabel">Market Overview — <span id="home-date" style="font-style:normal;letter-spacing:0;font-family:'DM Sans',sans-serif;font-size:11px;"></span></div>
+
+  <div class="grid-4">
+    <div class="stat-card"><div class="sc-label">S&P 500 (SPY)</div><div class="sc-val" id="h-spy">—</div><div class="sc-chg" id="h-spy-chg">—</div><div class="sc-ts" id="ts-spy"></div></div>
+    <div class="stat-card"><div class="sc-label">Bitcoin</div><div class="sc-val" id="h-btc">—</div><div class="sc-chg" id="h-btc-chg">—</div><div class="sc-ts" id="ts-btc"></div></div>
+    <div class="stat-card"><div class="sc-label">Fear & Greed</div><div class="sc-val" id="h-fg" style="color:var(--amber);">—</div><div class="sc-sub" id="h-fg-label">Loading...</div><div class="sc-ts" id="ts-fg"></div></div>
+    <div class="stat-card"><div class="sc-label">Ethereum</div><div class="sc-val" id="h-eth">—</div><div class="sc-chg" id="h-eth-chg">—</div><div class="sc-ts" id="ts-eth"></div></div>
+  </div>
+
+  <!-- AI SUGGESTION WIDGET -->
+  <div class="suggestion-widget">
+    <div class="sw-header">
+      <div class="sw-title">Daily Stock Suggestions</div>
+      <div class="sw-ts" id="sw-ts">Refreshes daily</div>
+    </div>
+    <div class="sw-tabs">
+      <button class="sw-tab active" onclick="switchSWTab('movers')">Top Movers</button>
+      <button class="sw-tab" onclick="switchSWTab('trending')">Trending Crypto</button>
+      <button class="sw-tab" onclick="switchSWTab('ai')">AI Briefing</button>
+    </div>
+    <div id="sw-movers" class="sw-section active"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+    <div id="sw-trending" class="sw-section"><div class="skel"></div></div>
+    <div id="sw-ai" class="sw-section"><div class="ai-loading"><div class="ai-spinner"></div>Generating daily briefing...</div></div>
+    <p class="disclaimer">For research purposes only. Not financial advice. Always do your own due diligence.</p>
+  </div>
+
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-title">Sector Heatmap <span class="live-badge">LIVE · Finnhub</span><span class="ts" id="ts-sectors"></span></div>
+        <div class="heatmap" id="heatmap"><div class="skel" style="grid-column:1/-1;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Market News <span class="live-badge">LIVE · ESPN</span><span class="ts" id="ts-news"></span></div>
+        <div id="home-news"><div class="skel"></div><div class="skel" style="width:80%;"></div><div class="skel" style="width:65%;"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Market Snapshot</div>
+        <div id="market-snapshot"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Upcoming Earnings <span class="live-badge">LIVE</span></div>
+        <div id="home-earnings"><div class="skel"></div><div class="skel" style="width:70%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quick Links</div>
+        <div class="ql-grid">
+          <a href="https://finance.yahoo.com" target="_blank" class="ql-item">Yahoo Finance</a>
+          <a href="https://www.bnnbloomberg.ca" target="_blank" class="ql-item">BNN Bloomberg</a>
+          <a href="https://www.tmxmoney.com" target="_blank" class="ql-item">TMX Money (TSX)</a>
+          <a href="https://puckpedia.com" target="_blank" class="ql-item">Finviz Screener</a>
+          <a href="https://coinmarketcap.com" target="_blank" class="ql-item">CoinMarketCap</a>
+          <a href="https://www.capitoltrades.com" target="_blank" class="ql-item">Capitol Trades</a>
+          <a href="https://www.openinsider.com" target="_blank" class="ql-item">OpenInsider</a>
+          <a href="https://www.dataroma.com" target="_blank" class="ql-item">Dataroma (13F)</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WATCHLIST ═══ -->
+<div id="watchlist" class="section">
+  <div class="slabel">Watchlist</div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+    <input type="text" id="wl-input" placeholder="Ticker (e.g. AAPL, SHOP.TO, BTC)" style="width:180px;" onkeydown="if(event.key==='Enter')addWLItem()"/>
+    <button class="btn btn-em" onclick="addWLItem()">+ Add</button>
+    <span style="font-size:11px;color:var(--text3);">Use .TO suffix for TSX stocks (e.g. RY.TO, TD.TO)</span>
+  </div>
+  <div class="grid-main-r">
+    <div id="wl-list"><div class="section-note">Add a ticker above to get started.</div></div>
+    <div>
+      <div class="card">
+        <div class="card-title">Portfolio Notes</div>
+        <textarea id="port-notes" placeholder="Strategy, sector allocation, long-term thesis..." style="width:100%;min-height:120px;" oninput="save('rt2_port_notes',this.value)"></textarea>
+      </div>
+      <div class="card">
+        <div class="card-title">Research Checklist</div>
+        <div id="research-checklist"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NEWS ═══ -->
+<div id="news" class="section">
+  <div class="slabel">News & Rumours</div>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
+    <select id="news-filter" onchange="filterNews()" style="font-size:12px;padding:6px 10px;width:auto;">
+      <option value="all">All Topics</option>
+      <option value="trade">M&A / Deals</option>
+      <option value="macro">Macro</option>
+      <option value="contract">Contracts</option>
+      <option value="biz">Business</option>
+    </select>
+    <button class="btn" onclick="loadNews()" style="font-size:11px;">↻ Refresh</button>
+    <span class="ts" id="ts-news-tab"></span>
+  </div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;"><div id="news-feed"><div class="skel"></div><div class="skel" style="width:80%;"></div></div></div>
+    <div>
+      <div class="card">
+        <div class="card-title">Sources</div>
+        <div class="ql-grid">
+          <a href="https://www.espn.com/investing" target="_blank" class="ql-item">ESPN Finance</a>
+          <a href="https://finance.yahoo.com/news" target="_blank" class="ql-item">Yahoo Finance News</a>
+          <a href="https://www.bnnbloomberg.ca" target="_blank" class="ql-item">BNN Bloomberg</a>
+          <a href="https://www.reuters.com/finance" target="_blank" class="ql-item">Reuters Finance</a>
+          <a href="https://seekingalpha.com" target="_blank" class="ql-item">Seeking Alpha</a>
+          <a href="https://www.reddit.com/r/investing" target="_blank" class="ql-item">r/investing</a>
+          <a href="https://www.reddit.com/r/wallstreetbets" target="_blank" class="ql-item">r/WallStreetBets</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Business & Markets</div>
+        <div class="ql-grid">
+          <a href="https://sportico.com" target="_blank" class="ql-item">Sportico</a>
+          <a href="https://www.forbes.com/investing" target="_blank" class="ql-item">Forbes Investing</a>
+          <a href="https://www.ft.com" target="_blank" class="ql-item">Financial Times</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BIG MONEY ═══ -->
+<div id="bigmoney" class="section">
+  <div class="slabel">Big Money Tracker</div>
+  <div class="info-bar">Live congressional trades and insider filings via Finnhub. Berkshire and ARK are curated quarterly — links provided for real-time data.</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Congressional Trades <span class="live-badge">LIVE · Finnhub</span><span class="ts" id="ts-congress"></span></div>
+      <div id="congress-list"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>
+      <div class="divider"></div>
+      <a href="https://www.capitoltrades.com" target="_blank" style="font-size:12px;">↗ Capitol Trades — full live data</a>
+    </div>
+    <div class="card">
+      <div class="card-title">Insider Trades <span class="live-badge">LIVE · Finnhub</span><span class="ts" id="ts-insider"></span></div>
+      <div id="insider-list"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>
+      <div class="divider"></div>
+      <a href="https://www.openinsider.com" target="_blank" style="font-size:12px;">↗ OpenInsider — full live data</a>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Berkshire Hathaway <span class="curated-badge">Curated · Q4 2024</span></div>
+      <div id="bm-berkshire"></div>
+      <div class="divider"></div>
+      <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001067983&type=13F" target="_blank" style="font-size:12px;">↗ Latest 13F on SEC EDGAR</a>
+    </div>
+    <div class="card">
+      <div class="card-title">ARK Invest <span class="curated-badge">Curated · Q1 2025</span></div>
+      <div id="bm-ark"></div>
+      <div class="divider"></div>
+      <a href="https://ark-funds.com/funds/arkk/" target="_blank" style="font-size:12px;">↗ ARK daily holdings</a>
+      &nbsp;&nbsp;<a href="https://www.dataroma.com" target="_blank" style="font-size:12px;">↗ Dataroma</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EARNINGS ═══ -->
+<div id="earnings" class="section">
+  <div class="slabel">Earnings Calendar <span style="font-style:normal;letter-spacing:0;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text2);">— next 2 weeks · via Finnhub</span></div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Upcoming Reports <span class="live-badge">LIVE</span><span class="ts" id="ts-earnings"></span></div>
+      <div id="earnings-list"><div class="skel"></div><div class="skel" style="width:80%;"></div><div class="skel" style="width:70%;"></div></div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Earnings Sources</div>
+        <div class="ql-grid">
+          <a href="https://finance.yahoo.com/calendar/earnings" target="_blank" class="ql-item">Yahoo Earnings Calendar</a>
+          <a href="https://stockanalysis.com/earnings-calendar/" target="_blank" class="ql-item">Stock Analysis</a>
+          <a href="https://www.marketbeat.com/earnings/" target="_blank" class="ql-item">MarketBeat</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">What to Watch</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+          <div>→ Focus on guidance, not just beat/miss</div>
+          <div>→ Revenue growth matters more than EPS surprises</div>
+          <div>→ Management tone on future quarters</div>
+          <div>→ Sector signals from large caps</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CALENDAR ═══ -->
+<div id="calendar" class="section">
+  <div class="slabel">Economic Calendar</div>
+  <div class="grid-main">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Upcoming Events <span class="live-badge">LIVE · Finnhub</span><span class="ts" id="ts-calendar"></span>
+        <span style="display:flex;gap:8px;font-size:10px;font-weight:400;font-style:normal;font-family:'DM Mono',monospace;letter-spacing:0;">
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block;"></span>High</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;"></span>Med</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block;"></span>Low</span>
+        </span>
+      </div>
+      <div id="econ-calendar"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+      <div class="divider"></div>
+      <a href="https://www.forexfactory.com/calendar" target="_blank" style="font-size:12px;">↗ ForexFactory</a>
+      &nbsp;&nbsp;<a href="https://www.investing.com/economic-calendar/" target="_blank" style="font-size:12px;">↗ Investing.com</a>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">What to Watch</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8;display:flex;flex-direction:column;gap:4px;" id="what-to-watch"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Calendar Sources</div>
+        <div class="ql-grid">
+          <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="ql-item">Fed FOMC Calendar</a>
+          <a href="https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/" target="_blank" class="ql-item">Bank of Canada</a>
+          <a href="https://www.bls.gov/schedule/news_release/cpi.htm" target="_blank" class="ql-item">BLS CPI Schedule</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALERTS ═══ -->
+<div id="alerts" class="section">
+  <div class="slabel">Price Alerts</div>
+  <div class="info-bar">Alerts check against live prices every time the terminal loads and every 90 seconds. You'll see a banner at the top of the page when a target is hit.</div>
+  <div class="grid-main">
+    <div>
+      <div class="card">
+        <div class="card-title">Set an Alert</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;">
+          <input type="text" id="alert-ticker" placeholder="Ticker (e.g. AAPL)"/>
+          <input type="number" id="alert-target" placeholder="Target price" step="0.01"/>
+          <select id="alert-dir" style="font-size:12px;">
+            <option value="above">Above target</option>
+            <option value="below">Below target</option>
+          </select>
+          <button class="btn btn-em" onclick="addAlert()">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Active Alerts</div>
+        <div id="alerts-list"><div class="section-note">No alerts set. Add one above.</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">How Alerts Work</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+          <div>→ Alerts save permanently in your browser</div>
+          <div>→ Checked on every page load and every 90 seconds</div>
+          <div>→ A yellow banner appears at the top when triggered</div>
+          <div>→ Works for US stocks (via Finnhub) and crypto (via CoinGecko)</div>
+          <div>→ TSX stocks use Yahoo Finance — may have 15 min delay</div>
+          <div>→ Alerts do not send push notifications — browser only</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RESEARCH NOTES ═══ -->
+<div id="research" class="section">
+  <div class="slabel">Research Notes</div>
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-title">Add a Note</div>
+        <input type="text" id="note-title" placeholder="Title (e.g. NVDA thesis, Fed thoughts...)" style="margin-bottom:8px;"/>
+        <textarea id="note-body" placeholder="Write your research note, thesis, or observation..." style="width:100%;min-height:120px;margin-bottom:8px;"></textarea>
+        <button class="btn btn-em" onclick="addNote()" style="width:100%;">Save Note</button>
+      </div>
+    </div>
+    <div id="notes-list"></div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<script>
+// ══════════════════════════════════════
+// CORE
+// ══════════════════════════════════════
+const PROXY='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=';
+const FINNHUB_KEY='d6r4g9pr01qgdhqd4k40d6r4g9pr01qgdhqd4k4g';
+
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function load(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
+function ts(){return new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function setTS(id){const el=document.getElementById(id);if(el)el.textContent='Updated '+ts();}
+function fmt(n,dp=2){if(n===undefined||n===null||isNaN(n))return '—';return Number(n).toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});}
+function chgCls(v){return v>0?'up':v<0?'dn':'neu';}
+function chgPfx(v){return v>0?'+':'';}
+function timeSince(ts){
+  const s=Math.floor((Date.now()-new Date(ts).getTime())/1000);
+  if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
+}
+
+// Clock
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';}
+setInterval(tick,1000);tick();
+
+// Dates
+const NOW=new Date();
+const TODAY=NOW.toISOString().split('T')[0];
+const IN14=new Date(NOW.getTime()+14*86400000).toISOString().split('T')[0];
+document.getElementById('home-date').textContent=NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ══════════════════════════════════════
+// API KEY
+// ══════════════════════════════════════
+function saveApiKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k){alert('Please enter your API key.');return;}
+  save('rt2_finnhub',k);
+  closeApiModal();
+  document.getElementById('api-key-btn').className='api-key-btn set';
+  document.getElementById('api-key-btn').textContent='⚙ '+k.substring(0,6)+'...';
+}
+function closeApiModal(){document.getElementById('api-modal').classList.remove('open');}
+
+// Show modal only if no key saved and key not baked in
+const FKEY=FINNHUB_KEY||load('rt2_finnhub','');
+if(FKEY){
+  document.getElementById('api-key-btn').className='api-key-btn set';
+  document.getElementById('api-key-btn').textContent='⚙ '+FKEY.substring(0,6)+'...';
+}
+
+// ══════════════════════════════════════
+// TABS
+// ══════════════════════════════════════
+const TAB_IDS=['home','watchlist','news','bigmoney','earnings','calendar','alerts','research'];
+function showTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  TAB_IDS.forEach((s,i)=>{if(s===id)document.querySelectorAll('.tab')[i]?.classList.add('active');});
+}
+
+// ══════════════════════════════════════
+// FETCH HELPERS
+// ══════════════════════════════════════
+async function proxyFetch(url){
+  const r=await fetch(PROXY+encodeURIComponent(url));
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+async function finnhub(path){
+  return proxyFetch(`https://finnhub.io/api/v1${path}&token=${FKEY}`);
+}
+async function coingecko(path){
+  return proxyFetch('https://api.coingecko.com/api/v3'+path);
+}
+
+// ══════════════════════════════════════
+// CRYPTO PRICES
+// ══════════════════════════════════════
+async function loadCrypto(){
+  try{
+    const d=await coingecko('/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true');
+    const btc=d.bitcoin,eth=d.ethereum;
+    document.getElementById('h-btc').textContent='$'+fmt(btc.usd,0);
+    const bc=btc.usd_24h_change;
+    document.getElementById('h-btc-chg').innerHTML=`<span class="${chgCls(bc)}">${chgPfx(bc)}${fmt(bc)}%</span>`;
+    setTS('ts-btc');
+    document.getElementById('h-eth').textContent='$'+fmt(eth.usd,0);
+    const ec=eth.usd_24h_change;
+    document.getElementById('h-eth-chg').innerHTML=`<span class="${chgCls(ec)}">${chgPfx(ec)}${fmt(ec)}%</span>`;
+    setTS('ts-eth');
+    setPill('pill-btc','BTC $'+fmt(btc.usd,0),bc);
+    setPill('pill-eth','ETH $'+fmt(eth.usd,0),ec);
+  }catch(e){}
+}
+
+function setPill(id,text,chg){
+  const el=document.getElementById(id);if(!el)return;
+  el.textContent=text+(chg!==undefined?` ${chgPfx(chg)}${fmt(chg)}%`:'');
+  el.className='mpill '+(chg>0?'up':chg<0?'dn':'neu');
+}
+
+// ══════════════════════════════════════
+// STOCK PRICES (Finnhub)
+// ══════════════════════════════════════
+async function loadStockPrice(symbol,priceId,chgId,tsId,pillId,pillLabel){
+  try{
+    const d=await finnhub(`/quote?symbol=${symbol}`);
+    if(!d.c||d.c===0) return;
+    document.getElementById(priceId).textContent='$'+fmt(d.c);
+    document.getElementById(chgId).innerHTML=`<span class="${chgCls(d.dp)}">${chgPfx(d.dp)}${fmt(d.dp)}%</span>`;
+    if(tsId) setTS(tsId);
+    if(pillId) setPill(pillId,(pillLabel||symbol)+' $'+fmt(d.c,0),d.dp);
+  }catch(e){}
+}
+
+// Yahoo Finance for TSX and fallback
+async function loadYahooPrice(symbol){
+  try{
+    const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    const d=await proxyFetch(url);
+    const meta=d.chart?.result?.[0]?.meta;
+    if(!meta) return null;
+    return {price:meta.regularMarketPrice,change:meta.regularMarketChangePercent,name:meta.shortName||symbol};
+  }catch(e){return null;}
+}
+
+// ══════════════════════════════════════
+// FEAR & GREED
+// ══════════════════════════════════════
+async function loadFearGreed(){
+  try{
+    const d=await proxyFetch('https://api.alternative.me/fng/?limit=1');
+    const v=parseInt(d.data[0].value);
+    const label=d.data[0].value_classification;
+    const color=v>=75?'var(--up)':v>=55?'#84cc16':v>=45?'var(--amber)':v>=25?'#fb923c':'var(--dn)';
+    document.getElementById('h-fg').textContent=v;
+    document.getElementById('h-fg').style.color=color;
+    document.getElementById('h-fg-label').textContent=label;
+    setTS('ts-fg');
+  }catch(e){}
+}
+
+// ══════════════════════════════════════
+// SECTOR HEATMAP
+// ══════════════════════════════════════
+const SECTORS=[
+  {name:'Technology',sym:'XLK'},{name:'Energy',sym:'XLE'},{name:'Financials',sym:'XLF'},
+  {name:'Health Care',sym:'XLV'},{name:'Industrials',sym:'XLI'},{name:'Consumer Disc.',sym:'XLY'},
+  {name:'Utilities',sym:'XLU'},{name:'Real Estate',sym:'XLRE'},{name:'Materials',sym:'XLB'},
+];
+async function loadSectors(){
+  try{
+    const quotes=await Promise.all(SECTORS.map(s=>finnhub(`/quote?symbol=${s.sym}`).catch(()=>null)));
+    document.getElementById('heatmap').innerHTML=SECTORS.map((s,i)=>{
+      const q=quotes[i];
+      const chg=q?.dp;
+      const cls=chg>1.5?'hm-up':chg>0?'hm-up':chg<-1.5?'hm-dn':chg<0?'hm-dn':'hm-neu';
+      return `<div class="hm-cell ${cls}"><div class="hm-sector">${s.name}</div><div class="hm-chg">${chg!==undefined?chgPfx(chg)+fmt(chg)+'%':'—'}</div></div>`;
+    }).join('');
+    setTS('ts-sectors');
+  }catch(e){document.getElementById('heatmap').innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0;">Sector data requires Finnhub API key.</div>';}
+}
+
+// ══════════════════════════════════════
+// MARKET SNAPSHOT
+// ══════════════════════════════════════
+async function loadSnapshot(){
+  const items=[
+    {label:'USD/CAD',sym:'OANDA:USD_CAD',key:'pill-tsx',lbl:'USD/CAD'},
+    {label:'Gold (XAU)',sym:'OANDA:XAU_USD'},
+    {label:'Oil (WTI)',sym:'OANDA:USOIL_USD'},
+    {label:'VIX',sym:'^VIX'},
+    {label:'10Y Treasury',sym:'US10Y'},
+  ];
+  try{
+    const results=await Promise.all(items.map(i=>finnhub(`/quote?symbol=${i.sym}`).catch(()=>null)));
+    document.getElementById('market-snapshot').innerHTML=items.map((item,i)=>{
+      const q=results[i];
+      const price=q?.c;
+      const chg=q?.dp;
+      if(item.key&&price) setPill(item.key,item.lbl+' '+fmt(price,4),chg);
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--text2);">${item.label}</span>
+        <div style="text-align:right;">
+          <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);">${price?fmt(price):'—'}</div>
+          ${chg!==undefined?`<div style="font-family:'DM Mono',monospace;font-size:10px;" class="${chgCls(chg)}">${chgPfx(chg)}${fmt(chg)}%</div>`:''}
+        </div>
+      </div>`;
+    }).join('')+'<div style="padding-top:6px;"><a href="https://finance.yahoo.com/markets/" target="_blank" style="font-size:11px;color:var(--text3);">↗ Full snapshot on Yahoo Finance</a></div>';
+  }catch(e){}
+}
+
+// ══════════════════════════════════════
+// TICKER TAPE
+// ══════════════════════════════════════
+async function loadTicker(){
+  const tickers=['SPY','AAPL','MSFT','NVDA','TSLA','BTC-USD','ETH-USD'];
+  try{
+    const quotes=await Promise.all(tickers.map(t=>{
+      if(t==='BTC-USD'||t==='ETH-USD') return null;
+      return finnhub(`/quote?symbol=${t}`).catch(()=>null);
+    }));
+    const cryptoD=await coingecko('/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true').catch(()=>null);
+    const items=tickers.map((t,i)=>{
+      let price,chg;
+      if(t==='BTC-USD'){price=cryptoD?.bitcoin?.usd;chg=cryptoD?.bitcoin?.usd_24h_change;}
+      else if(t==='ETH-USD'){price=cryptoD?.ethereum?.usd;chg=cryptoD?.ethereum?.usd_24h_change;}
+      else{price=quotes[i]?.c;chg=quotes[i]?.dp;}
+      if(!price) return null;
+      return `<div class="tick">${t.replace('-USD','')} <span class="${chgCls(chg)}">${price?'$'+fmt(price,t==='BTC-USD'?0:2):''} ${chg?chgPfx(chg)+fmt(chg)+'%':''}</span></div>`;
+    }).filter(Boolean);
+    const doubled=[...items,...items].join('');
+    document.getElementById('ticker-scroll').innerHTML=doubled;
+    setPill('pill-spy','S&P500',quotes[0]?.dp);
+    if(quotes[0]?.c) document.getElementById('pill-spy').textContent='S&P500 $'+fmt(quotes[0].c,0)+' '+chgPfx(quotes[0].dp)+fmt(quotes[0].dp)+'%';
+  }catch(e){}
+}
+
+// ══════════════════════════════════════
+// NEWS (ESPN Finance JSON API)
+// ══════════════════════════════════════
+let ALL_NEWS=[];
+async function loadNews(){
+  const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed')};
+  try{
+    const d=await proxyFetch('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=20');
+    // ESPN also has a general finance endpoint
+    const d2=await proxyFetch('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=10').catch(()=>({articles:[]}));
+    const articles=(d.articles||[]);
+    ALL_NEWS=articles.map(a=>({
+      title:a.headline||a.title||'',
+      url:a.links?.web?.href||a.links?.mobile?.href||'#',
+      created_utc:a.published?new Date(a.published).getTime()/1000:Date.now()/1000,
+      source:'ESPN',
+      desc:(a.description||a.summary||'').substring(0,200),
+    }));
+    if(!ALL_NEWS.length) throw new Error('empty');
+    renderNews(ALL_NEWS.slice(0,3),els.home,true);
+    renderNews(ALL_NEWS,els.feed,false);
+    setTS('ts-news');setTS('ts-news-tab');
+  }catch(e){
+    // Fallback: Yahoo Finance RSS via proxy
+    try{
+      const r=await fetch(PROXY+encodeURIComponent('https://rss.cbssports.com/rss/headlines/nhl'));
+      if(!r.ok) throw new Error('rss fail');
+      const txt=await r.text();
+      const xml=new DOMParser().parseFromString(txt,'text/xml');
+      const items=Array.from(xml.querySelectorAll('item')).slice(0,15);
+      ALL_NEWS=items.map(item=>({
+        title:item.querySelector('title')?.textContent||'',
+        url:item.querySelector('link')?.textContent||'#',
+        created_utc:new Date(item.querySelector('pubDate')?.textContent||Date.now()).getTime()/1000,
+        source:'CBS Sports',
+        desc:(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200),
+      }));
+      renderNews(ALL_NEWS.slice(0,3),els.home,true);
+      renderNews(ALL_NEWS,els.feed,false);
+      setTS('ts-news');setTS('ts-news-tab');
+    }catch(e2){
+      const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News unavailable. <a href="https://finance.yahoo.com/news" target="_blank" style="color:var(--em);">Yahoo Finance →</a></div>';
+      Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
+    }
+  }
+}
+
+function guessTag(title){
+  const t=(title||'').toLowerCase();
+  if(t.includes('acqui')||t.includes('merger')||t.includes('deal')||t.includes('buyout'))return{cls:'tag-trade',label:'M&A'};
+  if(t.includes('fed')||t.includes('rate')||t.includes('inflation')||t.includes('gdp')||t.includes('cpi'))return{cls:'tag-macro',label:'Macro'};
+  if(t.includes('contract')||t.includes('sign')||t.includes('agreement'))return{cls:'tag-contract',label:'Contract'};
+  if(t.includes('arena')||t.includes('broadcast')||t.includes('rights')||t.includes('owner'))return{cls:'tag-biz',label:'Business'};
+  return{cls:'tag-general',label:'Markets'};
+}
+
+function renderNews(items,el,compact){
+  if(!el||!items.length){if(el)el.innerHTML='<div class="section-note">No news available.</div>';return;}
+  el.innerHTML=items.slice(0,compact?4:20).map(n=>{
+    const tag=guessTag(n.title);
+    const ago=timeSince(new Date(n.created_utc*1000));
+    return `<div class="news-item">
+      <div class="news-meta"><span class="news-src">${n.source||'—'}</span><span class="news-time">${ago}</span><span class="news-tag ${tag.cls}">${tag.label}</span></div>
+      <div class="news-hl"><a href="${n.url}" target="_blank">${n.title}</a></div>
+      ${!compact&&n.desc?`<div class="news-sum">${n.desc}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function filterNews(){
+  const f=document.getElementById('news-filter').value;
+  const filtered=f==='all'?ALL_NEWS:ALL_NEWS.filter(n=>guessTag(n.title).label.toLowerCase().includes(f)||guessTag(n.title).cls.includes(f));
+  renderNews(filtered,document.getElementById('news-feed'),false);
+}
+
+// ══════════════════════════════════════
+// TRENDING CRYPTO
+// ══════════════════════════════════════
+async function loadTrendingCrypto(){
+  try{
+    const d=await coingecko('/search/trending');
+    const coins=(d.coins||[]).slice(0,8);
+    document.getElementById('sw-trending').innerHTML=coins.map((c,i)=>{
+      const coin=c.item;
+      const chg=coin.data?.price_change_percentage_24h?.usd;
+      return `<div class="mover-item">
+        <span class="mover-rank">${i+1}</span>
+        <img src="${coin.small}" style="width:18px;height:18px;border-radius:50%;" onerror="this.style.display='none'"/>
+        <div><div class="mover-ticker">${coin.symbol}</div><div class="mover-name">${coin.name}</div></div>
+        <div class="mover-chg ${chg!==undefined?chgCls(chg):''}">${chg!==undefined?chgPfx(chg)+fmt(chg)+'%':coin.data?.price||'—'}</div>
+      </div>`;
+    }).join('');
+  }catch(e){document.getElementById('sw-trending').innerHTML='<div class="section-note">Trending data unavailable.</div>';}
+}
+
+// ══════════════════════════════════════
+// TOP MOVERS (Finnhub)
+// ══════════════════════════════════════
+async function loadTopMovers(){
+  try{
+    // Use Finnhub market status and top movers
+    const movers=['NVDA','TSLA','AAPL','MSFT','AMZN','META','SHOP','PLTR','AMD','COIN'];
+    const quotes=await Promise.all(movers.map(t=>finnhub(`/quote?symbol=${t}`).catch(()=>null)));
+    const data=movers.map((t,i)=>({ticker:t,chg:quotes[i]?.dp,price:quotes[i]?.c}))
+      .filter(d=>d.chg!==undefined)
+      .sort((a,b)=>Math.abs(b.chg)-Math.abs(a.chg));
+    document.getElementById('sw-movers').innerHTML=data.slice(0,8).map((d,i)=>`
+      <div class="mover-item">
+        <span class="mover-rank">${i+1}</span>
+        <div style="flex:1;"><div class="mover-ticker">${d.ticker}</div></div>
+        <div style="text-align:right;">
+          <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);">${d.price?'$'+fmt(d.price):''}</div>
+          <div class="mover-chg ${chgCls(d.chg)}">${chgPfx(d.chg)}${fmt(d.chg)}%</div>
+        </div>
+      </div>`).join('');
+    document.getElementById('sw-ts').textContent='Updated '+ts();
+  }catch(e){document.getElementById('sw-movers').innerHTML='<div class="section-note">Requires Finnhub API key.</div>';}
+}
+
+// ══════════════════════════════════════
+// AI DAILY BRIEFING
+// ══════════════════════════════════════
+async function loadAIBriefing(){
+  const el=document.getElementById('sw-ai');
+  const cacheKey='rt2_ai_briefing';
+  const cacheDate='rt2_ai_date';
+  const todayStr=TODAY;
+  // Check cache — only regenerate once per day
+  if(load(cacheDate,'')===todayStr&&load(cacheKey,'')){
+    el.innerHTML='<div class="ai-briefing">'+load(cacheKey,'')+'</div><div class="disclaimer">Generated today · AI commentary for research only · Not financial advice</div>';
+    return;
+  }
+  el.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Generating daily market briefing...</div>';
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:`Today is ${new Date().toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}. 
+You are a concise investment research assistant. Write a brief daily market briefing covering:
+1. Key market themes and conditions right now (2-3 sentences)
+2. 3-4 specific stocks or sectors worth researching today and why (with tickers)
+3. One key risk or macro factor to watch this week
+
+Format with clear bold headers. Be specific and actionable. Keep it under 250 words. 
+Note: This is for personal research purposes only, not financial advice.`}]
+      })
+    });
+    const d=await resp.json();
+    const text=d.content?.[0]?.text||'';
+    if(!text) throw new Error('no response');
+    // Convert markdown bold to HTML
+    const html=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>');
+    save(cacheKey,html);
+    save(cacheDate,todayStr);
+    el.innerHTML='<div class="ai-briefing">'+html+'</div><div class="disclaimer">AI-generated · For research purposes only · Not financial advice</div>';
+  }catch(e){
+    el.innerHTML='<div class="section-note">AI briefing unavailable. Check your connection.</div>';
+  }
+}
+
+function switchSWTab(tab){
+  document.querySelectorAll('.sw-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.sw-section').forEach(s=>s.classList.remove('active'));
+  const tabs=['movers','trending','ai'];
+  tabs.forEach((t,i)=>{if(t===tab){document.querySelectorAll('.sw-tab')[i].classList.add('active');}});
+  document.getElementById('sw-'+tab).classList.add('active');
+  if(tab==='ai') loadAIBriefing();
+}
+
+// ══════════════════════════════════════
+// CONGRESSIONAL TRADES
+// ══════════════════════════════════════
+async function loadCongressTrades(){
+  const el=document.getElementById('congress-list');
+  try{
+    const d=await finnhub(`/stock/congressional-trading?symbol=&from=${new Date(NOW-30*86400000).toISOString().split('T')[0]}&to=${TODAY}`);
+    const trades=(d.data||[]).slice(0,8);
+    if(!trades.length){el.innerHTML='<div class="section-note">No recent congressional trades found.</div>';return;}
+    el.innerHTML=trades.map(t=>`
+      <div class="txn-item">
+        <span class="txn-type ${t.transactionType==='Buy'?'txn-buy':'txn-sell'}">${t.transactionType||'—'}</span>
+        <div>
+          <div class="txn-text"><strong>${t.symbol||'—'}</strong> · ${t.name||'Congress member'}</div>
+          <div class="txn-meta">${t.transactionDate||'—'} · $${t.amount||'—'}</div>
+        </div>
+      </div>`).join('');
+    setTS('ts-congress');
+  }catch(e){el.innerHTML='<div class="error-msg">Could not load. <a href="https://www.capitoltrades.com" target="_blank" style="color:var(--em);">Capitol Trades →</a></div>';}
+}
+
+// ══════════════════════════════════════
+// INSIDER TRADES
+// ══════════════════════════════════════
+async function loadInsiderTrades(){
+  const el=document.getElementById('insider-list');
+  const watchlist=load('rt2_watchlist',[]);
+  try{
+    let trades=[];
+    // Fetch insider trades for watchlist tickers + major stocks
+    const symbols=[...new Set([...watchlist.map(w=>w.ticker).filter(t=>!t.includes('.')),
+      'AAPL','MSFT','NVDA','TSLA','AMZN'])].slice(0,5);
+    const results=await Promise.all(symbols.map(s=>finnhub(`/stock/insider-transactions?symbol=${s}`).catch(()=>null)));
+    results.forEach((d,i)=>{
+      (d?.data||[]).filter(t=>Math.abs(t.change||0)>0).slice(0,2).forEach(t=>{
+        trades.push({...t,symbol:symbols[i]});
+      });
+    });
+    trades.sort((a,b)=>new Date(b.transactionDate)-new Date(a.transactionDate));
+    if(!trades.length){el.innerHTML='<div class="section-note">No recent insider trades for watched stocks.</div>';return;}
+    el.innerHTML=trades.slice(0,8).map(t=>`
+      <div class="txn-item">
+        <span class="txn-type ${(t.change||0)>0?'txn-buy':'txn-sell'}">${(t.change||0)>0?'Buy':'Sell'}</span>
+        <div>
+          <div class="txn-text"><strong>${t.symbol}</strong> · ${t.name||'Executive'}</div>
+          <div class="txn-meta">${t.transactionDate||'—'} · ${Math.abs(t.change||0).toLocaleString()} shares · ${t.officerTitle||''}</div>
+        </div>
+      </div>`).join('');
+    setTS('ts-insider');
+  }catch(e){el.innerHTML='<div class="error-msg">Could not load. <a href="https://www.openinsider.com" target="_blank" style="color:var(--em);">OpenInsider →</a></div>';}
+}
+
+// ══════════════════════════════════════
+// EARNINGS
+// ══════════════════════════════════════
+async function loadEarnings(){
+  const el1=document.getElementById('home-earnings');
+  const el2=document.getElementById('earnings-list');
+  try{
+    const d=await finnhub(`/calendar/earnings?from=${TODAY}&to=${IN14}`);
+    const earnings=(d.earningsCalendar||[]).filter(e=>e.symbol).slice(0,20);
+    if(!earnings.length){
+      [el1,el2].forEach(el=>{if(el)el.innerHTML='<div class="section-note">No earnings scheduled.</div>';});
+      return;
+    }
+    const html=earnings.map(e=>`
+      <div class="earn-item">
+        <span class="earn-ticker">${e.symbol}</span>
+        <span class="earn-name">${e.company||''}</span>
+        <div style="text-align:right;">
+          <div class="earn-date">${e.date||'—'}</div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <span class="earn-when">${e.hour==='bmo'?'Pre-market':e.hour==='amc'?'After-hours':'—'}</span>
+            ${e.epsEstimate?`<span class="earn-eps">EPS est: $${fmt(e.epsEstimate)}</span>`:''}
+          </div>
+        </div>
+      </div>`).join('');
+    if(el1) el1.innerHTML=earnings.slice(0,4).map(e=>`
+      <div class="earn-item">
+        <span class="earn-ticker">${e.symbol}</span>
+        <span class="earn-name" style="flex:1;">${e.company||''}</span>
+        <span class="earn-date">${e.date||'—'}</span>
+      </div>`).join('');
+    if(el2) el2.innerHTML=html;
+    setTS('ts-earnings');
+  }catch(e){
+    [el1,el2].forEach(el=>{if(el)el.innerHTML='<div class="error-msg">Could not load. Requires Finnhub key.</div>';});
+  }
+}
+
+// ══════════════════════════════════════
+// ECONOMIC CALENDAR
+// ══════════════════════════════════════
+async function loadEconCalendar(){
+  const el=document.getElementById('econ-calendar');
+  try{
+    const from=TODAY;
+    const to=new Date(NOW.getTime()+30*86400000).toISOString().split('T')[0];
+    const d=await finnhub(`/calendar/economic?from=${from}&to=${to}`);
+    const events=(d.economicCalendar||[]).filter(e=>e.event).slice(0,15);
+    if(!events.length){el.innerHTML='<div class="section-note">No economic events found.</div>';return;}
+    el.innerHTML=events.map(e=>{
+      const imp=e.impact==='high'?'high':e.impact==='medium'?'med':'low';
+      return `<div class="econ-item">
+        <div class="econ-date">${e.time||e.date||'—'}</div>
+        <div class="econ-dot imp-${imp}"></div>
+        <div>
+          <div class="econ-title">${e.event}</div>
+          <div class="econ-detail">${e.country||''} ${e.estimate?'Est: '+e.estimate:''} ${e.prev?'Prev: '+e.prev:''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    setTS('ts-calendar');
+  }catch(e){el.innerHTML='<div class="error-msg">Could not load calendar. Requires Finnhub key.</div>';}
+}
+
+// What to watch
+document.getElementById('what-to-watch').innerHTML=[
+  'Watch CPI and PCE closely — upside surprise pushes rate cuts further out.',
+  'FOMC tone matters more than the decision itself.',
+  'Q1 earnings — focus on guidance, not just beat/miss.',
+  'USD/CAD — BoC more dovish than Fed, affects TSX returns.',
+  'Bitcoin halving cycle — monitor institutional flows.',
+].map(w=>`<div style="display:flex;gap:8px;">→ <span>${w}</span></div>`).join('');
+
+// ══════════════════════════════════════
+// WATCHLIST
+// ══════════════════════════════════════
+let WATCHLIST=load('rt2_watchlist',[]);
+
+async function renderWatchlist(){
+  const el=document.getElementById('wl-list');
+  if(!WATCHLIST.length){el.innerHTML='<div class="section-note">No tickers added. Use the field above.</div>';return;}
+  el.innerHTML=WATCHLIST.map(w=>`
+    <div class="wl-item" id="wl-${w.id}">
+      <div class="wl-top">
+        <div><div class="wl-ticker">${w.ticker}</div><div class="wl-name" id="wl-name-${w.id}">Loading...</div></div>
+        <div>
+          <div class="wl-price ${w.isUp?'up':w.isDown?'dn':''}" id="wl-price-${w.id}">—</div>
+          <div class="wl-chg" id="wl-chg-${w.id}">—</div>
+        </div>
+      </div>
+      ${w.note?`<div class="wl-note">${w.note}</div>`:''}
+      <div id="wl-analyst-${w.id}" class="wl-analyst" style="display:none;"></div>
+      <div class="wl-actions">
+        <button class="btn btn-sm" onclick="editWLNote(${w.id})">✏ note</button>
+        <button class="btn btn-sm" onclick="loadAnalyst('${w.ticker}',${w.id})">★ analyst</button>
+        <button class="btn btn-sm" onclick="openChart('${w.ticker}')">↗ chart</button>
+        <button class="btn btn-sm btn-danger" onclick="removeWL(${w.id})">✕</button>
+      </div>
+    </div>`).join('');
+  // Load prices
+  for(const w of WATCHLIST) loadWLPrice(w);
+}
+
+async function loadWLPrice(w){
+  const t=w.ticker.toUpperCase();
+  const cryptoMap={'BTC':'bitcoin','ETH':'ethereum','SOL':'solana','XRP':'ripple'};
+  const cgId=cryptoMap[t];
+  try{
+    if(cgId){
+      const d=await coingecko(`/simple/price?ids=${cgId}&vs_currencies=usd&include_24hr_change=true`);
+      const price=d[cgId]?.usd;const chg=d[cgId]?.usd_24h_change;
+      updateWLPrice(w.id,price?'$'+fmt(price,cgId==='bitcoin'?0:2):'—',chg,(chg||0)>0,(chg||0)<0,cgId.charAt(0).toUpperCase()+cgId.slice(1));
+    } else if(t.endsWith('.TO')||t.endsWith('.V')){
+      const d=await loadYahooPrice(t);
+      if(d) updateWLPrice(w.id,'$'+fmt(d.price),(d.change||0),(d.change||0)>0,(d.change||0)<0,d.name+' · TSX');
+      else updateWLPrice(w.id,'—',null,false,false,t+' · TSX');
+    } else {
+      const d=await finnhub(`/quote?symbol=${t}`);
+      const p2=await finnhub(`/stock/profile2?symbol=${t}`).catch(()=>null);
+      if(d.c&&d.c!==0) updateWLPrice(w.id,'$'+fmt(d.c),d.dp,d.dp>0,d.dp<0,p2?.name||t);
+    }
+  }catch(e){updateWLPrice(w.id,'—',null,false,false,t);}
+  checkAlerts();
+}
+
+function updateWLPrice(id,price,chg,isUp,isDown,name){
+  const pe=document.getElementById('wl-price-'+id);
+  const ce=document.getElementById('wl-chg-'+id);
+  const ne=document.getElementById('wl-name-'+id);
+  if(pe){pe.textContent=price;pe.className='wl-price '+(isUp?'up':isDown?'dn':'');}
+  if(ce&&chg!==null&&chg!==undefined) ce.innerHTML=`<span class="${chgCls(chg)}">${chgPfx(chg)}${fmt(chg)}% (24h)</span>`;
+  if(ne) ne.textContent=name;
+}
+
+async function loadAnalyst(ticker,id){
+  const el=document.getElementById('wl-analyst-'+id);
+  if(el.style.display!=='none'){el.style.display='none';return;}
+  el.style.display='flex';el.innerHTML='Loading analyst data...';
+  try{
+    const [rec,target]=await Promise.all([
+      finnhub(`/stock/recommendation?symbol=${ticker}`).catch(()=>null),
+      finnhub(`/stock/price-target?symbol=${ticker}`).catch(()=>null),
+    ]);
+    const r=rec?.[0];
+    const t=target;
+    el.innerHTML=[
+      r?`<span>Buy: <strong style="color:var(--up);">${r.buy}</strong></span>`:null,
+      r?`<span>Hold: <strong style="color:var(--amber);">${r.hold}</strong></span>`:null,
+      r?`<span>Sell: <strong style="color:var(--dn);">${r.sell}</strong></span>`:null,
+      t?.targetMean?`<span>Avg target: <strong style="color:var(--em);">$${fmt(t.targetMean)}</strong></span>`:null,
+      t?.targetHigh?`<span>High: $${fmt(t.targetHigh)}</span>`:null,
+    ].filter(Boolean).join('');
+  }catch(e){el.innerHTML='Analyst data unavailable.';}
+}
+
+function addWLItem(){
+  const t=document.getElementById('wl-input').value.trim().toUpperCase();
+  if(!t)return;
+  if(WATCHLIST.find(w=>w.ticker===t)){alert('Already in watchlist.');return;}
+  WATCHLIST.push({ticker:t,note:'',id:Date.now(),isUp:false,isDown:false});
+  save('rt2_watchlist',WATCHLIST);renderWatchlist();
+  document.getElementById('wl-input').value='';
+}
+function removeWL(id){if(!confirm('Remove?'))return;WATCHLIST=WATCHLIST.filter(w=>w.id!==id);save('rt2_watchlist',WATCHLIST);renderWatchlist();}
+function editWLNote(id){
+  const w=WATCHLIST.find(x=>x.id===id);if(!w)return;
+  const el=document.getElementById('wl-'+id);
+  el.querySelector('.wl-note')?.remove();el.querySelector('.wl-edit')?.remove();
+  const div=document.createElement('div');div.className='wl-edit';
+  div.innerHTML=`<textarea class="wl-note-input" id="wln-${id}" placeholder="Your notes on ${w.ticker}...">${w.note}</textarea>
+    <div style="display:flex;gap:6px;margin-bottom:8px;">
+      <button class="btn btn-em btn-sm" onclick="saveWLNote(${id})">Save</button>
+      <button class="btn btn-sm" onclick="renderWatchlist()">Cancel</button>
+    </div>`;
+  el.querySelector('.wl-actions').insertAdjacentElement('beforebegin',div);
+}
+function saveWLNote(id){
+  const v=document.getElementById('wln-'+id)?.value.trim()||'';
+  const w=WATCHLIST.find(x=>x.id===id);if(!w)return;
+  w.note=v;save('rt2_watchlist',WATCHLIST);renderWatchlist();
+}
+function openChart(t){
+  const m={'BTC':'https://www.tradingview.com/chart/?symbol=BITSTAMP:BTCUSD','ETH':'https://www.tradingview.com/chart/?symbol=BITSTAMP:ETHUSD'};
+  window.open(m[t]||`https://finance.yahoo.com/quote/${t}`,'_blank');
+}
+
+// Research checklist
+document.getElementById('research-checklist').innerHTML=[
+  'What does this company actually do?',
+  'Revenue growth trend (last 3 years)',
+  'Profit margins vs sector average',
+  'Debt level and cash position',
+  'Insider ownership and recent buying',
+  'What is the bull case?',
+  'What is the bear case?',
+  'What is a fair entry price?',
+  'What could go wrong?',
+].map(c=>`<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;">
+  <input type="checkbox" style="margin-top:3px;accent-color:var(--em);flex-shrink:0;"/>
+  <span style="font-size:12px;color:var(--text2);">${c}</span>
+</div>`).join('');
+document.getElementById('port-notes').value=load('rt2_port_notes','');
+
+// ══════════════════════════════════════
+// PRICE ALERTS
+// ══════════════════════════════════════
+let ALERTS=load('rt2_alerts',[]);
+
+function addAlert(){
+  const ticker=document.getElementById('alert-ticker').value.trim().toUpperCase();
+  const target=parseFloat(document.getElementById('alert-target').value);
+  const dir=document.getElementById('alert-dir').value;
+  if(!ticker||isNaN(target)){alert('Please enter a ticker and target price.');return;}
+  ALERTS.push({ticker,target,dir,id:Date.now(),triggered:false});
+  save('rt2_alerts',ALERTS);renderAlerts();
+  document.getElementById('alert-ticker').value='';document.getElementById('alert-target').value='';
+}
+
+function removeAlert(id){ALERTS=ALERTS.filter(a=>a.id!==id);save('rt2_alerts',ALERTS);renderAlerts();}
+
+function renderAlerts(){
+  const el=document.getElementById('alerts-list');
+  if(!ALERTS.length){el.innerHTML='<div class="section-note">No alerts set.</div>';return;}
+  el.innerHTML=ALERTS.map(a=>`
+    <div class="alert-row">
+      <span class="alert-ticker">${a.ticker}</span>
+      <span style="font-size:12px;color:var(--text2);">${a.dir==='above'?'Above':'Below'}</span>
+      <span class="alert-target">$${fmt(a.target)}</span>
+      <span class="alert-current ${a.triggered?'alert-triggered':''}" id="alert-curr-${a.id}">${a.triggered?'✓ Triggered':'Checking...'}</span>
+      <button class="btn btn-sm btn-danger" onclick="removeAlert(${a.id})" style="margin-left:auto;">✕</button>
+    </div>`).join('');
+}
+
+async function checkAlerts(){
+  if(!ALERTS.length)return;
+  const triggered=[];
+  for(const alert of ALERTS){
+    try{
+      let price=null;
+      const cryptoMap={'BTC':'bitcoin','ETH':'ethereum','SOL':'solana'};
+      const cgId=cryptoMap[alert.ticker];
+      if(cgId){
+        const d=await coingecko(`/simple/price?ids=${cgId}&vs_currencies=usd`);
+        price=d[cgId]?.usd;
+      } else {
+        const d=await finnhub(`/quote?symbol=${alert.ticker}`);
+        price=d.c;
+      }
+      if(price){
+        const hit=(alert.dir==='above'&&price>=alert.target)||(alert.dir==='below'&&price<=alert.target);
+        alert.triggered=hit;
+        const el=document.getElementById('alert-curr-'+alert.id);
+        if(el) el.innerHTML=`<span class="${hit?'alert-triggered':''}" style="font-family:'DM Mono',monospace;font-size:11px;">${hit?'✓ $'+fmt(price):'$'+fmt(price)}</span>`;
+        if(hit) triggered.push({...alert,currentPrice:price});
+      }
+    }catch(e){}
+  }
+  save('rt2_alerts',ALERTS);
+  // Show alert banner
+  const banner=document.getElementById('alert-banner');
+  if(triggered.length){
+    banner.className='alert-banner show';
+    banner.innerHTML=triggered.map(a=>`<div class="alert-item">🔔 <strong>${a.ticker}</strong> ${a.dir==='above'?'crossed above':'fell below'} $${fmt(a.target)} — currently $${fmt(a.currentPrice)}</div>`).join('');
+  } else {
+    banner.className='alert-banner';
+  }
+}
+
+renderAlerts();
+
+// ══════════════════════════════════════
+// RESEARCH NOTES
+// ══════════════════════════════════════
+let NOTES=load('rt2_notes',[]);
+function addNote(){
+  const title=document.getElementById('note-title').value.trim();
+  const body=document.getElementById('note-body').value.trim();
+  if(!title&&!body)return;
+  NOTES.unshift({title,body,date:new Date().toLocaleDateString('en-CA'),id:Date.now()});
+  save('rt2_notes',NOTES);renderNotes();
+  document.getElementById('note-title').value='';document.getElementById('note-body').value='';
+}
+function deleteNote(id){if(!confirm('Delete?'))return;NOTES=NOTES.filter(n=>n.id!==id);save('rt2_notes',NOTES);renderNotes();}
+function renderNotes(){
+  const el=document.getElementById('notes-list');if(!el)return;
+  if(!NOTES.length){el.innerHTML='<div class="section-note">No notes yet.</div>';return;}
+  el.innerHTML=NOTES.map(n=>`
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-weight:600;font-size:14px;color:var(--text);">${n.title||'Note'}</div>
+          <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">${n.date}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="deleteNote(${n.id})">✕</button>
+      </div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">${n.body}</div>
+    </div>`).join('');
+}
+renderNotes();
+
+// ══════════════════════════════════════
+// BIG MONEY — Curated
+// ══════════════════════════════════════
+function renderCurated(id,items){
+  document.getElementById(id).innerHTML=items.map(b=>`
+    <div class="bm-item">
+      <div class="bm-top"><span class="bm-who">${b.who}</span><span class="bm-type type-${b.type}">${b.label}</span></div>
+      <div class="bm-detail">${b.detail}</div>
+      <div class="bm-date">${b.date}</div>
+    </div>`).join('');
+}
+renderCurated('bm-berkshire',[
+  {who:'Berkshire Hathaway',type:'hold',label:'Top Hold',detail:'AAPL remains largest equity position (~40% of portfolio). OXY stake at 28%+.',date:'Q4 2024 13F — verify at SEC EDGAR'},
+  {who:'Berkshire Hathaway',type:'buy',label:'Added',detail:'Continued accumulation of Occidental Petroleum (OXY). Sirius XM initiated.',date:'Q3–Q4 2024'},
+]);
+renderCurated('bm-ark',[
+  {who:'ARK Invest (ARKK)',type:'buy',label:'Added',detail:'TSLA accumulation ongoing. Cathie Wood $2,000 price target by 2029.',date:'Q1 2025 — verify at ark-funds.com'},
+  {who:'ARK Invest (ARKG)',type:'new',label:'New',detail:'Recursion Pharmaceuticals initiated. AI-driven drug discovery thesis.',date:'Q1 2025'},
+]);
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+async function initAll(){
+  await Promise.all([
+    loadCrypto(),
+    loadFearGreed(),
+    loadTrendingCrypto(),
+    loadNews(),
+  ]);
+  if(FKEY){
+    await Promise.all([
+      loadStockPrice('SPY','h-spy','h-spy-chg','ts-spy','pill-spy','S&P500'),
+      loadTicker(),
+      loadSectors(),
+      loadSnapshot(),
+      loadEarnings(),
+      loadEconCalendar(),
+      loadCongressTrades(),
+      loadInsiderTrades(),
+      loadTopMovers(),
+    ]);
+  }
+  renderWatchlist();
+  checkAlerts();
+}
+
+initAll();
+// Refresh prices every 90s
+setInterval(()=>{
+  loadCrypto();loadFearGreed();
+  if(FKEY){loadStockPrice('SPY','h-spy','h-spy-chg','ts-spy','pill-spy','S&P500');loadTicker();loadTopMovers();}
+  renderWatchlist();checkAlerts();
+},90000);
+// Refresh news every 5 mins
+setInterval(()=>{loadNews();},300000);
+</script>
+</body>
+</html>
