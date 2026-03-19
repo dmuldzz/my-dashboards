@@ -701,8 +701,6 @@ select option{background:var(--surface2);}
 </div><!-- end .main -->
 
 <script>
-
-
 // ══════════════════════════════════════
 // CORE UTILITIES
 // ══════════════════════════════════════
@@ -769,14 +767,8 @@ const P='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='
 
 async function nhl(path,base){
   const url=(base||NHL)+path;
-  try{
-    const r=await fetch(P+encodeURIComponent(url));
-    if(r.ok) return r.json();
-    if(r.status===404) throw new Error('404');
-  }catch(e){
-    if(e.message==='404') throw e;
-  }
-  // No direct fallback — always use proxy to avoid CORS
+  try{const r=await fetch(P+encodeURIComponent(url));if(r.ok)return r.json();}catch(e){}
+  try{const r=await fetch(url);if(r.ok)return r.json();}catch(e){}
   throw new Error('fetch failed: '+path);
 }
 
@@ -1056,22 +1048,17 @@ async function loadThisWeek(){
 // TRANSACTIONS
 // ══════════════════════════════════════
 async function loadTransactions(){
-  // NHL transactions API endpoint no longer available
-  // Show direct links to live transaction sources
-  const msg=`<div style="font-size:12px;color:var(--text2);line-height:1.8;">
-    <div style="color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;margin-bottom:8px;">LIVE TRANSACTION SOURCES</div>
-    <a href="https://puckpedia.com/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">↗ PuckPedia — live transactions</a>
-    <a href="https://www.capfriendly.com/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">↗ CapFriendly — signings & trades</a>
-    <a href="https://www.nhl.com/news/tag/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);">↗ NHL.com — official transactions</a>
-    <a href="https://www.tsn.ca/nhl/transactions" target="_blank" style="display:block;color:var(--text2);padding:4px 0;">↗ TSN — transaction log</a>
-  </div>`;
-  const homeEl=document.getElementById('home-txns');
-  const fullEl=document.getElementById('txn-full');
-  if(homeEl) homeEl.innerHTML=msg;
-  if(fullEl) fullEl.innerHTML=msg;
-  // Show notification dot since we have "new" info
-  document.getElementById('txn-badge').classList.add('show');
-  setTS('ts-txns');
+  try{
+    const [a,b]=await Promise.all([nhl(`/transactions/${TODAY}`),nhl(`/transactions/${YDAY}`)]);
+    const fresh=[...(a.transactions||[]),(b.transactions||[])].flat();
+    if(fresh.length>SEEN_TXN_COUNT&&!document.getElementById('transactions').classList.contains('active')){
+      document.getElementById('txn-badge').classList.add('show');
+    }
+    TXN_ALL=fresh;save('hkt3_txn_seen',TXN_ALL.length);
+    renderHomeTxns();renderFullTxns();setTS('ts-txns');
+  }catch(e){
+    document.getElementById('home-txns').innerHTML='<div class="error-msg">Transactions unavailable. <a href="https://puckpedia.com/transactions" target="_blank" style="color:var(--gold);">PuckPedia →</a></div>';
+  }
 }
 
 function txnClass(type){
@@ -1108,85 +1095,52 @@ function renderFullTxns(){
 async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed'),biz:document.getElementById('biz-feed')};
   try{
-    // Fetch NHL news RSS directly through proxy and parse XML
-    const rssUrl='https://www.nhl.com/rss/news.xml';
-    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(rssUrl));
-    if(!r.ok) throw new Error('RSS fetch failed: '+r.status);
-    const text=await r.text();
-    // Parse RSS XML
-    const parser=new DOMParser();
-    const xml=parser.parseFromString(text,'text/xml');
+    const r=await fetch(P+encodeURIComponent('https://www.nhl.com/rss/news.xml'));
+    if(!r.ok) throw new Error('RSS '+r.status);
+    const txt=await r.text();
+    const xml=new DOMParser().parseFromString(txt,'text/xml');
     const items=Array.from(xml.querySelectorAll('item')).slice(0,20);
-    if(!items.length) throw new Error('no items');
+    if(!items.length) throw new Error('empty');
     ALL_NEWS_ITEMS=items.map(item=>{
       const title=item.querySelector('title')?.textContent||'';
       const link=item.querySelector('link')?.textContent||item.querySelector('guid')?.textContent||'#';
       const desc=(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200);
-      const pubDate=item.querySelector('pubDate')?.textContent||'';
-      return {title,url:link,created_utc:pubDate?new Date(pubDate).getTime()/1000:Date.now()/1000,subreddit:'NHL.com',selftext:desc,permalink:link};
+      const pd=item.querySelector('pubDate')?.textContent||'';
+      return{title,url:link,created_utc:pd?new Date(pd).getTime()/1000:Date.now()/1000,subreddit:'NHL.com',selftext:desc,permalink:link};
     });
-    const bizTerms=['arena','broadcast','ownership','deal','rights','valuation','sponsor','expansion','technology','cba','commissioner','bettman','legal','sale','acquire','media'];
-    const bizItems=ALL_NEWS_ITEMS.filter(i=>{const t=(i.title||'').toLowerCase();return bizTerms.some(bt=>t.includes(bt));});
+    const biz=['arena','broadcast','ownership','deal','rights','valuation','sponsor','technology','cba','bettman','legal','sale'];
+    const bizItems=ALL_NEWS_ITEMS.filter(i=>biz.some(b=>i.title.toLowerCase().includes(b)));
     renderNewsItems(ALL_NEWS_ITEMS.slice(0,3),els.home,true);
     renderNewsItems(ALL_NEWS_ITEMS,els.feed,false);
     renderNewsItems(bizItems.length?bizItems:ALL_NEWS_ITEMS.slice(0,10),els.biz,false);
     setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
   }catch(e){
-    // Fallback — try TSN RSS
     try{
-      const r2=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.tsn.ca/rss/tsn.xml'));
-      if(r2.ok){
-        const text2=await r2.text();
-        const xml2=new DOMParser().parseFromString(text2,'text/xml');
-        const items2=Array.from(xml2.querySelectorAll('item')).filter(i=>{
-          const t=(i.querySelector('title')?.textContent||'').toLowerCase();
-          return t.includes('nhl')||t.includes('hockey');
-        }).slice(0,15);
-        if(items2.length){
-          ALL_NEWS_ITEMS=items2.map(item=>{
-            const title=item.querySelector('title')?.textContent||'';
-            const link=item.querySelector('link')?.textContent||'#';
-            const desc=(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200);
-            return {title,url:link,created_utc:Date.now()/1000,subreddit:'TSN',selftext:desc,permalink:link};
-          });
-          renderNewsItems(ALL_NEWS_ITEMS.slice(0,3),els.home,true);
-          renderNewsItems(ALL_NEWS_ITEMS,els.feed,false);
-          renderNewsItems(ALL_NEWS_ITEMS.slice(0,10),els.biz,false);
-          setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
-          return;
-        }
-      }
-    }catch(e2){}
-    const msg='<div style="font-size:12px;color:var(--text2);padding:10px 0;">News temporarily unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com →</a> &nbsp; <a href="https://www.tsn.ca/nhl" target="_blank" style="color:var(--gold);">TSN →</a></div>';
-    Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
+      const r2=await fetch(P+encodeURIComponent('https://www.tsn.ca/rss/tsn.xml'));
+      if(!r2.ok) throw new Error('TSN '+r2.status);
+      const txt2=await r2.text();
+      const xml2=new DOMParser().parseFromString(txt2,'text/xml');
+      const items2=Array.from(xml2.querySelectorAll('item'))
+        .filter(i=>(i.querySelector('title')?.textContent||'').toLowerCase().match(/nhl|hockey|leafs|oilers|habs/))
+        .slice(0,15);
+      if(!items2.length) throw new Error('no hockey items');
+      ALL_NEWS_ITEMS=items2.map(item=>({
+        title:item.querySelector('title')?.textContent||'',
+        url:item.querySelector('link')?.textContent||'#',
+        created_utc:Date.now()/1000,
+        subreddit:'TSN',
+        selftext:(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200),
+        permalink:item.querySelector('link')?.textContent||'#',
+      }));
+      renderNewsItems(ALL_NEWS_ITEMS.slice(0,3),els.home,true);
+      renderNewsItems(ALL_NEWS_ITEMS,els.feed,false);
+      renderNewsItems(ALL_NEWS_ITEMS.slice(0,10),els.biz,false);
+      setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
+    }catch(e2){
+      const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com</a> &middot; <a href="https://www.tsn.ca/nhl" target="_blank" style="color:var(--gold);">TSN</a></div>';
+      Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
+    }
   }
-}
-
-
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function load(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
-
-function timeSince(dateStr){
-  const s=Math.floor((Date.now()-new Date(dateStr).getTime())/1000);
-  if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';
-  if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
-}
-function nowStr(){return new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
-function setTS(id){const el=document.getElementById(id);if(el)el.textContent='Updated '+nowStr();}
-
-const NOW=new Date();
-const TODAY=NOW.toISOString().split('T')[0];
-const YDAY=new Date(NOW-86400000).toISOString().split('T')[0];
-document.getElementById('home-date').textContent=NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-// Clock
-function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';}
-setInterval(tick,1000);tick();
-
-// Format time
-function fmtTime(utcStr){
-  if(!utcStr)return '—';
-  return new Date(utcStr).toLocaleTimeString('en-CA',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'America/Toronto'});
 }
 
 function guessTag(title){
@@ -1282,39 +1236,35 @@ async function openPlayerPage(playerId,name){
   modal.classList.add('open');
   body.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
-    const [info,stats,currentStats]=await Promise.all([
+    const [info,stats,curLog]=await Promise.all([
       nhl(`/player/${playerId}/landing`),
       nhl(`/player/${playerId}/game-log/now`),
       nhl(`/player/${playerId}/game-log/20252026/2`).catch(()=>null),
     ]);
     const p=info;
-    // Build current season totals from game log
     let cs={};
-    if(currentStats&&currentStats.gameLog&&currentStats.gameLog.length){
-      const gl=currentStats.gameLog;
-      const isGoalie=p.position==='G';
-      if(isGoalie){
+    if(curLog&&curLog.gameLog&&curLog.gameLog.length){
+      const gl=curLog.gameLog;
+      const isG=p.position==='G';
+      if(isG){
+        cs.gamesPlayed=gl.length;
         cs.wins=gl.filter(g=>g.decision==='W').length;
         cs.losses=gl.filter(g=>g.decision==='L').length;
-        cs.gamesPlayed=gl.length;
-        cs.saveShotsAgainst=gl.reduce((a,g)=>a+(g.saveShotsAgainst||0),0);
-        cs.shotsAgainst=gl.reduce((a,g)=>a+(g.shotsAgainst||0),0);
-        cs.savePctg=cs.shotsAgainst>0?(cs.saveShotsAgainst/cs.shotsAgainst):0;
+        const sa=gl.reduce((a,g)=>a+(g.shotsAgainst||0),0);
+        const sv=gl.reduce((a,g)=>a+(g.saveShotsAgainst||0),0);
+        cs.savePctg=sa>0?sv/sa:0;
         cs.goalsAgainst=gl.reduce((a,g)=>a+(g.goalsAgainst||0),0);
-        cs.goalsAgainstAverage=cs.gamesPlayed>0?((cs.goalsAgainst/cs.gamesPlayed)):0;
-        cs.shutouts=gl.filter(g=>g.shotsAgainst>0&&g.goalsAgainst===0).length;
+        cs.goalsAgainstAverage=cs.gamesPlayed>0?(cs.goalsAgainst/cs.gamesPlayed):0;
+        cs.shutouts=gl.filter(g=>(g.shotsAgainst||0)>0&&(g.goalsAgainst||0)===0).length;
       } else {
+        cs.gamesPlayed=gl.length;
         cs.goals=gl.reduce((a,g)=>a+(g.goals||0),0);
         cs.assists=gl.reduce((a,g)=>a+(g.assists||0),0);
         cs.points=gl.reduce((a,g)=>a+(g.points||0),0);
-        cs.gamesPlayed=gl.length;
         cs.plusMinus=gl.reduce((a,g)=>a+(g.plusMinus||0),0);
       }
     } else {
-      // Fallback to seasonTotals most recent
-      const seasons=p.seasonTotals||[];
-      const reg=seasons.filter(s=>s.gameTypeId===2).sort((a,b)=>b.season-a.season);
-      cs=reg[0]||p.featuredStats?.regularSeason?.subSeason||{};
+      cs=p.featuredStats?.regularSeason?.subSeason||p.featuredStats?.regularSeason||{};
     }
     const headshot=p.headshot||`https://assets.nhle.com/mugs/nhl/60x60/${playerId}.png`;
     const statBoxes=p.position==='G'?[
@@ -1356,35 +1306,27 @@ async function searchPlayer(){
   const el=document.getElementById('search-results');
   el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
-    // Use skater bios endpoint with name search for current season
-    const qLower=q.toLowerCase();
     const url='https://api.nhle.com/stats/rest/en/skater/bios?limit=100&cayenneExp=seasonId=20252026';
-    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent(url));
+    const r=await fetch(P+encodeURIComponent(url));
     if(!r.ok) throw new Error('Status '+r.status);
     const d=await r.json();
-    const all=d.data||[];
-    // Filter by name client-side
-    const matches=all.filter(p=>(p.skaterFullName||'').toLowerCase().includes(qLower)).slice(0,5);
-    if(!matches.length){
-      el.innerHTML='<div class="section-note">No players found for "'+q+'". Try a full name like "Connor McDavid".</div>';
-      return;
-    }
+    const qLow=q.toLowerCase();
+    const matches=(d.data||[]).filter(p=>(p.skaterFullName||'').toLowerCase().includes(qLow)).slice(0,5);
+    if(!matches.length){el.innerHTML='<div class="section-note">No players found for &quot;'+q+'&quot;. Try a full name like &quot;Connor McDavid&quot;.</div>';return;}
     el.innerHTML='';
     for(const p of matches){
-      const playerId=p.playerId;
+      const pid=p.playerId;
       const name=p.skaterFullName||'';
       const div=document.createElement('div');
-      div.style.cssText='background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;';
-      div.onmouseover=function(){this.style.borderColor='var(--gold)';};
-      div.onmouseout=function(){this.style.borderColor='var(--border)';};
+      div.style.cssText='background:var(--surface2);border:1px solid var(--border);padding:1rem 1.2rem;margin-bottom:8px;cursor:pointer;';
       div.innerHTML='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:18px;color:#fff;">'+name+'</div>'
         +'<div style="font-size:12px;color:var(--text2);margin-top:3px;">'+(p.positionCode||'')+' · '+(p.currentTeamAbbrev||p.teamAbbrevs||'')+'</div>'
         +'<div style="font-size:11px;color:var(--gold);margin-top:6px;">View full profile →</div>';
-      div.onclick=function(){openPlayerPage(playerId,name);};
+      div.onclick=(function(id,n){return function(){openPlayerPage(id,n);};})(pid,name);
       el.appendChild(div);
     }
   }catch(e){
-    el.innerHTML='<div class="error-msg">Search failed: '+e.message+'.<br/><a href="https://www.nhl.com/player" target="_blank" style="color:var(--gold);">Search on NHL.com →</a></div>';
+    el.innerHTML='<div class="error-msg">Search failed: '+e.message+'</div>';
   }
 }
 
@@ -1481,7 +1423,7 @@ async function loadPlayoffs(){
 async function loadProspects(){
   const el=document.getElementById('prospect-list');if(!el)return;
   try{
-    const d=await nhl(`/prospects`).catch(()=>({prospects:[]}));
+    const d=await nhl(`/draft/prospects/20252026`);
     const prospects=(d.prospects||[]).slice(0,20);
     if(!prospects.length) throw new Error('empty');
     el.innerHTML=prospects.map((p,i)=>`
@@ -1498,7 +1440,7 @@ async function loadProspects(){
   }
   // Prospect news
   try{
-    const r=await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.tsn.ca/rss/news.xml')+'&count=8&api_key=public');
+    const r=await fetch('https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='+encodeURIComponent('https://www.reddit.com/r/hockeyprospects.json?limit=8&raw_json=1'));
     const d=await r.json();
     const el2=document.getElementById('prospect-news');
     if(d?.data?.children&&el2){
@@ -1680,9 +1622,6 @@ setInterval(async()=>{await loadScores();},30000);
 setInterval(()=>{loadNews();},300000);
 // Standings refresh every 5 mins
 setInterval(()=>{loadStandings();loadTransactions();},300000);
-
 </script>
-
-
 </body>
 </html>
