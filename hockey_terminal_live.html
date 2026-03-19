@@ -767,9 +767,9 @@ const P='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url='
 
 async function nhl(path,base){
   const url=(base||NHL)+path;
-  try{const r=await fetch(P+encodeURIComponent(url));if(r.ok)return r.json();}catch(e){}
-  try{const r=await fetch(url);if(r.ok)return r.json();}catch(e){}
-  throw new Error('fetch failed: '+path);
+  const r=await fetch(P+encodeURIComponent(url));
+  if(!r.ok) throw new Error(r.status+' '+path);
+  return r.json();
 }
 
 // ══════════════════════════════════════
@@ -1049,8 +1049,10 @@ async function loadThisWeek(){
 // ══════════════════════════════════════
 async function loadTransactions(){
   try{
-    const [a,b]=await Promise.all([nhl(`/transactions/${TODAY}`),nhl(`/transactions/${YDAY}`)]);
-    const fresh=[...(a.transactions||[]),(b.transactions||[])].flat();
+    // Use club transactions or waiver endpoint instead of date-based
+    const a=await nhl(`/transactions/${TODAY}`).catch(()=>({transactions:[]}));
+    const b=await nhl(`/transactions/${YDAY}`).catch(()=>({transactions:[]}));
+    const fresh=[...(a.transactions||[]),...(b.transactions||[])];
     if(fresh.length>SEEN_TXN_COUNT&&!document.getElementById('transactions').classList.contains('active')){
       document.getElementById('txn-badge').classList.add('show');
     }
@@ -1094,20 +1096,25 @@ function renderFullTxns(){
 // ══════════════════════════════════════
 async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed'),biz:document.getElementById('biz-feed')};
+  const sources=[
+    {url:'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=20',type:'espn'},
+    {url:'https://rss.cbssports.com/rss/headlines/nhl',type:'rss'},
+  ];
   try{
-    const r=await fetch(P+encodeURIComponent('https://www.nhl.com/rss/news.xml'));
-    if(!r.ok) throw new Error('RSS '+r.status);
-    const txt=await r.text();
-    const xml=new DOMParser().parseFromString(txt,'text/xml');
-    const items=Array.from(xml.querySelectorAll('item')).slice(0,20);
-    if(!items.length) throw new Error('empty');
-    ALL_NEWS_ITEMS=items.map(item=>{
-      const title=item.querySelector('title')?.textContent||'';
-      const link=item.querySelector('link')?.textContent||item.querySelector('guid')?.textContent||'#';
-      const desc=(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200);
-      const pd=item.querySelector('pubDate')?.textContent||'';
-      return{title,url:link,created_utc:pd?new Date(pd).getTime()/1000:Date.now()/1000,subreddit:'NHL.com',selftext:desc,permalink:link};
-    });
+    // Try ESPN JSON API first — reliable, returns JSON directly
+    const r=await fetch(P+encodeURIComponent(sources[0].url));
+    if(!r.ok) throw new Error('ESPN '+r.status);
+    const d=await r.json();
+    const articles=d.articles||[];
+    if(!articles.length) throw new Error('empty');
+    ALL_NEWS_ITEMS=articles.map(a=>({
+      title:a.headline||a.title||'',
+      url:(a.links?.web?.href||a.links?.mobile?.href||'#'),
+      created_utc:a.published?new Date(a.published).getTime()/1000:Date.now()/1000,
+      subreddit:'ESPN',
+      selftext:(a.description||a.summary||'').substring(0,200),
+      permalink:(a.links?.web?.href||'#'),
+    }));
     const biz=['arena','broadcast','ownership','deal','rights','valuation','sponsor','technology','cba','bettman','legal','sale'];
     const bizItems=ALL_NEWS_ITEMS.filter(i=>biz.some(b=>i.title.toLowerCase().includes(b)));
     renderNewsItems(ALL_NEWS_ITEMS.slice(0,3),els.home,true);
@@ -1116,28 +1123,29 @@ async function loadNews(){
     setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
   }catch(e){
     try{
-      const r2=await fetch(P+encodeURIComponent('https://www.tsn.ca/rss/tsn.xml'));
-      if(!r2.ok) throw new Error('TSN '+r2.status);
-      const txt2=await r2.text();
-      const xml2=new DOMParser().parseFromString(txt2,'text/xml');
-      const items2=Array.from(xml2.querySelectorAll('item'))
-        .filter(i=>(i.querySelector('title')?.textContent||'').toLowerCase().match(/nhl|hockey|leafs|oilers|habs/))
-        .slice(0,15);
-      if(!items2.length) throw new Error('no hockey items');
-      ALL_NEWS_ITEMS=items2.map(item=>({
+      // Fallback: CBS Sports RSS via proxy, parse XML
+      const r2=await fetch(P+encodeURIComponent(sources[1].url));
+      if(!r2.ok) throw new Error('CBS '+r2.status);
+      const txt=await r2.text();
+      const xml=new DOMParser().parseFromString(txt,'text/xml');
+      const items=Array.from(xml.querySelectorAll('item')).slice(0,15);
+      if(!items.length) throw new Error('empty rss');
+      ALL_NEWS_ITEMS=items.map(item=>({
         title:item.querySelector('title')?.textContent||'',
         url:item.querySelector('link')?.textContent||'#',
-        created_utc:Date.now()/1000,
-        subreddit:'TSN',
+        created_utc:new Date(item.querySelector('pubDate')?.textContent||Date.now()).getTime()/1000,
+        subreddit:'CBS Sports',
         selftext:(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200),
         permalink:item.querySelector('link')?.textContent||'#',
       }));
+      const biz=['arena','broadcast','ownership','deal','rights','valuation','sponsor','technology','cba','bettman','legal','sale'];
+      const bizItems=ALL_NEWS_ITEMS.filter(i=>biz.some(b=>i.title.toLowerCase().includes(b)));
       renderNewsItems(ALL_NEWS_ITEMS.slice(0,3),els.home,true);
       renderNewsItems(ALL_NEWS_ITEMS,els.feed,false);
-      renderNewsItems(ALL_NEWS_ITEMS.slice(0,10),els.biz,false);
+      renderNewsItems(bizItems.length?bizItems:ALL_NEWS_ITEMS.slice(0,10),els.biz,false);
       setTS('ts-news');setTS('ts-news-tab');setTS('ts-biz');
     }catch(e2){
-      const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com</a> &middot; <a href="https://www.tsn.ca/nhl" target="_blank" style="color:var(--gold);">TSN</a></div>';
+      const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com</a> &middot; <a href="https://www.espn.com/nhl" target="_blank" style="color:var(--gold);">ESPN NHL</a></div>';
       Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
     }
   }
@@ -1423,7 +1431,7 @@ async function loadPlayoffs(){
 async function loadProspects(){
   const el=document.getElementById('prospect-list');if(!el)return;
   try{
-    const d=await nhl(`/draft/prospects/20252026`);
+    const d=await nhl(`/prospects`).catch(()=>({prospects:[]}));
     const prospects=(d.prospects||[]).slice(0,20);
     if(!prospects.length) throw new Error('empty');
     el.innerHTML=prospects.map((p,i)=>`
