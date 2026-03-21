@@ -1277,7 +1277,7 @@ function renderFullTxns(){
 async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed')};
   const sources=[
-    {url:'https://sports.yahoo.com/nhl/rss/',label:'Yahoo Sports'},
+    {url:'https://www.prohockeyrumors.com/feed',label:'Pro Hockey Rumors'},
     {url:'https://nhlrumors.com/feed',label:'NHL Rumors'},
     {url:'https://thehockeywriters.com/feed',label:'Hockey Writers'},
   ];
@@ -1729,7 +1729,7 @@ async function doSearch(){
         </div>`).join('');
     } else {
       // Use skater summary endpoint - encoded correctly
-      const searchPath='/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"}]&start=0&limit=200&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20252026 and seasonId>=20252026';
+      const searchPath='/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"}]&start=0&limit=200&factCayenneExp=gamesPlayed>0&cayenneExp=gameTypeId=2 and seasonId=20252026';
       const d=await nhl(searchPath,NHL_STATS+'/');
       const qLow=q.toLowerCase();
       const matches=(d.data||[]).filter(p=>(p.skaterFullName||'').toLowerCase().includes(qLow)).slice(0,5);
@@ -1869,7 +1869,7 @@ async function loadTrending(){
   // Top scorers last 10 games - fetch from stats API
   const el=document.getElementById('trending-scorers');if(!el)return;
   try{
-    const d=await nhl('/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"}]&start=0&limit=20&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20252026 and seasonId>=20252026',NHL_STATS+'/');
+    const d=await nhl('/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"}]&start=0&limit=20&factCayenneExp=gamesPlayed>0&cayenneExp=gameTypeId=2 and seasonId=20252026',NHL_STATS+'/');
     const scorers=(d.data||[]).slice(0,15);
     el.innerHTML=scorers.map((p,i)=>`<div class="trend-item">
       <span class="trend-rank" style="color:var(--gold);">${i+1}</span>
