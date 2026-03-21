@@ -1383,7 +1383,7 @@ async function openTeamPage(abbrev,name){
         var cname=c.person&&c.person.fullName?c.person.fullName:'-';
         var ctitle=c.title||c.positionCode||'';
         return '<div class="roster-row"><span class="roster-num"></span>'
-          +'<span class="roster-name" onclick="openCoachPage('+cid+',''+encodeURIComponent(cname)+'')">'
+          +'<span class="roster-name" onclick="openCoachPage('+cid+',\''+encodeURIComponent(cname)+'\')">'
           +cname+'</span>'
           +'<span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">'+ctitle+'</span></div>';
       }).join('');
