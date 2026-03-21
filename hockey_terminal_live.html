@@ -744,6 +744,7 @@ function timeSince(dateStr){
   if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';
   if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
 }
+function fmtSeason(id){if(!id)return'-';const s=String(id);return s.substring(0,4)+'-'+s.substring(6,8);}
 
 // Clock
 function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';}
@@ -1998,8 +1999,6 @@ async function loadAllData(){
     loadThisWeek(),
   ]);
   loadDraft();
-  const msf=load('hkt4_msf',{user:'',pass:''});
-  if(msf.user)loadInjuries();
 }
 
 loadAllData();
