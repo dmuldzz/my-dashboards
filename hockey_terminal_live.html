@@ -1375,7 +1375,20 @@ async function openTeamPage(abbrev,name){
         <span class="roster-pos">${p.positionCode||''}</span>
       </div>`).join('')}`:'';
 
-    const coachSection=`<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">Coaching Staff</div>${coaches.length?coaches.map(c=>`<div class="roster-row"><span class="roster-num"></span><span class="roster-name" onclick="openCoachPage(${c.person?.id||'null'},'${(c.person?.fullName||'').replace(/'/g,"\'")}')">${c.person?.fullName||'-'}</span><span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">${c.title||c.positionCode||''}</span></div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:4px 0;">Coaching staff unavailable via API for this team.</div>'}`;
+    const coachSection=(function(){
+  var h='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">Coaching Staff</div>';
+  if(!coaches||!coaches.length)return h+'<div style="font-size:12px;color:var(--text3);padding:4px 0;">Coaching staff unavailable for this team.</div>';
+  var rows=coaches.map(function(c){
+    var cid=c.person&&c.person.id?c.person.id:'null';
+    var cname=c.person&&c.person.fullName?c.person.fullName:'-';
+    var ctitle=c.title||c.positionCode||'';
+    var safeName=cname.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<div class="roster-row"><span class="roster-num"></span>'
+      +'<span class="roster-name" onclick="openCoachPage('+cid+',&apos;'+encodeURIComponent(cname)+'&apos;)">'+cname+'</span>'
+      +'<span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">'+ctitle+'</span></div>';
+  }).join('');
+  return h+rows;
+}());
 
     // Load history async
     loadTeamHistory(abbrev,name);
@@ -1619,6 +1632,7 @@ async function openPlayerPage(playerId,name){
 // COACH PAGE
 // =============================================
 async function openCoachPage(coachId,name){
+  try{name=decodeURIComponent(name);}catch(e){}
   if(!coachId&&!name){return;}
   const modal=document.getElementById('coach-modal');
   const body=document.getElementById('coach-modal-body');
