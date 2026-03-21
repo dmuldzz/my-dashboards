@@ -1353,10 +1353,9 @@ async function openTeamPage(abbrev,name){
   modal.classList.add('open');
   body.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
   try{
-    const [roster,schedule,franchise]=await Promise.all([
+    const [roster,schedule]=await Promise.all([
       nhl('/roster/'+abbrev+'/current'),
       nhl('/club-schedule/'+abbrev+'/week/now'),
-      nhl('/franchise',NHL_STATS+'/en').catch(()=>null),
     ]);
     const tm=STANDINGS.find(t=>t.teamAbbrev?.default===abbrev);
     const logoUrl=tm?.teamLogo||'https://assets.nhle.com/logos/nhl/svg/'+abbrev+'_light.svg';
@@ -1369,30 +1368,77 @@ async function openTeamPage(abbrev,name){
     const last5=games.filter(g=>g.gameState==='OFF'||g.gameState==='FINAL').slice(0,5);
     const next5=games.filter(g=>g.gameState==='FUT'||g.gameState==='PRE').slice(0,5);
 
-    const rosterSection=(title,players)=>players.length?`
-      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">${title}</div>
-      ${players.map(p=>`<div class="roster-row">
-        <span class="roster-num">${p.sweaterNumber||'-'}</span>
-        <span class="roster-name" onclick="openPlayerPage(${p.id},'${(p.firstName?.default||'')+' '+(p.lastName?.default||'')}')">${p.firstName?.default||''} ${p.lastName?.default||''}</span>
-        <span class="roster-pos">${p.positionCode||''}</span>
-      </div>`).join('')}`:'';
+    const rosterRow=(p)=>`<div class="roster-row">
+      <span class="roster-num">${p.sweaterNumber||'-'}</span>
+      <span class="roster-name" onclick="openPlayerPage(${p.id},'${((p.firstName?.default||'')+' '+(p.lastName?.default||'')).replace(/'/g,"\'")}')">${p.firstName?.default||''} ${p.lastName?.default||''}</span>
+      <span class="roster-pos">${p.positionCode||''}</span>
+    </div>`;
 
-    const coachSection=(function(){
-  var h='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">Coaching Staff</div>';
-  if(!coaches||!coaches.length)return h+'<div style="font-size:12px;color:var(--text3);padding:4px 0;">Coaching staff unavailable for this team.</div>';
-  var rows=coaches.map(function(c){
-    var cid=c.person&&c.person.id?c.person.id:'null';
-    var cname=c.person&&c.person.fullName?c.person.fullName:'-';
-    var ctitle=c.title||c.positionCode||'';
-    var safeName=cname.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return '<div class="roster-row"><span class="roster-num"></span>'
-      +'<span class="roster-name" onclick="openCoachPage('+cid+',&apos;'+encodeURIComponent(cname)+'&apos;)">'+cname+'</span>'
-      +'<span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">'+ctitle+'</span></div>';
-  }).join('');
-  return h+rows;
-}());
+    const rosterSection=(title,players)=>players.length?`<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">${title}</div>${players.map(p=>rosterRow(p)).join('')}`:'';
 
-    // Load history async
+    var coachRows='';
+    if(coaches&&coaches.length){
+      coachRows=coaches.map(function(c){
+        var cid=c.person&&c.person.id?c.person.id:'null';
+        var cname=c.person&&c.person.fullName?c.person.fullName:'-';
+        var ctitle=c.title||c.positionCode||'';
+        return '<div class="roster-row"><span class="roster-num"></span>'
+          +'<span class="roster-name" onclick="openCoachPage('+cid+',''+encodeURIComponent(cname)+'')">'
+          +cname+'</span>'
+          +'<span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">'+ctitle+'</span></div>';
+      }).join('');
+    }
+    var coachSection='<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">Coaching Staff</div>'
+      +(coachRows||'<div style="font-size:12px;color:var(--text3);padding:4px 0;">Coaching staff unavailable for this team.</div>');
+
+    const gameCardSm=(g)=>{
+      const isLive=['LIVE','CRIT'].includes(g.gameState);
+      const isFinal=g.gameState==='OFF'||g.gameState==='FINAL';
+      const away=g.awayTeam,home=g.homeTeam;
+      const aScore=away.score??'-',hScore=home.score??'-';
+      const aWin=isFinal&&away.score>home.score,hWin=isFinal&&home.score>away.score;
+      const statusTxt=isLive?'LIVE':isFinal?'Final':fmtTime(g.startTimeUTC)+' ET';
+      return `<div class="game-card ${isLive?'live':isFinal?'final':'pre'}" onclick="openGameModal('${g.id}')">
+        <div class="game-row"><div class="game-team">${away.abbrev||'-'}</div><div class="game-score ${aWin?'winner':''}">${aScore}</div></div>
+        <div class="game-divider"></div>
+        <div class="game-row"><div class="game-team">${home.abbrev||'-'}</div><div class="game-score ${hWin?'winner':''}">${hScore}</div></div>
+        <div class="game-status-bar"><span class="game-status ${isLive?'status-live':isFinal?'status-final':'status-pre'}">${statusTxt}</span></div>
+      </div>`;
+    };
+
+    body.innerHTML=`
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchModalTab(this,'tm-roster')">Roster</button>
+        <button class="modal-tab" onclick="switchModalTab(this,'tm-schedule')">Schedule</button>
+        <button class="modal-tab" onclick="switchModalTab(this,'tm-history')">History</button>
+      </div>
+      <div class="team-header-modal">
+        <img src="${logoUrl}" class="team-logo-lg" onerror="this.style.display='none'"/>
+        <div>
+          <div class="team-name-lg">${name}</div>
+          <div class="team-record-lg">${record}</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
+          <a href="https://puckpedia.com/team/${abbrev.toLowerCase()}" target="_blank" class="btn btn-sm">Cap Space</a>
+          <a href="https://www.nhl.com/team/${abbrev.toLowerCase()}" target="_blank" class="btn btn-sm">NHL.com</a>
+        </div>
+      </div>
+      <div id="tm-roster" class="modal-section active">
+        ${coachSection}
+        <div class="grid-2" style="margin-top:10px;">
+          <div>${rosterSection('Forwards',forwards)}</div>
+          <div>${rosterSection('Defence',defense)}${rosterSection('Goalies',goalies)}</div>
+        </div>
+      </div>
+      <div id="tm-schedule" class="modal-section">
+        ${last5.length?'<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin-bottom:7px;text-transform:uppercase;">Last 5 Games</div>'+last5.map(g=>gameCardSm(g)).join(''):''}
+        ${next5.length?'<div style="font-family:Barlow Condensed,sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:10px 0 7px;text-transform:uppercase;">Next 5 Games</div>'+next5.map(g=>gameCardSm(g)).join(''):''}
+        ${!last5.length&&!next5.length?'<div class="section-note">No schedule data available.</div>':''}
+      </div>
+      <div id="tm-history" class="modal-section">
+        <div id="team-history-content"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>
+      </div>`;
+
     loadTeamHistory(abbrev,name);
   }catch(e){
     body.innerHTML=`<div class="error-msg">Could not load team data.</div><div style="margin-top:7px;"><a href="https://www.nhl.com/team" target="_blank" style="color:var(--gold);">NHL.com Teams</a></div>`;
