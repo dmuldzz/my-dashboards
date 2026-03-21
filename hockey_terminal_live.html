@@ -595,36 +595,28 @@ select option{background:var(--surface2);}
 <!-- ===== INJURIES ===== -->
 <div id="injuries" class="section">
   <div class="slabel">Injury Report</div>
-  <div id="msf-setup" style="background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--teal);padding:1rem 1.2rem;margin-bottom:1rem;">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--teal);margin-bottom:5px;">MySportsFeeds - Enter Credentials</div>
-    <p style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:9px;">Free for personal use. Sign up at <a href="https://www.mysportsfeeds.com" target="_blank">mysportsfeeds.com</a>. Make sure NHL is enabled on your account.</p>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;">
-      <input type="text" id="msf-user" placeholder="Username" style="width:150px;"/>
-      <input type="password" id="msf-pass" placeholder="Password" style="width:150px;"/>
-      <button class="btn btn-gold" onclick="saveMSFCreds()">Save & Load</button>
-    </div>
-    <div id="msf-error" style="font-size:11px;color:var(--red2);margin-top:7px;display:none;"></div>
-  </div>
-  <div style="display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
-    <select id="inj-filter" onchange="filterInjuries()" style="font-size:12px;padding:6px 10px;width:auto;"><option value="all">All</option><option value="IR">IR</option><option value="DTD">Day-to-Day</option></select>
-    <select id="inj-team-filter" onchange="filterInjuries()" style="font-size:12px;padding:6px 10px;width:auto;"><option value="all">All Teams</option></select>
-    <button class="btn" onclick="loadInjuries()" style="font-size:11px;">Refresh</button>
-    <span class="ts" id="ts-injuries"></span>
-  </div>
+  <div class="info-bar">MySportsFeeds free tier does not include injury data. These are the best free real-time sources for NHL injuries.</div>
   <div class="grid-main">
-    <div class="card" style="margin-bottom:0;"><div id="injury-list"><div class="skel"></div><div class="skel" style="width:80%;"></div></div></div>
     <div>
-      <div class="card"><div class="card-title">About</div>
-        <p style="font-size:12px;color:var(--text2);line-height:1.6;">MySportsFeeds provides daily injury updates. Free for personal use. NHL must be enabled on your account at mysportsfeeds.com.</p>
-        <div style="margin-top:9px;" class="ql-grid">
-          <a href="https://www.mysportsfeeds.com" target="_blank" class="ql-item">MySportsFeeds</a>
-          <a href="https://www.nhl.com/injuries" target="_blank" class="ql-item">NHL.com Injuries</a>
-          <a href="https://www.tsn.ca/nhl/injuries" target="_blank" class="ql-item">TSN Injury Report</a>
+      <div class="card">
+        <div class="card-title">Current Injury Sources</div>
+        <div class="ql-grid" style="gap:12px;">
+          <a href="https://www.rotowire.com/hockey/nhl-injuries.php" target="_blank" class="ql-item" style="font-size:13px;">Rotowire — daily updated with return dates</a>
+          <a href="https://www.dailyfaceoff.com/injuries" target="_blank" class="ql-item" style="font-size:13px;">Daily Faceoff — injury news and insider updates</a>
+          <a href="https://www.tsn.ca/nhl/injuries" target="_blank" class="ql-item" style="font-size:13px;">TSN Injury Report</a>
+          <a href="https://www.nhl.com/injuries" target="_blank" class="ql-item" style="font-size:13px;">NHL.com Official Injury Report</a>
+          <a href="https://www.sportsnet.ca/nhl" target="_blank" class="ql-item" style="font-size:13px;">Sportsnet Injury Updates</a>
+          <a href="https://www.espn.com/nhl/injuries" target="_blank" class="ql-item" style="font-size:13px;">ESPN NHL Injury Report</a>
         </div>
       </div>
     </div>
+    <div>
+      <div class="card">
+        <div class="card-title">About</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.7;">The NHL API and MySportsFeeds free tier do not provide injury data publicly. Rotowire and Daily Faceoff are the most complete and accurate free sources available.</p>
+      </div>
+    </div>
   </div>
-</div>
 
 <!-- ===== DRAFT ===== -->
 <div id="draft" class="section">
@@ -1077,16 +1069,26 @@ async function openGameModal(gameId){
     const isFinal=g?.gameState==='OFF'||g?.gameState==='FINAL';
     let statusStr=isFinal?'Final'+(g?.gameOutcome?.lastPeriodType==='OT'?' (OT)':g?.gameOutcome?.lastPeriodType==='SO'?' (SO)':''):isLive?'LIVE - '+(g?.period?.ordinalNum||'')+' '+(g?.clock?.timeRemaining||''):fmtTime(g?.startTimeUTC);
     const pbs=box?.playerByGameStats;
-    const teamStats=box?.teamGameStats||box?.teamStats||box?.linescore?.teams||[];
+    // Team stats - try both known structures from NHL boxscore API
+    const teamStats=box?.teamGameStats||box?.teamStats||[];
     const getTeamStat=(label)=>{
       const s=teamStats.find(x=>x.category===label);
-      return s?[s.awayValue,s.homeValue]:['-','-'];
+      if(s)return[s.awayValue,s.homeValue];
+      return['-','-'];
     };
-    const shots=getTeamStat('sog');
-    const pp=getTeamStat('powerPlayConversions');
-    const fow=getTeamStat('faceoffWinningPctg');
-    const hits=getTeamStat('hits');
-    const blocks=getTeamStat('blockedShots');
+    // Also try linescore for fallback values
+    const awLS=box?.linescore?.teams?.away||box?.awayTeam||{};
+    const hmLS=box?.linescore?.teams?.home||box?.homeTeam||{};
+    const getStat=(label,awFb,hmFb)=>{
+      const ts=getTeamStat(label);
+      if(ts[0]!=='-')return ts;
+      return[awFb??'-',hmFb??'-'];
+    };
+    const shots=getStat('sog',awLS.sog||awLS.shotsOnGoal,hmLS.sog||hmLS.shotsOnGoal);
+    const pp=getStat('powerPlayConversions',awLS.powerPlayConversions,hmLS.powerPlayConversions);
+    const fow=getStat('faceoffWinningPctg',awLS.faceoffWinningPctg,hmLS.faceoffWinningPctg);
+    const hits=getStat('hits',awLS.hits,hmLS.hits);
+    const blocks=getStat('blockedShots',awLS.blockedShots,hmLS.blockedShots);
     const skaters=(side)=>{
       const forwards=(pbs?.[side]?.forwards||[]);
       const defense=(pbs?.[side]?.defensemen||[]);
@@ -1226,21 +1228,18 @@ async function loadThisWeek(){
 // TRANSACTIONS
 // =============================================
 async function loadTransactions(){
-  try{
-    // Try today and yesterday — 404s are expected some days
-    const dates=[TODAY,YDAY,getETDate(-2),getETDate(-3),getETDate(-4),getETDate(-5),getETDate(-6)];
-    const results=await Promise.allSettled(dates.map(d=>nhl('/transactions/'+d)));
-    const seen=new Set();
-    const fresh=results.flatMap(r=>{
-      if(r.status!=='fulfilled')return[];
-      return(r.value?.transactions||[]).filter(t=>{const k=t.id||JSON.stringify(t).substring(0,80);if(seen.has(k))return false;seen.add(k);return true;});
-    });
-    if(fresh.length>0&&!document.getElementById('transactions').classList.contains('active')){
-      document.getElementById('txn-dot').classList.add('show');
-    }
-    TXN_ALL=fresh;
-    renderHomeTxns();renderFullTxns();setTS('ts-txns');
-  }catch(e){document.getElementById('home-txns').innerHTML='<div class="error-msg">Transactions unavailable.</div>';}
+  // NHL transactions endpoint returns 404 reliably - not a usable API
+  const el=document.getElementById('home-txns');
+  const el2=document.getElementById('txn-full');
+  const links=`<div class="ql-grid" style="gap:10px;">
+    <a href="https://puckpedia.com/transactions" target="_blank" class="ql-item">PuckPedia — most complete free transaction log</a>
+    <a href="https://www.capfriendly.com/transactions" target="_blank" class="ql-item">CapFriendly — signings and trades with cap impact</a>
+    <a href="https://www.nhl.com/news/tag/transactions" target="_blank" class="ql-item">NHL.com Official Transactions</a>
+    <a href="https://www.dailyfaceoff.com/transactions" target="_blank" class="ql-item">Daily Faceoff Transactions</a>
+  </div>`;
+  if(el)el.innerHTML='<div style="font-size:12px;color:var(--text2);">Transaction data: <a href="https://puckpedia.com/transactions" target="_blank" style="color:var(--gold);">PuckPedia</a></div>';
+  if(el2)el2.innerHTML=`<div class="info-bar">The NHL API transactions endpoint does not return reliable data. These sources are more complete.</div>${links}`;
+  TXN_ALL=[];
 }
 
 function txnClass(type){
@@ -1276,58 +1275,38 @@ function renderFullTxns(){
 // =============================================
 async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed')};
-  try{
-    let articles=[];
+  const sources=[
+    {url:'https://sports.yahoo.com/nhl/rss/',label:'Yahoo Sports'},
+    {url:'https://nhlrumors.com/feed',label:'NHL Rumors'},
+    {url:'https://thehockeywriters.com/feed',label:'Hockey Writers'},
+  ];
+  let fetched=[];
+  for(const src of sources){
     try{
-      const dn=await nhl('/news?limit=25');
-      articles=(dn.items||[]).map(a=>({
-        title:a.headline||a.title||'',
-        url:a.webUrl||'https://www.nhl.com/news',
-        created_utc:a.publishedAt?new Date(a.publishedAt).getTime()/1000:Date.now()/1000,
-        source:'NHL.com',
-        desc:(a.summary||'').substring(0,200),
-      }));
-    }catch(e1){}
-    if(!articles.length){
-      try{
-        const re=await fetch(PROXY+encodeURIComponent('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=25'));
-        if(re.ok){const de=await re.json();articles=(de.articles||[]).map(a=>({title:a.headline||'',url:a.links?.web?.href||'#',created_utc:a.published?new Date(a.published).getTime()/1000:Date.now()/1000,source:'ESPN',desc:(a.description||'').substring(0,200)}));}
-      }catch(e2){}
-    }
-    const d={articles};
-    ALL_NEWS=d.articles.map(a=>({
-      title:a.headline||a.title||'',
-      url:a.links?.web?.href||'#',
-      created_utc:a.published?new Date(a.published).getTime()/1000:Date.now()/1000,
-      source:'ESPN',
-      desc:(a.description||a.summary||'').substring(0,200),
-    }));
-    if(!ALL_NEWS.length)throw new Error('empty');
-    renderNews(ALL_NEWS.slice(0,3),els.home,true);
-    renderNews(ALL_NEWS,els.feed,false);
-    setTS('ts-news');setTS('ts-news-tab');
-  }catch(e){
-    try{
-      const r=await fetch(PROXY+encodeURIComponent('https://rss.cbssports.com/rss/headlines/nhl'));
-      if(!r.ok)throw new Error('rss fail');
+      const r=await fetch(PROXY+encodeURIComponent(src.url));
+      if(!r.ok)continue;
       const txt=await r.text();
       const xml=new DOMParser().parseFromString(txt,'text/xml');
-      const items=Array.from(xml.querySelectorAll('item')).slice(0,20);
-      ALL_NEWS=items.map(item=>({
-        title:item.querySelector('title')?.textContent||'',
-        url:item.querySelector('link')?.textContent||'#',
-        created_utc:new Date(item.querySelector('pubDate')?.textContent||Date.now()).getTime()/1000,
-        source:'CBS Sports',
-        desc:(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200),
-      }));
-      renderNews(ALL_NEWS.slice(0,3),els.home,true);
-      renderNews(ALL_NEWS,els.feed,false);
-      setTS('ts-news');setTS('ts-news-tab');
-    }catch(e2){
-      const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com</a></div>';
-      Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
-    }
+      const items=Array.from(xml.querySelectorAll('item')).slice(0,12);
+      items.forEach(item=>{
+        const title=item.querySelector('title')?.textContent||'';
+        const link=(item.querySelector('link')?.textContent||item.querySelector('link')?.nextSibling?.textContent||'#').trim();
+        const pub=item.querySelector('pubDate')?.textContent||'';
+        const desc=(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200);
+        if(title)fetched.push({title,url:link,created_utc:pub?new Date(pub).getTime()/1000:Date.now()/1000,source:src.label,desc});
+      });
+    }catch(e){}
   }
+  fetched.sort((a,b)=>b.created_utc-a.created_utc);
+  ALL_NEWS=fetched;
+  if(!ALL_NEWS.length){
+    const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News sources unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com</a> &nbsp; <a href="https://nhlrumors.com" target="_blank" style="color:var(--gold);">NHL Rumors</a></div>';
+    Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
+    return;
+  }
+  renderNews(ALL_NEWS.slice(0,4),els.home,true);
+  renderNews(ALL_NEWS,els.feed,false);
+  setTS('ts-news');setTS('ts-news-tab');
 }
 
 function guessTag(title,source){
@@ -1395,49 +1374,7 @@ async function openTeamPage(abbrev,name){
         <span class="roster-pos">${p.positionCode||''}</span>
       </div>`).join('')}`:'';
 
-    const coachSection=coaches.length?`
-      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">Coaching Staff</div>
-      ${coaches.map(c=>`<div class="roster-row">
-        <span class="roster-num"></span>
-        <span class="roster-name" onclick="openCoachPage(${c.person?.id},'${(c.person?.fullName||'').replace(/'/g,"\\'")}')">${c.person?.fullName||'-'}</span>
-        <span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">${c.title||''}</span>
-      </div>`).join('')}`:'';
-
-    const gamesSection=(title,gs)=>gs.length?`
-      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">${title}</div>
-      ${gs.map(g=>gameCardHTML(g)).join('')}`:'';
-
-    body.innerHTML=`
-      <div class="modal-tabs">
-        <button class="modal-tab active" onclick="switchModalTab(this,'tm-roster')">Roster</button>
-        <button class="modal-tab" onclick="switchModalTab(this,'tm-schedule')">Schedule</button>
-        <button class="modal-tab" onclick="switchModalTab(this,'tm-history')">History</button>
-      </div>
-      <div class="team-header-modal">
-        <img src="${logoUrl}" class="team-logo-lg" onerror="this.style.display='none'"/>
-        <div>
-          <div class="team-name-lg">${name}</div>
-          <div class="team-record-lg">${record}</div>
-        </div>
-        <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
-          <a href="https://puckpedia.com/team/${abbrev.toLowerCase()}" target="_blank" class="btn btn-sm">Cap Space</a>
-          <a href="https://www.nhl.com/team/${abbrev.toLowerCase()}" target="_blank" class="btn btn-sm">NHL.com</a>
-        </div>
-      </div>
-      <div id="tm-roster" class="modal-section active">
-        ${coachSection}
-        <div class="grid-2" style="margin-top:10px;">
-          <div>${rosterSection('Forwards',forwards)}</div>
-          <div>${rosterSection('Defence',defense)}${rosterSection('Goalies',goalies)}</div>
-        </div>
-      </div>
-      <div id="tm-schedule" class="modal-section">
-        ${gamesSection('Last 5 Games',last5)}
-        ${gamesSection('Next 5 Games',next5)}
-      </div>
-      <div id="tm-history" class="modal-section">
-        <div id="team-history-content"><div class="skel"></div></div>
-      </div>`;
+    const coachSection=`<div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:2px;color:var(--gold);margin:1rem 0 5px;text-transform:uppercase;">Coaching Staff</div>${coaches.length?coaches.map(c=>`<div class="roster-row"><span class="roster-num"></span><span class="roster-name" onclick="openCoachPage(${c.person?.id||'null'},'${(c.person?.fullName||'').replace(/'/g,"\'")}')">${c.person?.fullName||'-'}</span><span class="roster-pos" style="min-width:80px;font-size:10px;color:var(--text2);">${c.title||c.positionCode||''}</span></div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:4px 0;">Coaching staff unavailable via API for this team.</div>'}`;
 
     // Load history async
     loadTeamHistory(abbrev,name);
@@ -1777,7 +1714,7 @@ async function doSearch(){
         </div>`).join('');
     } else {
       // Use skater summary endpoint - encoded correctly
-      const searchPath='/en/skater/summary?limit=200&sort=points&cayenneExp=gameTypeId=2 and seasonId=20252026';
+      const searchPath='/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"}]&start=0&limit=200&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20252026 and seasonId>=20252026';
       const d=await nhl(searchPath,NHL_STATS+'/');
       const qLow=q.toLowerCase();
       const matches=(d.data||[]).filter(p=>(p.skaterFullName||'').toLowerCase().includes(qLow)).slice(0,5);
@@ -1813,71 +1750,9 @@ async function doSearch(){
 // =============================================
 // INJURIES
 // =============================================
-function saveMSFCreds(){
-  const user=document.getElementById('msf-user').value.trim();
-  const pass=document.getElementById('msf-pass').value.trim();
-  if(!user||!pass){alert('Please enter both username and password.');return;}
-  save('hkt4_msf',{user,pass});
-  loadInjuries();
-}
 
-async function loadInjuries(){
-  const el=document.getElementById('injury-list');if(!el)return;
-  const creds=load('hkt4_msf',{user:'',pass:''});
-  if(!creds.user||!creds.pass){el.innerHTML='<div class="section-note">Enter MySportsFeeds credentials above.</div>';return;}
-  el.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
-  const errEl=document.getElementById('msf-error');
-  try{
-    const auth=btoa(creds.user+':'+creds.pass);
-    // Correct season slug for 2025-26
-    const url='https://api.mysportsfeeds.com/v2.1/pull/nhl/2025-2026-regular/player_injuries.json';
-    const r=await fetch(PROXY+encodeURIComponent(url),{headers:{Authorization:'Basic '+auth,'Accept':'application/json'}});
-    if(r.status===401||r.status===403){
-      const hint=r.status===401?'Username or password incorrect.':'Access denied — confirm NHL is active on your account. Try logging into mysportsfeeds.com and checking your plan.';
-      if(errEl){errEl.textContent='HTTP '+r.status+': '+hint;errEl.style.display='block';}
-      el.innerHTML='<div class="error-msg">Authentication failed. Check credentials above. <a href="https://www.mysportsfeeds.com" target="_blank" style="color:var(--gold);">MySportsFeeds</a></div>';
-      return;
-    }
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();
-    const injuries=(d.injuries||[]);
-    if(errEl)errEl.style.display='none';
-    document.getElementById('msf-setup').style.display='none';
-    INJ_ALL=injuries;
-    populateTeamFilter();filterInjuries();
-    setTS('ts-injuries');
-  }catch(e){
-    if(errEl){errEl.textContent='Error: '+e.message+'. Check your credentials and ensure NHL is selected on your account.';errEl.style.display='block';}
-    el.innerHTML='<div class="error-msg">Could not load injury data. <a href="https://www.nhl.com/injuries" target="_blank" style="color:var(--gold);">NHL.com Injuries</a></div>';
-  }
-}
 
-function populateTeamFilter(){
-  const sel=document.getElementById('inj-team-filter');if(!sel)return;
-  const teams=[...new Set((INJ_ALL).map(i=>i.team?.abbreviation||'').filter(Boolean))].sort();
-  sel.innerHTML='<option value="all">All Teams</option>'+teams.map(t=>`<option value="${t}">${t}</option>`).join('');
-}
 
-function filterInjuries(){
-  const status=document.getElementById('inj-filter')?.value||'all';
-  const team=document.getElementById('inj-team-filter')?.value||'all';
-  let data=INJ_ALL;
-  if(status!=='all')data=data.filter(i=>(i.playingStatus||'').includes(status));
-  if(team!=='all')data=data.filter(i=>i.team?.abbreviation===team);
-  const el=document.getElementById('injury-list');if(!el)return;
-  if(!data.length){el.innerHTML='<div class="section-note">No injuries match this filter.</div>';return;}
-  el.innerHTML=data.map(i=>{
-    const pl=i.player,isDTD=(i.playingStatus||'').includes('DTD');
-    return `<div class="inj-item">
-      <span class="inj-status ${isDTD?'inj-dtd':'inj-ir'}">${isDTD?'D-T-D':'IR'}</span>
-      <div>
-        <div class="inj-name" onclick="${pl?.id?`openPlayerPage(${pl.id},'${(pl.firstName||'')+' '+(pl.lastName||'')}')`:''}">${pl?.firstName||''} ${pl?.lastName||'-'}</div>
-        <div class="inj-meta">${i.team?.abbreviation||''} - ${pl?.primaryPosition||''}</div>
-        <div class="inj-desc">${i.description||i.injuryType||'Injury'}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
 
 // =============================================
 // DRAFT
@@ -1979,7 +1854,7 @@ async function loadTrending(){
   // Top scorers last 10 games - fetch from stats API
   const el=document.getElementById('trending-scorers');if(!el)return;
   try{
-    const d=await nhl('/en/skater/summary?limit=20&sort=points&cayenneExp=gameTypeId=2 and seasonId=20252026',NHL_STATS+'/');
+    const d=await nhl('/en/skater/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"}]&start=0&limit=20&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20252026 and seasonId>=20252026',NHL_STATS+'/');
     const scorers=(d.data||[]).slice(0,15);
     el.innerHTML=scorers.map((p,i)=>`<div class="trend-item">
       <span class="trend-rank" style="color:var(--gold);">${i+1}</span>
