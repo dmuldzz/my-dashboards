@@ -631,7 +631,7 @@ select option{background:var(--surface2);}
   <div class="slabel">NHL Draft History</div>
   <div style="display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
     <select id="draft-year" onchange="loadDraft()" style="font-size:12px;padding:6px 10px;width:auto;">
-      <option value="2026">2026 (Upcoming)</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option>
+      <option value="all">All Years (2015-2025)</option><option value="2026">2026 (Upcoming)</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option>
       <option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option>
       <option value="2018">2018</option><option value="2017">2017</option><option value="2016">2016</option>
       <option value="2015">2015</option>
@@ -719,7 +719,7 @@ select option{background:var(--surface2);}
 <!-- ===== SEARCH ===== -->
 <div id="search" class="section">
   <div class="slabel">Player & Coach Search</div>
-  <div class="grid-search">
+  <div style="max-width:900px;">
     <div>
       <div style="display:flex;gap:7px;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
         <input type="text" id="search-input" placeholder="Search by name..." style="flex:1;" onkeydown="if(event.key==='Enter')doSearch()"/>
@@ -730,24 +730,7 @@ select option{background:var(--surface2);}
         <button class="btn btn-gold" onclick="doSearch()">Search</button>
       </div>
       <div id="search-results"><div class="section-note">Search for any NHL player or coach above.</div></div>
-    </div>
-    <div>
-      <div class="card">
-        <div class="card-title">Watchlist</div>
-        <div style="display:flex;gap:6px;margin-bottom:9px;">
-          <input type="text" id="wl-input" placeholder="Player or team..." style="flex:1;" onkeydown="if(event.key==='Enter')addWL()"/>
-          <select id="wl-type" style="font-size:12px;width:auto;"><option>Player</option><option>Team</option><option>Prospect</option></select>
-          <button class="btn btn-gold btn-sm" onclick="addWL()">+</button>
-        </div>
-        <div id="wl-list"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Season Notes</div>
-        <textarea id="wl-notes" placeholder="Trade thoughts, predictions..." style="width:100%;min-height:100px;" oninput="save('hkt4_notes',this.value)"></textarea>
-      </div>
-    </div>
-  </div>
-</div>
+    </div></div>
 
 </div><!-- end .main -->
 
@@ -776,9 +759,14 @@ setInterval(tick,1000);tick();
 
 // Dates - use ET timezone to avoid midnight flip issue
 function getETDate(offset=0){
-  const etNow=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Toronto'}));
-  etNow.setDate(etNow.getDate()+offset);
-  return etNow.toISOString().split('T')[0];
+  const now=new Date();
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+  const y=parts.find(p=>p.type==='year').value;
+  const m=parts.find(p=>p.type==='month').value;
+  const d=parts.find(p=>p.type==='day').value;
+  const etDate=new Date(y+'-'+m+'-'+d+'T12:00:00');
+  etDate.setDate(etDate.getDate()+offset);
+  return etDate.toISOString().split('T')[0];
 }
 const TODAY=getETDate(0);
 const YDAY=getETDate(-1);
@@ -814,6 +802,7 @@ let INJ_ALL=[];
 let SORT_COL='points';
 let SORT_DIR=-1;
 let SEARCH_MODE='player';
+let CURRENT_FULL_DIV='Atlantic';
 
 // =============================================
 // TABS
@@ -912,8 +901,7 @@ function renderFullStandings(div){
 function sortStandings(col){
   if(SORT_COL===col)SORT_DIR*=-1;else{SORT_COL=col;SORT_DIR=-1;}
   document.querySelectorAll('.std-hcol').forEach(h=>h.classList.remove('sorted'));
-  const div=document.querySelector('#full-div-tabs .div-tab.active')?.textContent||'Atlantic';
-  renderFullStandings(div);
+  renderFullStandings(CURRENT_FULL_DIV);
 }
 
 function switchHomeDivision(div,btn){
@@ -922,7 +910,7 @@ function switchHomeDivision(div,btn){
 }
 function switchFullDivision(div,btn){
   document.querySelectorAll('#full-div-tabs .div-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');renderFullStandings(div);
+  btn.classList.add('active');CURRENT_FULL_DIV=div;renderFullStandings(div);
 }
 
 function renderPlayoffSnap(){
@@ -956,7 +944,8 @@ async function loadScores(){
 }
 
 function updateTopBar(){
-  const live=TODAY_GAMES.filter(g=>['LIVE','CRIT','LIVE1','LIVE2'].includes(g.gameState));
+  const allG=[...TODAY_GAMES,...YDAY_GAMES];
+  const live=allG.filter(g=>['LIVE','CRIT','LIVE1','LIVE2'].includes(g.gameState));
   const badge=document.getElementById('live-badge');
   if(live.length){badge.textContent=live.length+' Live';badge.style.display='';}
   else badge.style.display='none';
@@ -980,7 +969,7 @@ function gameCardHTML(g,clickable){
   let statusTxt='',sc='status-pre';
   if(isLive){statusTxt='LIVE - '+( g.period?.ordinalNum||'')+' '+(g.clock?.timeRemaining||'');sc='status-live';}
   else if(isFinal){statusTxt='Final'+(g.gameOutcome?.lastPeriodType==='OT'?' (OT)':g.gameOutcome?.lastPeriodType==='SO'?' (SO)':'');sc='status-final';}
-  else{statusTxt=fmtTime(g.startTimeUTC);sc='status-pre';}
+  else{statusTxt=fmtTime(g.startTimeUTC)+(g.venue?.default?' · '+g.venue.default:'');sc='status-pre';}
   const aLogo=away.logo?`<img src="${away.logo}" class="team-logo-img" onerror="this.style.display='none'"/>`:'';
   const hLogo=home.logo?`<img src="${home.logo}" class="team-logo-img" onerror="this.style.display='none'"/>`:'';
   const click=clickable!==false?`onclick="openGameModal('${g.id}')"`:''
@@ -1019,6 +1008,43 @@ function renderScoresGrids(){
 // =============================================
 // GAME MODAL - Clickable game tiles
 // =============================================
+async function loadPreGameData(gameId,awayAbbrev,homeAbbrev,container){
+  try{
+    const [awayStats,homeStats,h2h]=await Promise.allSettled([
+      nhl('/club-stats/'+awayAbbrev+'/now'),
+      nhl('/club-stats/'+homeAbbrev+'/now'),
+      nhl('/schedule/'+awayAbbrev+'?vs='+homeAbbrev+'&gameType=2&limit=5').catch(()=>null),
+    ]);
+    const as=awayStats.status==='fulfilled'?awayStats.value?.skatingStats||awayStats.value:null;
+    const hs=homeStats.status==='fulfilled'?homeStats.value?.skatingStats||homeStats.value:null;
+    const h2hGames=h2h.status==='fulfilled'&&h2h.value?h2h.value?.games||[]:[];
+    const statRow=(label,av,hv)=>`<div class="game-stat-row"><span class="game-stat-val">${av??'-'}</span><span class="game-stat-label">${label}</span><span class="game-stat-val">${hv??'-'}</span></div>`;
+    const teamStatSection=`<div class="card" style="margin-bottom:10px;">
+      <div class="card-title">Season Stats</div>
+      ${statRow('Goals/Game',as?.goalsForPerGame?.toFixed(2),hs?.goalsForPerGame?.toFixed(2))}
+      ${statRow('Goals Against/Game',as?.goalsAgainstPerGame?.toFixed(2),hs?.goalsAgainstPerGame?.toFixed(2))}
+      ${statRow('PP%',as?.powerPlayPct?.toFixed(1)+'%',hs?.powerPlayPct?.toFixed(1)+'%')}
+      ${statRow('PK%',as?.penaltyKillPct?.toFixed(1)+'%',hs?.penaltyKillPct?.toFixed(1)+'%')}
+    </div>`;
+    const h2hSection=h2hGames.length?`<div class="card"><div class="card-title">Last 5 Meetings</div>
+      ${h2hGames.slice(0,5).map(g=>{
+        const isFinal=g.gameState==='OFF'||g.gameState==='FINAL';
+        if(!isFinal)return'';
+        const aw=g.awayTeam?.abbrev,hw=g.homeTeam?.abbrev;
+        const as2=g.awayTeam?.score,hs2=g.homeTeam?.score;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;min-width:80px;">${g.gameDate||''}</span>
+          <span style="color:var(--text);">${aw} ${as2} - ${hs2} ${hw}</span>
+          <span style="color:var(--text3);font-size:10px;">${g.gameOutcome?.lastPeriodType==='OT'?'OT':g.gameOutcome?.lastPeriodType==='SO'?'SO':'REG'}</span>
+        </div>`;}).join('')}
+    </div>`:'<div class="section-note">No recent head-to-head data found.</div>';
+    const el=container.querySelector('#pregame-h2h');
+    if(el)el.innerHTML=teamStatSection+h2hSection;
+  }catch(e){
+    const el=container.querySelector('#pregame-h2h');
+    if(el)el.innerHTML='<div class="section-note">Preview data unavailable.</div>';
+  }
+}
 async function openGameModal(gameId){
   if(!gameId)return;
   // Check if game hasn't started yet
@@ -1028,13 +1054,15 @@ async function openGameModal(gameId){
     const away=preGame.awayTeam,home=preGame.homeTeam;
     const modal=document.getElementById('game-modal');
     modal.classList.add('open');
-    document.getElementById('game-modal-body').innerHTML=`
+    const gmBody=document.getElementById('game-modal-body');
+    gmBody.innerHTML=`
       <div class="game-modal-teams">
-        <div class="game-modal-team">${away.logo?`<img src="${away.logo}" style="width:48px;height:48px;object-fit:contain;margin-bottom:4px;"/>`:''}<div class="game-modal-abbrev">${away.abbrev||'-'}</div></div>
+        <div class="game-modal-team">${away.logo?`<img src="${away.logo}" style="width:48px;height:48px;object-fit:contain;margin-bottom:4px;"/>`:''}<div class="game-modal-abbrev" style="cursor:pointer;" onclick="openTeamPage('${away.abbrev||''}','${away.abbrev||''}')">${away.abbrev||'-'}</div></div>
         <div style="text-align:center;"><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;color:var(--text2);">vs</div><div class="game-modal-period">${fmtTime(preGame.startTimeUTC)} ET</div><div style="font-size:11px;color:var(--text3);margin-top:3px;">${preGame.venue?.default||''}</div></div>
-        <div class="game-modal-team">${home.logo?`<img src="${home.logo}" style="width:48px;height:48px;object-fit:contain;margin-bottom:4px;"/>`:''}<div class="game-modal-abbrev">${home.abbrev||'-'}</div></div>
+        <div class="game-modal-team">${home.logo?`<img src="${home.logo}" style="width:48px;height:48px;object-fit:contain;margin-bottom:4px;"/>`:''}<div class="game-modal-abbrev" style="cursor:pointer;" onclick="openTeamPage('${home.abbrev||''}','${home.abbrev||''}')">${home.abbrev||'-'}</div></div>
       </div>
-      <div class="section-note">Game has not started yet. Check back for live stats.</div>`;
+      <div id="pregame-h2h"><div class="skel"></div><div class="skel" style="width:75%;"></div></div>`;
+    loadPreGameData(preGame.id, away.abbrev, home.abbrev, gmBody);
     return;
   }
   const modal=document.getElementById('game-modal');
@@ -1049,7 +1077,7 @@ async function openGameModal(gameId){
     const isFinal=g?.gameState==='OFF'||g?.gameState==='FINAL';
     let statusStr=isFinal?'Final'+(g?.gameOutcome?.lastPeriodType==='OT'?' (OT)':g?.gameOutcome?.lastPeriodType==='SO'?' (SO)':''):isLive?'LIVE - '+(g?.period?.ordinalNum||'')+' '+(g?.clock?.timeRemaining||''):fmtTime(g?.startTimeUTC);
     const pbs=box?.playerByGameStats;
-    const teamStats=box?.teamGameStats||[];
+    const teamStats=box?.teamGameStats||box?.teamStats||box?.linescore?.teams||[];
     const getTeamStat=(label)=>{
       const s=teamStats.find(x=>x.category===label);
       return s?[s.awayValue,s.homeValue]:['-','-'];
@@ -1200,11 +1228,13 @@ async function loadThisWeek(){
 async function loadTransactions(){
   try{
     // Try today and yesterday — 404s are expected some days
-    const results=await Promise.allSettled([
-      nhl('/transactions/'+TODAY),
-      nhl('/transactions/'+YDAY),
-    ]);
-    const fresh=results.flatMap(r=>r.status==='fulfilled'?r.value?.transactions||[]:[]);
+    const dates=[TODAY,YDAY,getETDate(-2),getETDate(-3),getETDate(-4),getETDate(-5),getETDate(-6)];
+    const results=await Promise.allSettled(dates.map(d=>nhl('/transactions/'+d)));
+    const seen=new Set();
+    const fresh=results.flatMap(r=>{
+      if(r.status!=='fulfilled')return[];
+      return(r.value?.transactions||[]).filter(t=>{const k=t.id||JSON.stringify(t).substring(0,80);if(seen.has(k))return false;seen.add(k);return true;});
+    });
     if(fresh.length>0&&!document.getElementById('transactions').classList.contains('active')){
       document.getElementById('txn-dot').classList.add('show');
     }
@@ -1247,11 +1277,25 @@ function renderFullTxns(){
 async function loadNews(){
   const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed')};
   try{
-    const r_espn=await fetch(PROXY+encodeURIComponent('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=25'));
-    if(!r_espn.ok)throw new Error('ESPN '+r_espn.status);
-    const d=await r_espn.json();
-    const articles=(d.articles||[]);
-    ALL_NEWS=articles.map(a=>({
+    let articles=[];
+    try{
+      const dn=await nhl('/news?limit=25');
+      articles=(dn.items||[]).map(a=>({
+        title:a.headline||a.title||'',
+        url:a.webUrl||'https://www.nhl.com/news',
+        created_utc:a.publishedAt?new Date(a.publishedAt).getTime()/1000:Date.now()/1000,
+        source:'NHL.com',
+        desc:(a.summary||'').substring(0,200),
+      }));
+    }catch(e1){}
+    if(!articles.length){
+      try{
+        const re=await fetch(PROXY+encodeURIComponent('https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/news?limit=25'));
+        if(re.ok){const de=await re.json();articles=(de.articles||[]).map(a=>({title:a.headline||'',url:a.links?.web?.href||'#',created_utc:a.published?new Date(a.published).getTime()/1000:Date.now()/1000,source:'ESPN',desc:(a.description||'').substring(0,200)}));}
+      }catch(e2){}
+    }
+    const d={articles};
+    ALL_NEWS=d.articles.map(a=>({
       title:a.headline||a.title||'',
       url:a.links?.web?.href||'#',
       created_utc:a.published?new Date(a.published).getTime()/1000:Date.now()/1000,
@@ -1381,9 +1425,10 @@ async function openTeamPage(abbrev,name){
         </div>
       </div>
       <div id="tm-roster" class="modal-section active">
-        <div class="grid-2">
-          <div>${rosterSection('Forwards',forwards)}${rosterSection('Defence',defense)}${rosterSection('Goalies',goalies)}</div>
-          <div>${coachSection}</div>
+        ${coachSection}
+        <div class="grid-2" style="margin-top:10px;">
+          <div>${rosterSection('Forwards',forwards)}</div>
+          <div>${rosterSection('Defence',defense)}${rosterSection('Goalies',goalies)}</div>
         </div>
       </div>
       <div id="tm-schedule" class="modal-section">
@@ -1407,7 +1452,8 @@ async function loadTeamHistory(abbrev,name){
     // Get franchise ID from standings
     const tm=STANDINGS.find(t=>t.teamAbbrev?.default===abbrev);
     // Try to get franchiseId from standings or from the standings franchiseId field
-    const franchiseId=tm?.franchiseId||tm?.franchise?.id;
+    const FMAP={ANA:32,BOS:6,BUF:19,CGY:26,CAR:26,CHI:11,COL:27,CBJ:36,DAL:15,DET:12,EDM:25,FLA:33,LAK:14,MIN:37,MTL:1,NSH:34,NJD:23,NYI:22,NYR:10,OTT:30,PHI:16,PIT:17,SJS:29,SEA:39,STL:18,TBL:31,TOR:5,UTA:40,VAN:20,VGK:38,WSH:24,WPG:35};
+    const franchiseId=FMAP[abbrev]||tm?.franchiseId||tm?.franchise?.id;
     if(!franchiseId){
       el.innerHTML='<div class="section-note">History data requires franchise ID. <a href="https://www.hockeyreference.com" target="_blank" style="color:var(--gold);">Hockey Reference</a></div>';
       return;
@@ -1569,7 +1615,7 @@ async function openPlayerPage(playerId,name){
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
           <a href="https://www.nhl.com/player/${playerId}" target="_blank" class="btn btn-sm">NHL.com</a>
-          <button class="btn btn-sm" onclick="addToWatchlist('${p.firstName?.default||''} ${p.lastName?.default||''}','Player')">+ Watchlist</button>
+          
         </div>
       </div>
 
@@ -1593,6 +1639,23 @@ async function openPlayerPage(playerId,name){
             ${isG?`<td>${s.wins||0}</td><td>${s.losses||0}</td><td>${s.savePctg?s.savePctg.toFixed(3):'-'}</td><td>${s.goalsAgainstAverage?s.goalsAgainstAverage.toFixed(2):'-'}</td><td>${s.shutouts||0}</td>`:`<td>${s.goals||0}</td><td>${s.assists||0}</td><td>${s.points||0}</td><td>${s.plusMinus||0}</td>`}
             <td>${s.gamesPlayed||0}</td>
           </tr>`).join('')}
+              ${(()=>{
+            if(!seasons.length)return'';
+            if(isG){
+              const tw=seasons.reduce((a,s)=>a+(s.wins||0),0);
+              const tl=seasons.reduce((a,s)=>a+(s.losses||0),0);
+              const tso=seasons.reduce((a,s)=>a+(s.shutouts||0),0);
+              const tgp=seasons.reduce((a,s)=>a+(s.gamesPlayed||0),0);
+              return'<tr style="border-top:2px solid var(--gold);font-weight:700;"><td style="color:var(--gold);">Career</td><td></td><td style="color:var(--gold);">'+tw+'</td><td style="color:var(--gold);">'+tl+'</td><td></td><td></td><td style="color:var(--gold);">'+tso+'</td><td style="color:var(--gold);">'+tgp+'</td></tr>';
+            }else{
+              const tg=seasons.reduce((a,s)=>a+(s.goals||0),0);
+              const ta=seasons.reduce((a,s)=>a+(s.assists||0),0);
+              const tp=seasons.reduce((a,s)=>a+(s.points||0),0);
+              const tpm=seasons.reduce((a,s)=>a+(s.plusMinus||0),0);
+              const tgp=seasons.reduce((a,s)=>a+(s.gamesPlayed||0),0);
+              return'<tr style="border-top:2px solid var(--gold);font-weight:700;"><td style="color:var(--gold);">Career</td><td></td><td style="color:var(--gold);">'+tg+'</td><td style="color:var(--gold);">'+ta+'</td><td style="color:var(--gold);">'+tp+'</td><td style="color:var(--gold);">'+(tpm>=0?'+':'')+tpm+'</td><td style="color:var(--gold);">'+tgp+'</td></tr>';
+            }
+          })()}
         </table>
       </div>
 
@@ -1607,7 +1670,7 @@ async function openPlayerPage(playerId,name){
       </div>
 
       ${awards.length?`<div id="pl-awards" class="modal-section">
-        ${awards.map(a=>`<div style="margin-bottom:10px;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--text);">${a.trophy?.default||'-'}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px;">${(a.seasons||[]).map(s=>fmtSeason(s.seasonId)).join(', ')}</div></div>`).join('')}
+        ${[...awards].sort((a,b)=>Math.max(...(b.seasons||[{seasonId:0}]).map(s=>s.seasonId||0))-Math.max(...(a.seasons||[{seasonId:0}]).map(s=>s.seasonId||0))).map(a=>`<div style="margin-bottom:10px;"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;color:var(--text);">${a.trophy?.default||'-'}</div><div style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;margin-top:2px;">${(a.seasons||[]).slice().sort((x,y)=>(y.seasonId||0)-(x.seasonId||0)).map(s=>fmtSeason(s.seasonId)).join(', ')}</div></div>`).join('')}
       </div>`:''}`;
   }catch(e){
     body.innerHTML=`<div class="error-msg">Could not load player data.</div><a href="https://www.nhl.com/player/${playerId}" target="_blank" style="color:var(--gold);">View on NHL.com</a>`;
@@ -1625,7 +1688,7 @@ async function openCoachPage(coachId,name){
   body.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
     // Search coach summary by name
-        const d=await nhl('/en/coach/summary?limit=500&cayenneExp=seasonId%3D20252026',NHL_STATS+'/');
+        const d=await nhl('/en/coach/summary?limit=500&cayenneExp=seasonId=20252026',NHL_STATS+'/');
     const coaches=(d.data||[]);
     const c=coachId?coaches.find(x=>x.coachId===coachId)||coaches[0]:coaches[0];
     if(!c)throw new Error('not found');
@@ -1701,7 +1764,7 @@ async function doSearch(){
   el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%;"></div>';
   try{
     if(SEARCH_MODE==='coach'){
-      const d=await nhl('/en/coach/summary?limit=100&cayenneExp=seasonId%3D20252026',NHL_STATS+'/');
+      const d=await nhl('/en/coach/summary?limit=100&cayenneExp=seasonId=20252026',NHL_STATS+'/');
       const qLow=q.toLowerCase();
       const matches=(d.data||[]).filter(c=>(c.coachFullName||'').toLowerCase().includes(qLow)).slice(0,6);
       if(!matches.length){el.innerHTML='<div class="section-note">No coaches found for "'+q+'".</div>';return;}
@@ -1714,13 +1777,13 @@ async function doSearch(){
         </div>`).join('');
     } else {
       // Use skater summary endpoint - encoded correctly
-      const searchPath='/en/skater/summary?limit=200&sort=points&cayenneExp=gameTypeId%3D2%20and%20seasonId%3D20252026';
+      const searchPath='/en/skater/summary?limit=200&sort=points&cayenneExp=gameTypeId=2 and seasonId=20252026';
       const d=await nhl(searchPath,NHL_STATS+'/');
       const qLow=q.toLowerCase();
       const matches=(d.data||[]).filter(p=>(p.skaterFullName||'').toLowerCase().includes(qLow)).slice(0,5);
       if(!matches.length){
         // Try goalie bios
-        const dg=await nhl('/en/goalie/summary?limit=100&cayenneExp=seasonId%3D20252026',NHL_STATS+'/').catch(()=>({data:[]}));
+        const dg=await nhl('/en/goalie/summary?limit=100&cayenneExp=seasonId=20252026',NHL_STATS+'/').catch(()=>({data:[]}));
         const gMatches=(dg.data||[]).filter(p=>(p.goalieFullName||p.skaterFullName||'').toLowerCase().includes(qLow)).slice(0,3);
         if(!gMatches.length){el.innerHTML='<div class="section-note">No players found for "'+q+'".</div>';return;}
         el.innerHTML=gMatches.map(p=>`
@@ -1729,7 +1792,7 @@ async function doSearch(){
             <div style="font-size:12px;color:var(--text2);margin-top:2px;">G - ${p.currentTeamAbbrev||p.teamAbbrevs||'-'}</div>
             <div style="display:flex;gap:7px;margin-top:7px;align-items:center;">
               <div style="font-size:11px;color:var(--gold);">View player profile</div>
-              <button class="btn btn-sm" onclick="event.stopPropagation();addToWatchlist('${(p.goalieFullName||'').replace(/'/g,"\\'")}'+'','Player')">+ Watchlist</button>
+              
             </div>
           </div>`).join('');
         return;
@@ -1740,7 +1803,7 @@ async function doSearch(){
           <div style="font-size:12px;color:var(--text2);margin-top:2px;">${p.positionCode||''} - ${p.currentTeamAbbrev||p.teamAbbrevs||'-'}</div>
           <div style="display:flex;gap:7px;margin-top:7px;align-items:center;">
             <div style="font-size:11px;color:var(--gold);">View player profile</div>
-            <button class="btn btn-sm" onclick="event.stopPropagation();addToWatchlist('${(p.skaterFullName||'').replace(/'/g,"\\'")}'+'','Player')">+ Watchlist</button>
+            
           </div>
         </div>`).join('');
     }
@@ -1770,7 +1833,8 @@ async function loadInjuries(){
     const url='https://api.mysportsfeeds.com/v2.1/pull/nhl/2025-2026-regular/player_injuries.json';
     const r=await fetch(PROXY+encodeURIComponent(url),{headers:{Authorization:'Basic '+auth,'Accept':'application/json'}});
     if(r.status===401||r.status===403){
-      if(errEl){errEl.textContent='Authentication failed. Double-check your username and password, and confirm NHL is enabled on your MySportsFeeds account.';errEl.style.display='block';}
+      const hint=r.status===401?'Username or password incorrect.':'Access denied — confirm NHL is active on your account. Try logging into mysportsfeeds.com and checking your plan.';
+      if(errEl){errEl.textContent='HTTP '+r.status+': '+hint;errEl.style.display='block';}
       el.innerHTML='<div class="error-msg">Authentication failed. Check credentials above. <a href="https://www.mysportsfeeds.com" target="_blank" style="color:var(--gold);">MySportsFeeds</a></div>';
       return;
     }
@@ -1828,8 +1892,21 @@ async function loadDraft(){
   const el=document.getElementById('draft-list');if(!el)return;
   el.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
   try{
-    const d=await nhl('/draft/picks/'+year+'/all');
-    DRAFT_ALL=(d.picks||d.rounds?.flatMap(r=>r.picks||[])||[]);
+    if(year==='all'){
+      const years=['2025','2024','2023','2022','2021','2020','2019','2018','2017','2016','2015'];
+      const results=await Promise.allSettled(years.map(y=>nhl('/draft/picks/'+y+'/all')));
+      DRAFT_ALL=results.flatMap((r,i)=>{
+        if(r.status!=='fulfilled')return[];
+        const picks=r.value?.picks||r.value?.rounds?.flatMap(rd=>rd.picks||[])||[];
+        return picks.map(p=>({...p,draftYear:years[i]}));
+      });
+    } else if(year==='2026'){
+      el.innerHTML='<div class="section-note">2026 draft has not happened yet.</div>';
+      return;
+    } else {
+      const d=await nhl('/draft/picks/'+year+'/all');
+      DRAFT_ALL=(d.picks||d.rounds?.flatMap(r=>r.picks||[])||[]);
+    }
     filterDraft();
     setTS('ts-draft');
   }catch(e){
@@ -1902,7 +1979,7 @@ async function loadTrending(){
   // Top scorers last 10 games - fetch from stats API
   const el=document.getElementById('trending-scorers');if(!el)return;
   try{
-    const d=await nhl('/en/skater/summary?limit=20&sort=points&cayenneExp=gameTypeId%3D2%20and%20seasonId%3D20252026',NHL_STATS+'/');
+    const d=await nhl('/en/skater/summary?limit=20&sort=points&cayenneExp=gameTypeId=2 and seasonId=20252026',NHL_STATS+'/');
     const scorers=(d.data||[]).slice(0,15);
     el.innerHTML=scorers.map((p,i)=>`<div class="trend-item">
       <span class="trend-rank" style="color:var(--gold);">${i+1}</span>
@@ -2007,7 +2084,7 @@ function loadStaff(){
           <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">${div} &middot; ${conf}</div>
         </div>
       </div>
-      <div style="margin-top:8px;font-size:11px;color:var(--teal);">Click to view full team page including roster, coaching staff, schedule, franchise history, all-time records and Cup wins</div>
+
     </div>`;
   }).join('');
   el.innerHTML=`<div class="grid-3">${grid}</div>`;
@@ -2015,58 +2092,6 @@ function loadStaff(){
 
 // =============================================
 // WATCHLIST
-// =============================================
-let WL=load('hkt4_wl',[]);
-function renderWL(){
-  const el=document.getElementById('wl-list');if(!el)return;
-  if(!WL.length){el.innerHTML='<div class="section-note" style="text-align:left;">Nothing added yet.</div>';return;}
-  const colors={Player:'var(--gold)',Team:'var(--teal)',Prospect:'var(--green)'};
-  el.innerHTML=WL.map(w=>`<div class="wl-item" id="wl-${w.id}">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
-      <div><div class="wl-ticker">${w.name}</div><div class="wl-type">${w.type}</div></div>
-      <button class="btn btn-sm btn-danger" onclick="removeWL(${w.id})">X</button>
-    </div>
-    ${w.note?`<div class="wl-note">${w.note}</div>`:''}
-    <div style="display:flex;gap:5px;margin-top:5px;">
-      <button class="btn btn-sm" onclick="editWLNote(${w.id})">Note</button>
-    </div>
-  </div>`).join('');
-}
-function addWL(){
-  const n=document.getElementById('wl-input').value.trim();
-  const t=document.getElementById('wl-type').value;
-  if(!n)return;
-  if(WL.find(w=>w.name.toLowerCase()===n.toLowerCase())){return;}
-  WL.push({name:n,type:t,note:'',id:Date.now()});
-  save('hkt4_wl',WL);renderWL();
-  document.getElementById('wl-input').value='';
-}
-function addToWatchlist(name,type){
-  if(!name)return;
-  if(WL.find(w=>w.name.toLowerCase()===name.toLowerCase())){return;}
-  WL.push({name,type:type||'Player',note:'',id:Date.now()});
-  save('hkt4_wl',WL);renderWL();
-}
-function removeWL(id){WL=WL.filter(w=>w.id!==id);save('hkt4_wl',WL);renderWL();}
-function editWLNote(id){
-  const w=WL.find(x=>x.id===id);if(!w)return;
-  const el=document.getElementById('wl-'+id);
-  el.querySelector('.wl-note-edit')?.remove();
-  const div=document.createElement('div');div.className='wl-note-edit';
-  div.innerHTML=`<textarea style="font-family:'Barlow',sans-serif;font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border2);padding:6px 9px;width:100%;min-height:50px;outline:none;display:block;margin-bottom:5px;" id="wln-${id}" placeholder="Note...">${w.note}</textarea>
-    <div style="display:flex;gap:5px;"><button class="btn btn-gold btn-sm" onclick="saveWLNote(${id})">Save</button><button class="btn btn-sm" onclick="renderWL()">Cancel</button></div>`;
-  el.querySelector('[onclick*="editWLNote"]').closest('div').insertAdjacentElement('beforebegin',div);
-}
-function saveWLNote(id){
-  const v=document.getElementById('wln-'+id)?.value.trim()||'';
-  const w=WL.find(x=>x.id===id);if(!w)return;
-  w.note=v;save('hkt4_wl',WL);renderWL();
-}
-renderWL();
-document.getElementById('wl-notes').value=load('hkt4_notes','');
-
-// =============================================
-// NOTES
 // =============================================
 function saveNote(type){
   const el=document.getElementById(type+'-note-input');if(!el)return;
