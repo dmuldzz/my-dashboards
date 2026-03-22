@@ -1148,8 +1148,8 @@ async function loadAIBriefing(force=false){
   el.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Generating daily market briefing...</div>';
   if(badge)badge.style.display='none';
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+    const resp=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
 
 You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter.
