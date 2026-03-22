@@ -843,7 +843,7 @@ select option{background:var(--surface2);}
 // ══════════════════════════════════════════
 // CORE
 // ══════════════════════════════════════════
-const PROXY='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=';
+const PROXY='https://my-dashboards-theta.vercel.app/api/proxy?url=';
 const FINNHUB='d6r4g9pr01qgdhqd4k40d6r4g9pr01qgdhqd4k4g';
 const FMP_KEY='w5AmcMUVebOc3SZIl9fqXk0lIxAlCJ4o';
 const FH_BASE='https://finnhub.io/api/v1';
@@ -853,6 +853,7 @@ const CG_BASE='https://api.coingecko.com/api/v3';
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function load(k,d){try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):d;}catch(e){return d;}}
 function ts(){return new Date().toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function setTS(id){const el=document.getElementById(id);if(el)el.textContent='Updated '+ts();}
 function fmt(n,dp=2){if(n===undefined||n===null||isNaN(n))return'—';return Number(n).toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});}
 function fmtB(n){if(!n)return'—';const abs=Math.abs(n);if(abs>=1e12)return(n/1e12).toFixed(2)+'T';if(abs>=1e9)return(n/1e9).toFixed(2)+'B';if(abs>=1e6)return(n/1e6).toFixed(2)+'M';return fmt(n,0);}
@@ -993,7 +994,8 @@ async function loadMarketOverview(){
 async function loadTicker(){
   try{
     const syms=['SPY','QQQ','NVDA','AAPL','MSFT','TSLA','AMZN','META'];
-    const quotes=await Promise.all(syms.map(s=>fhFetch('/quote?symbol='+s).catch(()=>null)));
+    const quotes=[];
+    for(const s of syms){quotes.push(await fhFetch('/quote?symbol='+s).catch(()=>null));await sleep(80);}
     const crypto=await cgFetch('/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true').catch(()=>null);
     const items=[];
     syms.forEach((s,i)=>{const d=quotes[i];if(d?.c)items.push(`<div class="tick">${s} <span class="${chgCls(d.dp)}">\$${fmt(d.c)} ${chgPfx(d.dp)}${fmt(d.dp)}%</span></div>`);});
@@ -1009,7 +1011,11 @@ async function loadTicker(){
 const SECTORS=[{n:'Technology',s:'XLK'},{n:'Energy',s:'XLE'},{n:'Financials',s:'XLF'},{n:'Health Care',s:'XLV'},{n:'Industrials',s:'XLI'},{n:'Consumer Disc.',s:'XLY'},{n:'Utilities',s:'XLU'},{n:'Real Estate',s:'XLRE'},{n:'Materials',s:'XLB'}];
 async function loadSectors(){
   try{
-    const quotes=await Promise.all(SECTORS.map(s=>fhFetch('/quote?symbol='+s.s).catch(()=>null)));
+    const quotes=[];
+    for(const s of SECTORS){
+      quotes.push(await fhFetch('/quote?symbol='+s.s).catch(()=>null));
+      await sleep(80);
+    }
     document.getElementById('heatmap').innerHTML=SECTORS.map((s,i)=>{
       const chg=quotes[i]?.dp;
       const cls=chg===undefined?'hm-neu':chg>0?'hm-up':'hm-dn';
@@ -1026,7 +1032,8 @@ async function loadMovers(){
   const el=document.getElementById('movers-list');if(!el)return;
   try{
     const tickers=['NVDA','TSLA','AAPL','MSFT','AMZN','META','AMD','COIN','PLTR','NFLX'];
-    const quotes=await Promise.all(tickers.map(t=>fhFetch('/quote?symbol='+t).catch(()=>null)));
+    const quotes=[];
+    for(const t of tickers){quotes.push(await fhFetch('/quote?symbol='+t).catch(()=>null));await sleep(80);}
     const data=tickers.map((t,i)=>({t,p:quotes[i]?.c,chg:quotes[i]?.dp})).filter(d=>d.chg!==undefined).sort((a,b)=>Math.abs(b.chg)-Math.abs(a.chg));
     el.innerHTML=data.slice(0,8).map((d,i)=>`<div class="mover"><span class="mover-rank">${i+1}</span><span class="mover-sym" style="cursor:pointer" onclick="quickResearch('${d.t}')">${d.t}</span><span class="mover-name"></span><span class="mover-price">$${fmt(d.p)}</span><span class="mover-chg ${chgCls(d.chg)}">${chgPfx(d.chg)}${fmt(d.chg)}%</span></div>`).join('');
     setTS('ts-movers');
@@ -1556,10 +1563,10 @@ renderCurated('bm-ark',[
 // ══════════════════════════════════════════
 async function loadCrypto(){
   try{
-    const [market,trending]=await Promise.all([
-      cgFetch('/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'),
-      cgFetch('/search/trending'),
-    ]);
+    const market=await cgFetch('/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false');
+    await sleep(200);
+    const trending=await cgFetch('/search/trending');
+    await sleep(200);
     const globalData=await cgFetch('/global').catch(()=>null);
     if(globalData?.data){
       const g=globalData.data;
@@ -1756,8 +1763,24 @@ function renderCashFlow(data){
 // INIT
 // ══════════════════════════════════════════
 async function initAll(){
-  await Promise.all([loadMarketOverview(),loadSectors(),loadMovers(),loadHomeNews(),loadEarningsCalendar(),loadEconCalendar(),loadCongressTrades(),loadCrypto()]);
-  renderWatchlist();checkAlerts();loadAIBriefing();
+  // Run sequentially to avoid overwhelming proxy with simultaneous requests
+  await loadMarketOverview();
+  await sleep(300);
+  loadSectors(); // fire and forget - will populate as data arrives
+  await sleep(300);
+  loadMovers();
+  await sleep(300);
+  loadHomeNews();
+  await sleep(300);
+  loadEarningsCalendar();
+  loadEconCalendar();
+  loadCongressTrades();
+  await sleep(500);
+  loadCrypto();
+  renderWatchlist();
+  checkAlerts();
+  await sleep(1000);
+  loadAIBriefing();
 }
 initAll();
 setInterval(()=>{loadMarketOverview();loadMovers();renderWatchlist();checkAlerts();},90000);
