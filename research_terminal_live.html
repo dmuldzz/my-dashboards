@@ -844,6 +844,7 @@ select option{background:var(--surface2);}
 // CORE
 // ══════════════════════════════════════════
 const PROXY='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=';
+const PROXY2='https://corsproxy.io/?url='; // fallback for domains not in own proxy
 const FINNHUB='d6r4g9pr01qgdhqd4k40d6r4g9pr01qgdhqd4k4g';
 const FMP_KEY='w5AmcMUVebOc3SZIl9fqXk0lIxAlCJ4o';
 const FH_BASE='https://finnhub.io/api/v1';
@@ -899,10 +900,18 @@ async function fmpFetch(path,useCache=true){
   const cacheKey='fmp_'+path.replace(/[^a-z0-9]/gi,'_');
   if(useCache){const c=cacheGet(cacheKey,86400000);if(c){return c;}}
   const url=FMP_BASE+path+(path.includes('?')?'&':'?')+'apikey='+FMP_KEY;
-  const r=await fetch(PROXY+encodeURIComponent(url));
-  if(!r.ok)throw new Error(r.status);
-  const d=await r.json();
-  if(useCache){cacheSet(cacheKey,d);trackFMP(1);}
+  // Try own proxy first, fall back to corsproxy.io if domain not yet allowed
+  let d=null;
+  try{
+    const r=await fetch(PROXY+encodeURIComponent(url));
+    if(r.ok){d=await r.json();}
+  }catch(e){}
+  if(!d){
+    const r2=await fetch(PROXY2+encodeURIComponent(url));
+    if(!r2.ok)throw new Error(r2.status);
+    d=await r2.json();
+  }
+  if(useCache&&d){cacheSet(cacheKey,d);trackFMP(1);}
   return d;
 }
 async function cgFetch(path){
@@ -1174,7 +1183,7 @@ Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is
     // If direct call fails (CORS), try through proxy
     try{
       const resp2=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
-        method:'POST',headers:{'Content-Type':'application/json'},
+        method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01'},
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}. You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter. Write a daily market briefing covering: 1. **Market Conditions** — 2-3 sentences on the current market environment 2. **3 Stocks Worth Researching Today** — specific tickers with brief reason (growth + dividend mix) 3. **Canadian/TSX Angle** — one specific Canadian stock or sector observation 4. **Key Risk This Week** — one macro or market risk to monitor. Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is for personal research only, not financial advice.`}]})
       });
       if(resp2.ok){
