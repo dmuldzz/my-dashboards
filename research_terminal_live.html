@@ -1185,8 +1185,7 @@ Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is
         const d2=await resp2.json();
         const text2=d2.content?.[0]?.text||'';
         if(text2){
-          const html2=text2.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/
-/g,'<br/>');
+          const html2=text2.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>');
           save(cacheKey,html2);save(dateKey,TODAY);
           el.innerHTML='<div class="ai-briefing">'+html2+'</div>';
           if(badge){badge.style.display='';badge.textContent='Generated Today';}
