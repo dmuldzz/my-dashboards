@@ -899,7 +899,8 @@ async function fmpFetch(path,useCache=true){
   const cacheKey='fmp_'+path.replace(/[^a-z0-9]/gi,'_');
   if(useCache){const c=cacheGet(cacheKey,86400000);if(c){return c;}}
   const url=FMP_BASE+path+(path.includes('?')?'&':'?')+'apikey='+FMP_KEY;
-  const r=await fetch(PROXY+encodeURIComponent(url));
+  // FMP supports CORS directly - no proxy needed
+  const r=await fetch(url);
   if(!r.ok)throw new Error(r.status);
   const d=await r.json();
   if(useCache){cacheSet(cacheKey,d);trackFMP(1);}
@@ -1041,12 +1042,13 @@ function quickResearch(ticker){showTab('research');document.getElementById('rese
 async function loadHomeNews(){
   const el=document.getElementById('home-news');if(!el)return;
   try{
-    const d=await fhFetch('/news?category=general&minId=0');
-    const items=(d||[]).slice(0,5);
-    el.innerHTML=items.map(n=>`<div class="news-item">
-      <div class="news-meta"><span class="news-src">${n.source||'—'}</span><span class="news-time">${timeSince(n.datetime*1000)}</span></div>
-      <div class="news-hl"><a href="${n.url}" target="_blank">${n.headline||n.summary||'—'}</a></div>
-    </div>`).join('');
+    // Use FMP stock news - free tier, no proxy needed (CORS supported)
+    const d=await fetch('https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey='+FMP_KEY).then(r=>r.json());
+    const items=(d||[]).slice(0,6);
+    el.innerHTML=items.length?items.map(n=>`<div class="news-item">
+      <div class="news-meta"><span class="news-src">${n.site||n.symbol||'—'}</span><span class="news-time">${timeSince(n.publishedDate)}</span></div>
+      <div class="news-hl"><a href="${n.url}" target="_blank">${n.title||'—'}</a></div>
+    </div>`).join(''):'<div class="section-note">No news available</div>';
     setTS('ts-news-home');
   }catch(e){el.innerHTML='<div class="section-note">News unavailable</div>';}
 }
@@ -1148,8 +1150,10 @@ async function loadAIBriefing(force=false){
   el.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Generating daily market briefing...</div>';
   if(badge)badge.style.display='none';
   try{
-    const resp=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
-      method:'POST',headers:{'Content-Type':'application/json'},
+    // Try direct then proxy - Anthropic blocks direct browser calls
+    // Proxy must have api.anthropic.com in allowlist and support POST
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
 
 You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter.
@@ -1170,7 +1174,29 @@ Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is
     el.innerHTML='<div class="ai-briefing">'+html+'</div>';
     if(badge){badge.style.display='';badge.textContent='Generated Today';}
     document.getElementById('ai-ts').textContent='Generated '+ts();
-  }catch(e){el.innerHTML='<div class="section-note">AI briefing unavailable. Check connection.</div>';}
+  }catch(e){
+    // If direct call fails (CORS), try through proxy
+    try{
+      const resp2=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}. You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter. Write a daily market briefing covering: 1. **Market Conditions** — 2-3 sentences on the current market environment 2. **3 Stocks Worth Researching Today** — specific tickers with brief reason (growth + dividend mix) 3. **Canadian/TSX Angle** — one specific Canadian stock or sector observation 4. **Key Risk This Week** — one macro or market risk to monitor. Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is for personal research only, not financial advice.`}]})
+      });
+      if(resp2.ok){
+        const d2=await resp2.json();
+        const text2=d2.content?.[0]?.text||'';
+        if(text2){
+          const html2=text2.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/
+/g,'<br/>');
+          save(cacheKey,html2);save(dateKey,TODAY);
+          el.innerHTML='<div class="ai-briefing">'+html2+'</div>';
+          if(badge){badge.style.display='';badge.textContent='Generated Today';}
+          document.getElementById('ai-ts').textContent='Generated '+ts();
+          return;
+        }
+      }
+    }catch(e2){}
+    el.innerHTML='<div class="section-note">AI briefing requires proxy update. Add <code>api.anthropic.com</code> to your proxy allowlist and ensure it supports POST requests.</div>';
+  }
 }
 
 // ══════════════════════════════════════════
