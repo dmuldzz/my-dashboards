@@ -844,7 +844,6 @@ select option{background:var(--surface2);}
 // CORE
 // ══════════════════════════════════════════
 const PROXY='https://my-proxy-k3dsmkqh1-dmuldzzs-projects.vercel.app/api/proxy?url=';
-const PROXY2='https://corsproxy.io/?url='; // fallback for domains not in own proxy
 const FINNHUB='d6r4g9pr01qgdhqd4k40d6r4g9pr01qgdhqd4k4g';
 const FMP_KEY='w5AmcMUVebOc3SZIl9fqXk0lIxAlCJ4o';
 const FH_BASE='https://finnhub.io/api/v1';
@@ -900,17 +899,9 @@ async function fmpFetch(path,useCache=true){
   const cacheKey='fmp_'+path.replace(/[^a-z0-9]/gi,'_');
   if(useCache){const c=cacheGet(cacheKey,86400000);if(c){return c;}}
   const url=FMP_BASE+path+(path.includes('?')?'&':'?')+'apikey='+FMP_KEY;
-  // Try own proxy first, fall back to corsproxy.io if domain not yet allowed
-  let d=null;
-  try{
-    const r=await fetch(PROXY+encodeURIComponent(url));
-    if(r.ok){d=await r.json();}
-  }catch(e){}
-  if(!d){
-    const r2=await fetch(PROXY2+encodeURIComponent(url));
-    if(!r2.ok)throw new Error(r2.status);
-    d=await r2.json();
-  }
+  const r=await fetch(PROXY+encodeURIComponent(url));
+  if(!r.ok)throw new Error(r.status);
+  const d=await r.json();
   if(useCache&&d){cacheSet(cacheKey,d);trackFMP(1);}
   return d;
 }
@@ -1050,17 +1041,26 @@ function quickResearch(ticker){showTab('research');document.getElementById('rese
 async function loadHomeNews(){
   const el=document.getElementById('home-news');if(!el)return;
   try{
-    // Use FMP stock news - free tier, no proxy needed (CORS supported)
-    const d=await fmpFetch('/stock_news?limit=10');
-    const items=(d||[]).slice(0,6);
-    el.innerHTML=items.length?items.map(n=>`<div class="news-item">
-      <div class="news-meta"><span class="news-src">${n.site||n.symbol||'—'}</span><span class="news-time">${timeSince(n.publishedDate)}</span></div>
-      <div class="news-hl"><a href="${n.url}" target="_blank">${n.title||'—'}</a></div>
-    </div>`).join(''):'<div class="section-note">No news available</div>';
+    // Use Finnhub company news for key tickers (free tier)
+    const tickers=['AAPL','NVDA','MSFT','TSLA','AMZN'];
+    const allNews=[];
+    for(const t of tickers){
+      const from=new Date(NOW-7*86400000).toISOString().split('T')[0];
+      const d=await fhFetch('/company-news?symbol='+t+'&from='+from+'&to='+TODAY).catch(()=>null);
+      if(d&&d.length)allNews.push(...d.slice(0,2).map(n=>({...n,sym:t})));
+    }
+    allNews.sort((a,b)=>b.datetime-a.datetime);
+    el.innerHTML=allNews.slice(0,6).map(n=>`<div class="news-item">
+      <div class="news-meta">
+        <span class="news-src">${n.source||n.sym}</span>
+        <span class="news-time">${timeSince(n.datetime*1000)}</span>
+        ${n.sentiment?`<span class="news-sent ${n.sentiment==='positive'?'sent-pos':n.sentiment==='negative'?'sent-neg':'sent-neu'}">${n.sentiment}</span>`:''}
+      </div>
+      <div class="news-hl"><a href="${n.url}" target="_blank">${n.headline||'—'}</a></div>
+    </div>`).join('')||'<div class="section-note">No recent news</div>';
     setTS('ts-news-home');
   }catch(e){el.innerHTML='<div class="section-note">News unavailable</div>';}
 }
-
 // ══════════════════════════════════════════
 // HOME EARNINGS
 // ══════════════════════════════════════════
@@ -1068,20 +1068,16 @@ let ALL_EARNINGS=[];
 async function loadEarningsCalendar(){
   const home=document.getElementById('home-earnings');
   const full=document.getElementById('earnings-list');
-  try{
-    const d=await fmpFetch('/earning_calendar?from='+TODAY+'&to='+IN30);
-    ALL_EARNINGS=(d||[]).filter(e=>e.symbol);
-    const homeHtml=ALL_EARNINGS.slice(0,6).map(e=>`<div class="earn-row">
-      <span class="earn-sym" style="cursor:pointer" onclick="quickResearch('${e.symbol}')">${e.symbol}</span>
-      <span class="earn-name">${e.name||''}</span>
-      <div style="text-align:right"><div class="earn-date">${e.date||'—'}</div><div class="earn-when">${e.time==='bmo'?'Pre-mkt':e.time==='amc'?'After-hrs':'—'}</div></div>
-    </div>`).join('');
-    if(home)home.innerHTML=homeHtml||'<div class="section-note">No earnings scheduled</div>';
-    renderFullEarnings();
-    setTS('ts-earnings');
-  }catch(e){if(home)home.innerHTML='<div class="section-note">Earnings data unavailable</div>';}
+  const msg=`<div style="font-size:12px;color:var(--text2);line-height:1.8;">
+    <div style="margin-bottom:8px;color:var(--text3);">Earnings calendar requires proxy update. Best free sources:</div>
+    <a href="https://finance.yahoo.com/calendar/earnings" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Yahoo Finance Earnings Calendar</a>
+    <a href="https://stockanalysis.com/earnings-calendar/" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Stock Analysis Earnings Calendar</a>
+    <a href="https://earningswhispers.com" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Earnings Whispers</a>
+  </div>`;
+  if(home)home.innerHTML=msg;
+  if(full)full.innerHTML=msg;
+  ALL_EARNINGS=[];
 }
-
 function renderFullEarnings(){
   const el=document.getElementById('earnings-list');if(!el)return;
   const f=document.getElementById('earn-filter')?.value||'all';
@@ -1101,33 +1097,22 @@ function filterEarnings(){renderFullEarnings();}
 async function loadEconCalendar(){
   const homeEl=document.getElementById('home-econ');
   const fullEl=document.getElementById('macro-calendar');
-  try{
-    const d=await fmpFetch('/economic_calendar?from='+TODAY+'&to='+IN30);
-    const events=(d||[]).filter(e=>e.event).slice(0,40);
-    const renderEvents=(items,max)=>items.slice(0,max).map(e=>{
-      const imp=e.impact==='High'?'high':e.impact==='Medium'?'med':'low';
-      return `<div class="econ-row">
-        <div class="econ-date">${(e.date||'').substring(0,10)}</div>
-        <div class="econ-dot imp-${imp}"></div>
-        <div><div class="econ-title">${e.event}</div><div class="econ-detail">${e.country||''} ${e.estimate?'Est: '+e.estimate:''} ${e.previous?'Prev: '+e.previous:''}</div></div>
-      </div>`;
-    }).join('');
-    if(homeEl)homeEl.innerHTML=renderEvents(events.filter(e=>e.impact==='High'),5)||'<div class="section-note">No high-impact events this week</div>';
-    if(fullEl)fullEl.innerHTML=renderEvents(events,40)||'<div class="section-note">No events found</div>';
-    setTS('ts-macro');
-    // Rate environment
-    const rateEl=document.getElementById('rate-env');
-    if(rateEl){
-      rateEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text2);">
-        <div style="display:flex;justify-content:space-between;"><span>Fed Funds Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text)">4.25–4.50%</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>BoC Policy Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text)">2.75%</span></div>
-        <div style="display:flex;justify-content:space-between;"><span>10Y Treasury</span><span style="font-family:'DM Mono',monospace;color:var(--blue)"><a href="https://finance.yahoo.com/quote/%5ETNX" target="_blank" style="color:var(--blue);">Yahoo Finance ↗</a></span></div>
-        <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" style="font-size:11px;margin-top:4px;">Next FOMC meeting schedule →</a>
-      </div>`;
-    }
-  }catch(e){if(homeEl)homeEl.innerHTML='<div class="section-note">Economic calendar unavailable</div>';}
+  const msg=`<div style="font-size:12px;color:var(--text2);line-height:1.8;">
+    <div style="margin-bottom:8px;color:var(--text3);">Economic calendar requires proxy update. Best free sources:</div>
+    <a href="https://www.forexfactory.com/calendar" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>ForexFactory — best free economic calendar</a>
+    <a href="https://tradingeconomics.com/calendar" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Trading Economics Calendar</a>
+    <a href="https://www.bankofcanada.ca/rates/interest-rates/canadian-interest-rates/" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Bank of Canada Rate Schedule</a>
+  </div>`;
+  if(homeEl)homeEl.innerHTML=msg;
+  if(fullEl)fullEl.innerHTML=msg;
+  const rateEl=document.getElementById('rate-env');
+  if(rateEl)rateEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text2);">
+    <div style="display:flex;justify-content:space-between;"><span>Fed Funds Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text);">4.25–4.50%</span></div>
+    <div style="display:flex;justify-content:space-between;"><span>BoC Policy Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text);">2.75%</span></div>
+    <a href="https://finance.yahoo.com/quote/%5ETNX" target="_blank" style="font-size:11px;color:var(--em);margin-top:4px;">Live 10Y Treasury → Yahoo Finance</a>
+    <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" style="font-size:11px;color:var(--em);">FOMC Meeting Calendar →</a>
+  </div>`;
 }
-
 // Macro themes
 document.getElementById('macro-themes').innerHTML=[
   'Watch Fed language on "higher for longer" vs pivot signals',
@@ -1144,6 +1129,7 @@ document.getElementById('macro-themes').innerHTML=[
 async function loadAIBriefing(force=false){
   const el=document.getElementById('ai-briefing-content');
   const badge=document.getElementById('ai-cache-badge');
+  // Check cache first
   const cacheKey='rt3_ai_briefing';
   const dateKey='rt3_ai_date';
   if(!force&&load(dateKey,'')===TODAY&&load(cacheKey,'')){
@@ -1155,54 +1141,26 @@ async function loadAIBriefing(force=false){
   el.innerHTML='<div class="ai-loading"><div class="ai-spinner"></div>Generating daily market briefing...</div>';
   if(badge)badge.style.display='none';
   try{
-    // Try direct then proxy - Anthropic blocks direct browser calls
-    // Proxy must have api.anthropic.com in allowlist and support POST
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
-
-You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter.
-
-Write a daily market briefing covering:
-1. **Market Conditions** — 2-3 sentences on the current market environment
-2. **3 Stocks Worth Researching Today** — specific tickers with brief reason (growth + dividend mix)  
-3. **Canadian/TSX Angle** — one specific Canadian stock or sector observation
-4. **Key Risk This Week** — one macro or market risk to monitor
-
-Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is for personal research only, not financial advice.`}]})
+    const body=JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:'Today is '+NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+'. You are a concise investment research analyst. The user focuses on growth stocks (tech, biotech, disruptors), dividend income investing, and macro indicators. They are Canadian (Brampton, Ontario). Write a daily market briefing: 1. **Market Conditions** 2-3 sentences. 2. **3 Stocks Worth Researching** specific tickers with reason. 3. **Canadian/TSX Angle** one observation. 4. **Key Risk This Week** one item. Under 280 words. Bold headers. Not financial advice.'}]});
+    const r=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body
     });
-    const d=await resp.json();
+    if(!r.ok)throw new Error(r.status);
+    const d=await r.json();
     const text=d.content?.[0]?.text||'';
-    if(!text)throw new Error('no response');
-    const html=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>');
+    if(!text)throw new Error('empty');
+    const html=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/
+/g,'<br/>');
     save(cacheKey,html);save(dateKey,TODAY);
     el.innerHTML='<div class="ai-briefing">'+html+'</div>';
     if(badge){badge.style.display='';badge.textContent='Generated Today';}
     document.getElementById('ai-ts').textContent='Generated '+ts();
   }catch(e){
-    // If direct call fails (CORS), try through proxy
-    try{
-      const resp2=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
-        method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}. You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter. Write a daily market briefing covering: 1. **Market Conditions** — 2-3 sentences on the current market environment 2. **3 Stocks Worth Researching Today** — specific tickers with brief reason (growth + dividend mix) 3. **Canadian/TSX Angle** — one specific Canadian stock or sector observation 4. **Key Risk This Week** — one macro or market risk to monitor. Be specific with ticker symbols. Keep under 280 words. Use bold headers. This is for personal research only, not financial advice.`}]})
-      });
-      if(resp2.ok){
-        const d2=await resp2.json();
-        const text2=d2.content?.[0]?.text||'';
-        if(text2){
-          const html2=text2.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br/>');
-          save(cacheKey,html2);save(dateKey,TODAY);
-          el.innerHTML='<div class="ai-briefing">'+html2+'</div>';
-          if(badge){badge.style.display='';badge.textContent='Generated Today';}
-          document.getElementById('ai-ts').textContent='Generated '+ts();
-          return;
-        }
-      }
-    }catch(e2){}
-    el.innerHTML='<div class="section-note">AI briefing requires proxy update. Add <code>api.anthropic.com</code> to your proxy allowlist and ensure it supports POST requests.</div>';
+    el.innerHTML='<div class="section-note" style="text-align:left;padding:8px 0;">AI briefing unavailable until proxy is updated to allow <code style="font-family:'DM Mono',monospace;color:var(--em);">api.anthropic.com</code>. All other research features work.</div>';
   }
 }
-
 // ══════════════════════════════════════════
 // DEEP RESEARCH
 // ══════════════════════════════════════════
@@ -1289,7 +1247,11 @@ async function loadResearch(){
 }
 
 async function loadFMPResearch(ticker){
-  // Profile + ratios + DCF
+  // Show graceful pending state for FMP sections until proxy is updated
+  const fmpMsg='<div class="section-note" style="text-align:left;">Requires proxy update for <code style="font-family:'DM Mono',monospace;color:var(--em);">financialmodelingprep.com</code>. <a href="https://stockanalysis.com/stocks/'+ticker.toLowerCase()+'/financials/" target="_blank" style="color:var(--em);">View financials on Stock Analysis →</a></div>';
+  const ids=['res-ratios','res-income','res-balance','res-cashflow','res-profile','res-dcf'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=fmpMsg;});
+  // Try anyway - will work once proxy updates
   try{
     const [ratios,dcf]=await Promise.all([
       fmpFetch('/ratios-ttm/'+ticker),
@@ -1308,83 +1270,28 @@ async function loadFMPResearch(ticker){
       ['Div Yield',r.dividendYielTTM?fmt(r.dividendYielTTM*100,2)+'%':null],
     ].filter(([_,v])=>v);
     const el=document.getElementById('res-ratios');
-    if(el)el.innerHTML=ratioItems.map(([l,v])=>`<div class="ratio-item"><div class="ratio-label">${l}</div><div class="ratio-val">${v}</div></div>`).join('')||'<div class="section-note">No ratio data available</div>';
+    if(el&&ratioItems.length)el.innerHTML=ratioItems.map(([l,v])=>`<div class="ratio-item"><div class="ratio-label">${l}</div><div class="ratio-val">${v}</div></div>`).join('');
     if(dcf?.[0]){
       const el2=document.getElementById('res-dcf');
       const d=dcf[0];
-      if(el2)el2.innerHTML=`
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--em);">$${fmt(d.dcf)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">DCF Fair Value</div></div>
-          <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--text);">$${fmt(d.price)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">Current Price</div></div>
-        </div>
-        <div style="font-size:12px;color:${d.dcf>d.price?'var(--up)':'var(--dn)'};padding:7px 10px;background:${d.dcf>d.price?'var(--em-dim)':'var(--red-dim)'};border-left:2px solid ${d.dcf>d.price?'var(--em)':'var(--dn)'};">
-          ${d.dcf>d.price?'Potentially undervalued':'Potentially overvalued'} — ${Math.abs(((d.dcf-d.price)/d.price)*100).toFixed(1)}% ${d.dcf>d.price?'upside':'downside'} to DCF
-        </div>
-        <p class="disclaimer">DCF estimate from FMP. Based on projected cash flows. Not a recommendation.</p>`;
+      if(el2)el2.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--em)">$${fmt(d.dcf)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">DCF Fair Value</div></div>
+        <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--text)">$${fmt(d.price)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">Current Price</div></div>
+      </div>
+      <div style="font-size:12px;color:${d.dcf>d.price?'var(--up)':'var(--dn)'};padding:7px 10px;background:${d.dcf>d.price?'var(--em-dim)':'var(--red-dim)'};border-left:2px solid ${d.dcf>d.price?'var(--em)':'var(--dn)'}">
+        ${d.dcf>d.price?'Potentially undervalued':'Potentially overvalued'} — ${Math.abs(((d.dcf-d.price)/d.price)*100).toFixed(1)}% ${d.dcf>d.price?'upside':'downside'} to DCF
+      </div>`;
     }
-  }catch(e){
-    const el=document.getElementById('res-ratios');
-    if(el)el.innerHTML='<div class="section-note">Ratios unavailable (FMP limit may be reached)</div>';
-  }
-  // Financial statements
-  try{
     const [income,balance,cashflow]=await Promise.all([
       fmpFetch('/income-statement/'+ticker+'?limit=3'),
       fmpFetch('/balance-sheet-statement/'+ticker+'?limit=3'),
       fmpFetch('/cash-flow-statement/'+ticker+'?limit=3'),
     ]);
-    renderIncomeStatement(income||[]);
-    renderBalanceSheet(balance||[]);
-    renderCashFlow(cashflow||[]);
-  }catch(e){}
-  // Company profile
-  try{
+    renderIncomeStatement(income||[]);renderBalanceSheet(balance||[]);renderCashFlow(cashflow||[]);
     const prof=await fmpFetch('/profile/'+ticker);
     const p=prof?.[0];
-    if(p){
-      const el=document.getElementById('res-profile');
-      if(el)el.innerHTML=`<div style="font-size:12px;color:var(--text2);line-height:1.7;">${(p.description||'').substring(0,300)}${p.description?.length>300?'...':''}</div>
-        <div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--text3);flex-wrap:wrap;">
-          <span>CEO: <strong style="color:var(--text2)">${p.ceo||'—'}</strong></span>
-          <span>Exchange: <strong style="color:var(--text2)">${p.exchangeShortName||'—'}</strong></span>
-          <span>Employees: <strong style="color:var(--text2)">${p.fullTimeEmployees?Number(p.fullTimeEmployees).toLocaleString():'-'}</strong></span>
-          <span>IPO: <strong style="color:var(--text2)">${p.ipoDate||'—'}</strong></span>
-        </div>`;
-    }
+    if(p){const el=document.getElementById('res-profile');if(el)el.innerHTML=`<div style="font-size:12px;color:var(--text2);line-height:1.7;">${(p.description||'').substring(0,300)}${p.description?.length>300?'...':''}</div><div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--text3);flex-wrap:wrap;"><span>CEO: <strong style="color:var(--text2)">${p.ceo||'—'}</strong></span><span>Exchange: <strong style="color:var(--text2)">${p.exchangeShortName||'—'}</strong></span><span>Employees: <strong style="color:var(--text2)">${p.fullTimeEmployees?Number(p.fullTimeEmployees).toLocaleString():'-'}</strong></span><span>IPO: <strong style="color:var(--text2)">${p.ipoDate||'—'}</strong></span></div>`;}
   }catch(e){}
-}
-
-function renderIncomeStatement(data){
-  const el=document.getElementById('res-income');if(!el||!data.length)return;
-  const rows=[
-    ['Revenue','revenue'],['Gross Profit','grossProfit'],['Operating Income','operatingIncome'],['Net Income','netIncome'],['EPS Diluted','epsdiluted'],
-  ];
-  el.innerHTML=`<table class="fin-table">
-    <tr><th>Metric</th>${data.map(d=>`<th>${d.calendarYear||d.date?.substring(0,4)||'—'}</th>`).join('')}</tr>
-    ${rows.map(([label,key])=>`<tr${key==='netIncome'?' class="highlight"':''}>
-      <td>${label}</td>${data.map(d=>`<td>${key==='epsdiluted'?'$'+fmt(d[key]):fmtB(d[key])}</td>`).join('')}
-    </tr>`).join('')}
-  </table>`;
-}
-
-function renderBalanceSheet(data){
-  const el=document.getElementById('res-balance');if(!el||!data.length)return;
-  const rows=[['Cash','cashAndCashEquivalents'],['Total Assets','totalAssets'],['Total Debt','totalDebt'],['Total Liabilities','totalLiabilities'],['Stockholder Equity','totalStockholdersEquity']];
-  el.innerHTML=`<table class="fin-table">
-    <tr><th>Metric</th>${data.map(d=>`<th>${d.calendarYear||d.date?.substring(0,4)||'—'}</th>`).join('')}</tr>
-    ${rows.map(([l,k])=>`<tr><td>${l}</td>${data.map(d=>`<td>${fmtB(d[k])}</td>`).join('')}</tr>`).join('')}
-  </table>`;
-}
-
-function renderCashFlow(data){
-  const el=document.getElementById('res-cashflow');if(!el||!data.length)return;
-  const rows=[['Operating CF','operatingCashFlow'],['Free Cash Flow','freeCashFlow'],['CapEx','capitalExpenditure'],['Dividends Paid','dividendsPaid']];
-  el.innerHTML=`<table class="fin-table">
-    <tr><th>Metric</th>${data.map(d=>`<th>${d.calendarYear||d.date?.substring(0,4)||'—'}</th>`).join('')}</tr>
-    ${rows.map(([l,k])=>`<tr${k==='freeCashFlow'?' class="highlight"':''}>
-      <td>${l}</td>${data.map(d=>`<td>${fmtB(d[k])}</td>`).join('')}
-    </tr>`).join('')}
-  </table>`;
 }
 
 async function loadResearchAnalyst(ticker){
@@ -1535,40 +1442,47 @@ function applyPreset(name,btn){
 
 async function runScreener(){
   const el=document.getElementById('screener-results');
-  el.innerHTML='<div class="skel"></div><div class="skel" style="width:80%"></div>';
-  const params={
-    sector:document.getElementById('f-sector').value,
-    marketCapMoreThan:document.getElementById('f-mktcap').value==='large'?10000000000:document.getElementById('f-mktcap').value==='mid'?2000000000:document.getElementById('f-mktcap').value==='small'?300000000:'',
-    marketCapLowerThan:document.getElementById('f-mktcap').value==='mid'?10000000000:document.getElementById('f-mktcap').value==='small'?2000000000:document.getElementById('f-mktcap').value==='micro'?300000000:'',
-    country:document.getElementById('f-country').value,
-    exchange:document.getElementById('f-exchange').value,
-    volumeMoreThan:document.getElementById('f-vol').value,
-    betaLowerThan:document.getElementById('f-beta').value,
-    dividendMoreThan:document.getElementById('f-div').value,
-    isEtf:false,isActivelyTrading:true,limit:30,
-  };
-  const pRange=document.getElementById('f-pe').value;
-  if(pRange){const[lo,hi]=pRange.split(',');if(lo)params.priceMoreThan=0;if(hi)params.peLowerThan=hi;}
-  const qs=Object.entries(params).filter(([,v])=>v!==''&&v!==undefined&&v!==null).map(([k,v])=>k+'='+v).join('&');
+  // Try FMP screener (works once proxy is updated)
+  const sector=document.getElementById('f-sector').value;
+  const country=document.getElementById('f-country').value;
+  const mktcap=document.getElementById('f-mktcap').value;
+  const divMin=document.getElementById('f-div').value;
+  const exchange=document.getElementById('f-exchange').value;
+  el.innerHTML='<div class="skel"></div><div class="skel" style="width:75%"></div>';
   try{
+    const params={isEtf:false,isActivelyTrading:true,limit:30};
+    if(sector)params.sector=sector;
+    if(country)params.country=country;
+    if(exchange)params.exchange=exchange;
+    if(mktcap==='large')params.marketCapMoreThan=10000000000;
+    if(mktcap==='mid'){params.marketCapMoreThan=2000000000;params.marketCapLowerThan=10000000000;}
+    if(mktcap==='small'){params.marketCapMoreThan=300000000;params.marketCapLowerThan=2000000000;}
+    if(divMin)params.dividendMoreThan=divMin;
+    const qs=Object.entries(params).filter(([,v])=>v!==''&&v!==undefined).map(([k,v])=>k+'='+v).join('&');
     const data=await fmpFetch('/stock-screener?'+qs+'&limit=30');
     document.getElementById('screener-title').innerHTML='Results ('+data.length+') <span class="fmp-badge">FMP</span>';
     setTS('ts-screener');
     el.innerHTML=`<div style="overflow-x:auto"><table>
-      <tr><th>Ticker</th><th>Company</th><th style="text-align:right">Price</th><th style="text-align:right">Mkt Cap</th><th style="text-align:right">P/E</th><th style="text-align:right">Beta</th><th style="text-align:right">Div Yield</th><th style="text-align:right">Volume</th></tr>
+      <tr><th>Ticker</th><th>Company</th><th>Price</th><th>Mkt Cap</th><th>P/E</th><th>Beta</th><th>Div Yield</th></tr>
       ${data.map(s=>`<tr>
-        <td onclick="quickResearch('${s.symbol}')" style="cursor:pointer;color:var(--em);font-family:'DM Mono',monospace;font-size:13px;">${s.symbol}</td>
-        <td style="color:var(--text);font-family:'DM Sans',sans-serif;">${s.companyName||'—'}</td>
-        <td>$${fmt(s.price)}</td>
-        <td>${fmtB(s.marketCap)}</td>
-        <td>${s.pe?fmt(s.pe,1):'—'}</td>
-        <td>${s.beta?fmt(s.beta,2):'—'}</td>
+        <td onclick="quickResearch('${s.symbol}')" style="cursor:pointer;color:var(--em);font-family:'DM Mono',monospace">${s.symbol}</td>
+        <td style="color:var(--text);font-family:'DM Sans',sans-serif">${s.companyName||'—'}</td>
+        <td>$${fmt(s.price)}</td><td>${fmtB(s.marketCap)}</td>
+        <td>${s.pe?fmt(s.pe,1):'—'}</td><td>${s.beta?fmt(s.beta,2):'—'}</td>
         <td>${s.lastAnnualDividend?fmt(s.lastAnnualDividend,2)+'%':'—'}</td>
-        <td>${s.volume?fmtB(s.volume):'—'}</td>
       </tr>`).join('')}
     </table></div>`;
-  }catch(e){el.innerHTML='<div class="section-note">Screener unavailable. FMP limit may be reached for today.</div>';}
+  }catch(e){
+    document.getElementById('screener-title').innerHTML='Screener <span class="fmp-badge">FMP</span>';
+    el.innerHTML=`<div style="font-size:12px;color:var(--text2);line-height:2;">
+      <div style="color:var(--text3);margin-bottom:10px;">Screener requires proxy update. Best free screeners:</div>
+      <a href="https://finviz.com/screener.ashx" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Finviz — powerful free stock screener</a>
+      <a href="https://stockanalysis.com/screener/stock/" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>Stock Analysis Screener</a>
+      <a href="https://www.tmxmoney.com/en/research/stock_screener.html" target="_blank" class="ql-item" style="display:flex;align-items:center;gap:5px;font-size:13px;"><span style="width:5px;height:5px;background:var(--em);flex-shrink:0;display:inline-block;"></span>TMX Money Screener (TSX/Canadian)</a>
+    </div>`;
+  }
 }
+
 function resetScreener(){['f-sector','f-mktcap','f-pe','f-div','f-country','f-exchange','f-beta','f-vol'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});}
 
 // ══════════════════════════════════════════
