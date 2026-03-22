@@ -1059,12 +1059,12 @@ async function loadEarningsCalendar(){
   const home=document.getElementById('home-earnings');
   const full=document.getElementById('earnings-list');
   try{
-    const d=await fhFetch('/calendar/earnings?from='+TODAY+'&to='+IN30);
-    ALL_EARNINGS=(d.earningsCalendar||[]).filter(e=>e.symbol);
+    const d=await fmpFetch('/earning_calendar?from='+TODAY+'&to='+IN30);
+    ALL_EARNINGS=(d||[]).filter(e=>e.symbol);
     const homeHtml=ALL_EARNINGS.slice(0,6).map(e=>`<div class="earn-row">
       <span class="earn-sym" style="cursor:pointer" onclick="quickResearch('${e.symbol}')">${e.symbol}</span>
-      <span class="earn-name">${e.company||''}</span>
-      <div style="text-align:right"><div class="earn-date">${e.date||'—'}</div><div class="earn-when">${e.hour==='bmo'?'Pre-mkt':e.hour==='amc'?'After-hrs':'—'}</div></div>
+      <span class="earn-name">${e.name||''}</span>
+      <div style="text-align:right"><div class="earn-date">${e.date||'—'}</div><div class="earn-when">${e.time==='bmo'?'Pre-mkt':e.time==='amc'?'After-hrs':'—'}</div></div>
     </div>`).join('');
     if(home)home.innerHTML=homeHtml||'<div class="section-note">No earnings scheduled</div>';
     renderFullEarnings();
@@ -1078,9 +1078,9 @@ function renderFullEarnings(){
   const data=f==='all'?ALL_EARNINGS:ALL_EARNINGS.filter(e=>e.hour===f);
   el.innerHTML=data.slice(0,40).map(e=>`<div class="earn-row">
     <span class="earn-sym" style="cursor:pointer" onclick="quickResearch('${e.symbol}')">${e.symbol}</span>
-    <span class="earn-name">${e.company||''}</span>
-    <span class="earn-eps">${e.epsEstimate?'Est: $'+fmt(e.epsEstimate):''}</span>
-    <div style="text-align:right;margin-left:auto"><div class="earn-date">${e.date||'—'}</div><div class="earn-when">${e.hour==='bmo'?'Pre-market':e.hour==='amc'?'After-hours':'—'}</div></div>
+    <span class="earn-name">${e.name||''}</span>
+    <span class="earn-eps">${e.eps?'Est: $'+fmt(e.eps):''}</span>
+    <div style="text-align:right;margin-left:auto"><div class="earn-date">${e.date||'—'}</div><div class="earn-when">${e.time==='bmo'?'Pre-market':e.time==='amc'?'After-hours':'—'}</div></div>
   </div>`).join('')||'<div class="section-note">No earnings found</div>';
 }
 function filterEarnings(){renderFullEarnings();}
@@ -1092,17 +1092,17 @@ async function loadEconCalendar(){
   const homeEl=document.getElementById('home-econ');
   const fullEl=document.getElementById('macro-calendar');
   try{
-    const d=await fhFetch('/calendar/economic?from='+TODAY+'&to='+IN30);
-    const events=(d.economicCalendar||[]).filter(e=>e.event).slice(0,40);
+    const d=await fmpFetch('/economic_calendar?from='+TODAY+'&to='+IN30);
+    const events=(d||[]).filter(e=>e.event).slice(0,40);
     const renderEvents=(items,max)=>items.slice(0,max).map(e=>{
-      const imp=e.impact==='high'?'high':e.impact==='medium'?'med':'low';
+      const imp=e.impact==='High'?'high':e.impact==='Medium'?'med':'low';
       return `<div class="econ-row">
-        <div class="econ-date">${(e.time||e.date||'').substring(0,10)}</div>
+        <div class="econ-date">${(e.date||'').substring(0,10)}</div>
         <div class="econ-dot imp-${imp}"></div>
-        <div><div class="econ-title">${e.event}</div><div class="econ-detail">${e.country||''} ${e.estimate?'Est: '+e.estimate:''} ${e.prev?'Prev: '+e.prev:''}</div></div>
+        <div><div class="econ-title">${e.event}</div><div class="econ-detail">${e.country||''} ${e.estimate?'Est: '+e.estimate:''} ${e.previous?'Prev: '+e.previous:''}</div></div>
       </div>`;
     }).join('');
-    if(homeEl)homeEl.innerHTML=renderEvents(events.filter(e=>e.impact==='high'),5)||'<div class="section-note">No high-impact events this week</div>';
+    if(homeEl)homeEl.innerHTML=renderEvents(events.filter(e=>e.impact==='High'),5)||'<div class="section-note">No high-impact events this week</div>';
     if(fullEl)fullEl.innerHTML=renderEvents(events,40)||'<div class="section-note">No events found</div>';
     setTS('ts-macro');
     // Rate environment
@@ -1149,7 +1149,7 @@ async function loadAIBriefing(force=false){
   if(badge)badge.style.display='none';
   try{
     const resp=await fetch(PROXY+encodeURIComponent('https://api.anthropic.com/v1/messages'),{
-      method:'POST',headers:{'Content-Type':'application/json','x-api-key':'','anthropic-version':'2023-06-01'},
+      method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Today is ${NOW.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}.
 
 You are a concise investment research analyst. The user is focused on growth stocks (tech, biotech, disruptors), dividend income investing, and macro/economic indicators. They are Canadian (based in Brampton, Ontario) so Canadian market context and CAD/USD dynamics matter.
@@ -1415,15 +1415,12 @@ async function loadResearchInsider(ticker){
 
 async function loadResearchCongress(ticker){
   const el=document.getElementById('res-congress');if(!el)return;
-  try{
-    const from=new Date(NOW-180*86400000).toISOString().split('T')[0];
-    const d=await fhFetch('/stock/congressional-trading?symbol='+ticker+'&from='+from+'&to='+TODAY);
-    el.innerHTML=(d?.data||[]).slice(0,6).map(t=>`<div class="congress-row">
-      <span class="c-type ${t.transactionType==='Buy'?'c-buy':'c-sell'}">${t.transactionType||'—'}</span>
-      <div class="c-detail">${t.name||'—'}<div class="c-meta">${t.transactionDate||'—'}</div></div>
-      <span class="c-amount">$${t.amount||'—'}</span>
-    </div>`).join('')||'<div class="section-note">No congressional trades in last 6 months</div>';
-  }catch(e){el.innerHTML='<div class="section-note">Congressional trade data unavailable</div>';}
+  // Congressional trading requires Finnhub premium - link to free sources
+  el.innerHTML=`<div style="font-size:12px;color:var(--text2);line-height:1.8;">
+    <a href="https://www.capitoltrades.com/tickers/${ticker}" target="_blank" class="ql-item" style="font-size:13px;display:flex;align-items:center;gap:5px;"><span style="width:5px;height:5px;background:var(--em);display:inline-block;flex-shrink:0;"></span>Capitol Trades — ${ticker}</a>
+    <a href="https://unusualwhales.com/politics?ticker=${ticker}" target="_blank" class="ql-item" style="font-size:13px;display:flex;align-items:center;gap:5px;margin-top:6px;"><span style="width:5px;height:5px;background:var(--em);display:inline-block;flex-shrink:0;"></span>Unusual Whales — ${ticker}</a>
+    <div style="margin-top:8px;font-size:11px;color:var(--text3);">Congressional trade data requires Finnhub premium.</div>
+  </div>`;
 }
 
 async function loadResearchEarnings(ticker){
@@ -1550,12 +1547,18 @@ function resetScreener(){['f-sector','f-mktcap','f-pe','f-div','f-country','f-ex
 let ALL_CONGRESS=[];
 async function loadCongressTrades(){
   const el=document.getElementById('congress-list');if(!el)return;
-  try{
-    const from=new Date(NOW-60*86400000).toISOString().split('T')[0];
-    const d=await fhFetch('/stock/congressional-trading?symbol=&from='+from+'&to='+TODAY);
-    ALL_CONGRESS=(d?.data||[]).slice(0,50);
-    filterCongress();setTS('ts-congress');
-  }catch(e){el.innerHTML='<div class="section-note">Congressional trades unavailable</div>';}
+  // Finnhub congressional trading requires premium plan
+  // Show curated links to best free sources
+  el.innerHTML=`<div style="font-size:12px;color:var(--text2);line-height:1.9;">
+    <div style="margin-bottom:10px;">Congressional trade data requires a Finnhub premium plan. Use these free sources for the same data:</div>
+    <div class="ql-grid">
+      <a href="https://www.capitoltrades.com" target="_blank" class="ql-item" style="font-size:13px;">Capitol Trades — most complete free congressional trade tracker</a>
+      <a href="https://www.quiverquant.com/congresstrading/" target="_blank" class="ql-item" style="font-size:13px;">Quiver Quantitative — Congress trading with charts</a>
+      <a href="https://unusualwhales.com/politics" target="_blank" class="ql-item" style="font-size:13px;">Unusual Whales — political alpha tracker</a>
+      <a href="https://www.opensecrets.org" target="_blank" class="ql-item" style="font-size:13px;">OpenSecrets — political money flows</a>
+    </div>
+  </div>`;
+  ALL_CONGRESS=[];
 }
 function filterCongress(){
   const el=document.getElementById('congress-list');if(!el)return;
