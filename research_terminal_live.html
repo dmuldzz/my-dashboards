@@ -1157,7 +1157,7 @@ async function loadAIBriefing(force=false){
     if(badge){badge.style.display='';badge.textContent='Generated Today';}
     document.getElementById('ai-ts').textContent='Generated '+ts();
   }catch(e){
-    el.innerHTML='<div class="section-note" style="text-align:left;padding:8px 0;">AI briefing unavailable until proxy is updated to allow <code style="font-family:'DM Mono',monospace;color:var(--em);">api.anthropic.com</code>. All other research features work.</div>';
+    el.innerHTML='<div class="section-note" style="text-align:left;padding:8px 0;">AI briefing unavailable — proxy needs updating. All other features work.</div>';
   }
 }
 // ══════════════════════════════════════════
@@ -1362,17 +1362,20 @@ async function loadResearchCongress(ticker){
 async function loadResearchEarnings(ticker){
   const el=document.getElementById('res-earnings-next');if(!el)return;
   try{
-    const d=await fhFetch('/calendar/earnings?symbol='+ticker+'&from='+TODAY+'&to='+IN30);
-    const next=(d?.earningsCalendar||[])[0];
-    if(next){
-      el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
-        <div><div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--em)">${next.date||'—'}</div><div style="font-size:11px;color:var(--text2);margin-top:2px;">${next.hour==='bmo'?'Pre-market':next.hour==='amc'?'After-hours':'—'}</div></div>
-        ${next.epsEstimate?`<div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--text)">$${fmt(next.epsEstimate)}</div><div style="font-size:11px;color:var(--text3)">EPS estimate</div></div>`:''}
-      </div>`;
+    // /stock/earnings is free tier - returns historical EPS + surprise data
+    const d=await fhFetch('/stock/earnings?symbol='+ticker+'&limit=5');
+    const recent=(d||[]).slice(0,4);
+    if(recent.length){
+      el.innerHTML=recent.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--em);min-width:65px;">${e.period||'—'}</div>
+        <div style="flex:1;font-size:11px;color:var(--text2);">Q${e.quarter||'?'} ${e.year||''}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);text-align:right;">Act: <span style="color:${(e.actual||0)>=(e.estimate||0)?'var(--up)':'var(--dn)'}">${e.actual!=null?'$'+fmt(e.actual):'—'}</span></div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right;min-width:60px;">Est: ${e.estimate!=null?'$'+fmt(e.estimate):'—'}</div>
+      </div>`).join('')+'<div style="font-size:10px;color:var(--text3);margin-top:6px;">Historical EPS · <a href="https://finance.yahoo.com/quote/'+ticker+'/analysis" target="_blank" style="color:var(--em)">Next date on Yahoo →</a></div>';
     } else {
-      el.innerHTML='<div class="section-note">No earnings scheduled in next 30 days</div>';
+      el.innerHTML='<div class="section-note">No EPS data found. <a href="https://finance.yahoo.com/quote/'+ticker+'/analysis" target="_blank" style="color:var(--em)">Check Yahoo Finance →</a></div>';
     }
-  }catch(e){el.innerHTML='<div class="section-note">Earnings data unavailable</div>';}
+  }catch(e){el.innerHTML='<div class="section-note">Earnings unavailable. <a href="https://finance.yahoo.com/quote/'+ticker+'/analysis" target="_blank" style="color:var(--em)">Yahoo Finance →</a></div>';}
 }
 
 function loadResearchLinks(ticker){
@@ -1733,6 +1736,22 @@ document.getElementById('sector-tracker').innerHTML=SECTORS_TRACK.map(s=>`<div s
 </div>`).join('');
 document.getElementById('sector-notes').value=load('rt3_sector_notes','');
 
+
+function renderIncomeStatement(data){
+  const el=document.getElementById('res-income');if(!el||!data.length)return;
+  const rows=[['Revenue','revenue'],['Gross Profit','grossProfit'],['Operating Income','operatingIncome'],['Net Income','netIncome'],['EPS Diluted','epsdiluted']];
+  el.innerHTML='<table class="fin-table"><tr><th>Metric</th>'+data.map(d=>'<th>'+(d.calendarYear||d.date?.substring(0,4)||'—')+'</th>').join('')+'</tr>'+rows.map(([label,key])=>'<tr'+(key==='netIncome'?' class="highlight"':'')+'><td>'+label+'</td>'+data.map(d=>'<td>'+(key==='epsdiluted'?'$'+fmt(d[key]):fmtB(d[key]))+'</td>').join('')+'</tr>').join('')+'</table>';
+}
+function renderBalanceSheet(data){
+  const el=document.getElementById('res-balance');if(!el||!data.length)return;
+  const rows=[['Cash','cashAndCashEquivalents'],['Total Assets','totalAssets'],['Total Debt','totalDebt'],['Total Liabilities','totalLiabilities'],['Stockholder Equity','totalStockholdersEquity']];
+  el.innerHTML='<table class="fin-table"><tr><th>Metric</th>'+data.map(d=>'<th>'+(d.calendarYear||d.date?.substring(0,4)||'—')+'</th>').join('')+'</tr>'+rows.map(([l,k])=>'<tr><td>'+l+'</td>'+data.map(d=>'<td>'+fmtB(d[k])+'</td>').join('')+'</tr>').join('')+'</table>';
+}
+function renderCashFlow(data){
+  const el=document.getElementById('res-cashflow');if(!el||!data.length)return;
+  const rows=[['Operating CF','operatingCashFlow'],['Free Cash Flow','freeCashFlow'],['CapEx','capitalExpenditure'],['Dividends Paid','dividendsPaid']];
+  el.innerHTML='<table class="fin-table"><tr><th>Metric</th>'+data.map(d=>'<th>'+(d.calendarYear||d.date?.substring(0,4)||'—')+'</th>').join('')+'</tr>'+rows.map(([l,k])=>'<tr'+(k==='freeCashFlow'?' class="highlight"':'')+'><td>'+l+'</td>'+data.map(d=>'<td>'+fmtB(d[k])+'</td>').join('')+'</tr>').join('')+'</table>';
+}
 // ══════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════
