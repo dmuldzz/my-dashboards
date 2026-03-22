@@ -1107,8 +1107,8 @@ async function loadEconCalendar(){
   if(fullEl)fullEl.innerHTML=msg;
   const rateEl=document.getElementById('rate-env');
   if(rateEl)rateEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text2);">
-    <div style="display:flex;justify-content:space-between;"><span>Fed Funds Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text);">4.25–4.50%</span></div>
-    <div style="display:flex;justify-content:space-between;"><span>BoC Policy Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text);">2.75%</span></div>
+    <div style="display:flex;justify-content:space-between;"><span>Fed Funds Rate</span><span style="font-family:monospace;color:var(--text);">4.25–4.50%</span></div>
+    <div style="display:flex;justify-content:space-between;"><span>BoC Policy Rate</span><span style="font-family:monospace;color:var(--text);">2.75%</span></div>
     <a href="https://finance.yahoo.com/quote/%5ETNX" target="_blank" style="font-size:11px;color:var(--em);margin-top:4px;">Live 10Y Treasury → Yahoo Finance</a>
     <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" style="font-size:11px;color:var(--em);">FOMC Meeting Calendar →</a>
   </div>`;
@@ -1247,7 +1247,7 @@ async function loadResearch(){
 
 async function loadFMPResearch(ticker){
   // Show graceful pending state for FMP sections until proxy is updated
-  const fmpMsg='<div class="section-note" style="text-align:left;">Requires proxy update for <code style="font-family:'DM Mono',monospace;color:var(--em);">financialmodelingprep.com</code>. <a href="https://stockanalysis.com/stocks/'+ticker.toLowerCase()+'/financials/" target="_blank" style="color:var(--em);">View financials on Stock Analysis →</a></div>';
+  const fmpMsg='<div class="section-note" style="text-align:left;">Requires proxy update for <code style="font-family:monospace;color:var(--em);">financialmodelingprep.com</code>. <a href="https://stockanalysis.com/stocks/'+ticker.toLowerCase()+'/financials/" target="_blank" style="color:var(--em);">View financials on Stock Analysis →</a></div>';
   const ids=['res-ratios','res-income','res-balance','res-cashflow','res-profile','res-dcf'];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=fmpMsg;});
   // Try anyway - will work once proxy updates
@@ -1274,8 +1274,8 @@ async function loadFMPResearch(ticker){
       const el2=document.getElementById('res-dcf');
       const d=dcf[0];
       if(el2)el2.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--em)">$${fmt(d.dcf)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">DCF Fair Value</div></div>
-        <div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--text)">$${fmt(d.price)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">Current Price</div></div>
+        <div><div style="font-family:monospace;font-size:22px;color:var(--em)">$${fmt(d.dcf)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">DCF Fair Value</div></div>
+        <div style="text-align:right"><div style="font-family:monospace;font-size:22px;color:var(--text)">$${fmt(d.price)}</div><div style="font-size:11px;color:var(--text2);margin-top:3px;">Current Price</div></div>
       </div>
       <div style="font-size:12px;color:${d.dcf>d.price?'var(--up)':'var(--dn)'};padding:7px 10px;background:${d.dcf>d.price?'var(--em-dim)':'var(--red-dim)'};border-left:2px solid ${d.dcf>d.price?'var(--em)':'var(--dn)'}">
         ${d.dcf>d.price?'Potentially undervalued':'Potentially overvalued'} — ${Math.abs(((d.dcf-d.price)/d.price)*100).toFixed(1)}% ${d.dcf>d.price?'upside':'downside'} to DCF
@@ -1367,10 +1367,10 @@ async function loadResearchEarnings(ticker){
     const recent=(d||[]).slice(0,4);
     if(recent.length){
       el.innerHTML=recent.map((e,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);">
-        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--em);min-width:65px;">${e.period||'—'}</div>
+        <div style="font-family:monospace;font-size:11px;color:var(--em);min-width:65px;">${e.period||'—'}</div>
         <div style="flex:1;font-size:11px;color:var(--text2);">Q${e.quarter||'?'} ${e.year||''}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text);text-align:right;">Act: <span style="color:${(e.actual||0)>=(e.estimate||0)?'var(--up)':'var(--dn)'}">${e.actual!=null?'$'+fmt(e.actual):'—'}</span></div>
-        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right;min-width:60px;">Est: ${e.estimate!=null?'$'+fmt(e.estimate):'—'}</div>
+        <div style="font-family:monospace;font-size:12px;color:var(--text);text-align:right;">Act: <span style="color:${(e.actual||0)>=(e.estimate||0)?'var(--up)':'var(--dn)'}">${e.actual!=null?'$'+fmt(e.actual):'—'}</span></div>
+        <div style="font-family:monospace;font-size:11px;color:var(--text3);text-align:right;min-width:60px;">Est: ${e.estimate!=null?'$'+fmt(e.estimate):'—'}</div>
       </div>`).join('')+'<div style="font-size:10px;color:var(--text3);margin-top:6px;">Historical EPS · <a href="https://finance.yahoo.com/quote/'+ticker+'/analysis" target="_blank" style="color:var(--em)">Next date on Yahoo →</a></div>';
     } else {
       el.innerHTML='<div class="section-note">No EPS data found. <a href="https://finance.yahoo.com/quote/'+ticker+'/analysis" target="_blank" style="color:var(--em)">Check Yahoo Finance →</a></div>';
@@ -1467,7 +1467,7 @@ async function runScreener(){
     el.innerHTML=`<div style="overflow-x:auto"><table>
       <tr><th>Ticker</th><th>Company</th><th>Price</th><th>Mkt Cap</th><th>P/E</th><th>Beta</th><th>Div Yield</th></tr>
       ${data.map(s=>`<tr>
-        <td onclick="quickResearch('${s.symbol}')" style="cursor:pointer;color:var(--em);font-family:'DM Mono',monospace">${s.symbol}</td>
+        <td onclick="quickResearch('${s.symbol}')" style="cursor:pointer;color:var(--em);font-family:monospace">${s.symbol}</td>
         <td style="color:var(--text);font-family:'DM Sans',sans-serif">${s.companyName||'—'}</td>
         <td>$${fmt(s.price)}</td><td>${fmtB(s.marketCap)}</td>
         <td>${s.pe?fmt(s.pe,1):'—'}</td><td>${s.beta?fmt(s.beta,2):'—'}</td>
@@ -1664,7 +1664,7 @@ function renderAlerts(){
   el.innerHTML=ALERTS.map(a=>`<div class="wl-row">
     <span class="wl-sym">${a.ticker}</span>
     <span class="wl-name" style="color:var(--text2)">${a.dir==='above'?'Above':'Below'} $${fmt(a.target)}</span>
-    <span class="${a.triggered?'up':'neu'}" style="font-family:'DM Mono',monospace;font-size:12px;margin-left:auto;">${a.triggered?'TRIGGERED':'Watching'}</span>
+    <span class="${a.triggered?'up':'neu'}" style="font-family:monospace;font-size:12px;margin-left:auto;">${a.triggered?'TRIGGERED':'Watching'}</span>
     <button class="btn btn-sm btn-danger" onclick="removeAlert(${a.id})" style="margin-left:8px">✕</button>
   </div>`).join('');
 }
@@ -1715,7 +1715,7 @@ function renderNotes(){
       <div style="display:flex;align-items:center;gap:8px;">
         ${n.ticker?`<span class="note-ticker" style="cursor:pointer" onclick="quickResearch('${n.ticker}')">${n.ticker}</span>`:''}
         <span style="font-size:13px;font-weight:500;color:var(--text)">${n.title||''}</span>
-        <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;font-family:'DM Mono',monospace;">${n.type||'note'}</span>
+        <span style="font-size:9px;background:var(--surface2);color:var(--text3);padding:1px 5px;font-family:monospace;">${n.type||'note'}</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span class="note-date">${n.date}</span>
@@ -1732,7 +1732,7 @@ const SECTORS_TRACK=['Technology','Healthcare','Financials','Energy','Consumer',
 document.getElementById('sector-tracker').innerHTML=SECTORS_TRACK.map(s=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
   <span style="font-size:12px;color:var(--text2);min-width:100px;">${s}</span>
   <input type="range" min="0" max="100" value="0" style="flex:1;accent-color:var(--em);" oninput="this.nextElementSibling.textContent=this.value+'%'"/>
-  <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--em);min-width:32px;">0%</span>
+  <span style="font-family:monospace;font-size:11px;color:var(--em);min-width:32px;">0%</span>
 </div>`).join('');
 document.getElementById('sector-notes').value=load('rt3_sector_notes','');
 
