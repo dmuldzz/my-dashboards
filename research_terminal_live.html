@@ -370,7 +370,7 @@ select option{background:var(--surface2);}
   </div>
   <div class="g4" style="margin-bottom:14px;">
     <div class="tile"><div class="tile-label">USD/CAD</div><div class="tile-val sm" id="h-cad">—</div><div class="tile-chg" id="h-cad-c">—</div></div>
-    <div class="tile"><div class="tile-label">10Y Treasury</div><div class="tile-val sm" id="h-10y">—</div><div class="tile-chg" id="h-10y-c">—</div></div>
+    <div class="tile" onclick="window.open('https://finance.yahoo.com/quote/%5ETNX','_blank')" style="cursor:pointer"><div class="tile-label">10Y Treasury</div><div class="tile-val sm" id="h-10y" style="font-size:13px;color:var(--blue)">Yahoo Finance ↗</div><div class="tile-sub">Click for live rate</div></div>
     <div class="tile"><div class="tile-label">Ethereum</div><div class="tile-val sm" id="h-eth">—</div><div class="tile-chg" id="h-eth-c">—</div></div>
     <div class="tile"><div class="tile-label">Nasdaq (QQQ)</div><div class="tile-val sm" id="h-qqq">—</div><div class="tile-chg" id="h-qqq-c">—</div></div>
   </div>
@@ -899,8 +899,7 @@ async function fmpFetch(path,useCache=true){
   const cacheKey='fmp_'+path.replace(/[^a-z0-9]/gi,'_');
   if(useCache){const c=cacheGet(cacheKey,86400000);if(c){return c;}}
   const url=FMP_BASE+path+(path.includes('?')?'&':'?')+'apikey='+FMP_KEY;
-  // FMP supports CORS directly - no proxy needed
-  const r=await fetch(url);
+  const r=await fetch(PROXY+encodeURIComponent(url));
   if(!r.ok)throw new Error(r.status);
   const d=await r.json();
   if(useCache){cacheSet(cacheKey,d);trackFMP(1);}
@@ -976,7 +975,7 @@ async function loadMarketOverview(){
     {sym:'SPY',hId:'h-spy',cId:'h-spy-c',pillId:'pill-spy',pillLbl:'S&P'},
     {sym:'GLD',hId:'h-gold',cId:'h-gold-c',pillId:'pill-gold',pillLbl:'Gold'},
     {sym:'OANDA:USD_CAD',hId:'h-cad',cId:'h-cad-c',pillId:'pill-cad',pillLbl:'CAD'},
-    {sym:'US10Y',hId:'h-10y',cId:'h-10y-c'},
+    // US10Y requires Finnhub premium - handled separately
     {sym:'QQQ',hId:'h-qqq',cId:'h-qqq-c'},
   ];
   for(const q of quotes){
@@ -1043,7 +1042,7 @@ async function loadHomeNews(){
   const el=document.getElementById('home-news');if(!el)return;
   try{
     // Use FMP stock news - free tier, no proxy needed (CORS supported)
-    const d=await fetch('https://financialmodelingprep.com/api/v3/stock_news?limit=10&apikey='+FMP_KEY).then(r=>r.json());
+    const d=await fmpFetch('/stock_news?limit=10');
     const items=(d||[]).slice(0,6);
     el.innerHTML=items.length?items.map(n=>`<div class="news-item">
       <div class="news-meta"><span class="news-src">${n.site||n.symbol||'—'}</span><span class="news-time">${timeSince(n.publishedDate)}</span></div>
@@ -1110,15 +1109,12 @@ async function loadEconCalendar(){
     // Rate environment
     const rateEl=document.getElementById('rate-env');
     if(rateEl){
-      try{
-        const fed=await fhFetch('/quote?symbol=US10Y');
-        rateEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text2);">
-          <div style="display:flex;justify-content:space-between;"><span>10Y Treasury</span><span style="font-family:'DM Mono',monospace;color:var(--text)">${fed.c?fmt(fed.c)+'%':'—'}</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>Fed Funds Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text)">4.25-4.50%</span></div>
-          <div style="display:flex;justify-content:space-between;"><span>BoC Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text)">2.75%</span></div>
-          <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" style="font-size:11px;margin-top:4px;">Next FOMC meeting schedule</a>
-        </div>`;
-      }catch(e){}
+      rateEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--text2);">
+        <div style="display:flex;justify-content:space-between;"><span>Fed Funds Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text)">4.25–4.50%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>BoC Policy Rate</span><span style="font-family:'DM Mono',monospace;color:var(--text)">2.75%</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>10Y Treasury</span><span style="font-family:'DM Mono',monospace;color:var(--blue)"><a href="https://finance.yahoo.com/quote/%5ETNX" target="_blank" style="color:var(--blue);">Yahoo Finance ↗</a></span></div>
+        <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" style="font-size:11px;margin-top:4px;">Next FOMC meeting schedule →</a>
+      </div>`;
     }
   }catch(e){if(homeEl)homeEl.innerHTML='<div class="section-note">Economic calendar unavailable</div>';}
 }
