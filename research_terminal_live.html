@@ -1151,8 +1151,7 @@ async function loadAIBriefing(force=false){
     const d=await r.json();
     const text=d.content?.[0]?.text||'';
     if(!text)throw new Error('empty');
-    const html=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/
-/g,'<br/>');
+    const html=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').split('\n').join('<br/>');
     save(cacheKey,html);save(dateKey,TODAY);
     el.innerHTML='<div class="ai-briefing">'+html+'</div>';
     if(badge){badge.style.display='';badge.textContent='Generated Today';}
