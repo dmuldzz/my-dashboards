@@ -95,33 +95,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* ===================== HOME ===================== */
 #tab-home{overflow:hidden;}
-#home-surface{height:100%;position:relative;display:flex;flex-direction:column;}
-#home-tl{position:absolute;top:28px;left:40px;z-index:10;}
-#home-tr{position:absolute;top:28px;right:40px;z-index:10;text-align:right;}
-#home-bl{position:absolute;bottom:28px;left:40px;z-index:10;}
-#home-br{position:absolute;bottom:28px;right:40px;z-index:10;text-align:right;}
-.corner-mark{font-family:var(--mono);font-size:7px;letter-spacing:0.45em;text-transform:uppercase;color:rgba(74,46,18,0.16);}
-.corner-greeting{font-family:var(--serif);font-size:13px;font-style:italic;font-weight:300;color:var(--brown3);margin-top:3px;letter-spacing:0.04em;}
-.corner-time{font-family:var(--mono);font-size:10px;color:var(--brown3);letter-spacing:0.1em;}
-.corner-wod{font-family:var(--serif);font-size:15px;font-weight:300;color:var(--amber);letter-spacing:0.04em;margin-top:2px;}
-.corner-wod-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.25em;text-transform:uppercase;color:var(--brown4);}
-.corner-sb{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;color:var(--brown4);text-transform:uppercase;}
-.corner-sb.live{color:rgba(46,110,56,0.45);}
-#home-panels{flex:1;display:grid;grid-template-columns:260px 1fr 260px;position:relative;}
-.vline{position:absolute;top:0;bottom:0;width:1px;background:var(--border);}
-#hp-left{padding:56px 32px 56px 40px;display:flex;flex-direction:column;justify-content:center;gap:2px;}
-.hp-ew{font-family:var(--mono);font-size:7px;letter-spacing:0.38em;text-transform:uppercase;color:var(--brown4);margin-bottom:22px;}
-.t-link{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;text-decoration:none;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);position:relative;}
-.t-link:last-child{border-bottom:none;}
-.t-link::before{content:'';position:absolute;left:-14px;width:0;height:1px;background:var(--amber);top:50%;transition:width 0.3s;}
-.t-link:hover::before{width:10px;}
-.t-link:hover .tln{color:var(--esp);letter-spacing:0.04em;}
-.t-link:hover .tla{opacity:1;transform:translateX(0);}
-.tln{font-family:var(--sans);font-size:17px;font-weight:300;color:var(--brown2);transition:all 0.3s;line-height:1.2;}
-.tls{font-family:var(--mono);font-size:8px;color:var(--brown4);margin-top:2px;letter-spacing:0.06em;}
-.tla{font-size:13px;color:var(--amber-dim);opacity:0;transform:translateX(-5px);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);}
-#hp-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;position:relative;}
-#cmd-outer{width:100%;max-width:400px;position:relative;}
+#home-surface{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:0 60px;}
+/* Greeting + time corners */
+#home-tl{position:absolute;top:24px;left:40px;}
+#home-tr{position:absolute;top:24px;right:40px;text-align:right;}
+.corner-mark{font-family:var(--mono);font-size:7px;letter-spacing:0.45em;text-transform:uppercase;color:rgba(74,46,18,0.13);}
+.corner-greeting{font-family:var(--serif);font-size:12px;font-style:italic;font-weight:300;color:var(--brown3);margin-top:2px;letter-spacing:0.04em;}
+.corner-time{font-family:var(--mono);font-size:11px;color:var(--brown3);letter-spacing:0.09em;}
+/* Terminal pill row */
+#home-terminals{display:flex;gap:7px;justify-content:center;margin-bottom:26px;flex-wrap:wrap;}
+.t-pill{display:flex;align-items:center;padding:5px 16px;background:var(--surface);border:1px solid var(--border);border-radius:30px;cursor:pointer;text-decoration:none;transition:all 0.22s;}
+.t-pill:hover{border-color:var(--amber-dim);background:var(--amber-faint);}
+.t-pill-name{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--brown2);}
+.t-pill:hover .t-pill-name{color:var(--esp);}
+/* Command center block */
+#hp-center{display:flex;flex-direction:column;align-items:center;width:100%;max-width:520px;}
+#cmd-outer{width:100%;position:relative;}
 #cmd-in{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(74,46,18,0.14);padding:14px 0;font-family:var(--mono);font-size:14px;color:var(--esp);letter-spacing:0.08em;outline:none;caret-color:var(--amber);text-align:center;transition:border-color 0.3s;}
 #cmd-in::placeholder{color:var(--brown4);letter-spacing:0.2em;font-size:12px;}
 #cmd-in:focus{border-bottom-color:var(--amber);}
@@ -130,8 +119,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #cmd-sugs.show{display:flex;}
 .csug{font-family:var(--mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--brown3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;cursor:pointer;transition:all 0.2s;}
 .csug:hover{color:var(--amber);border-color:var(--amber-dim);background:var(--amber-faint);}
-#cmd-res{position:absolute;top:100%;left:50%;transform:translateX(-50%);width:400px;margin-top:1px;background:var(--bg2);border:1px solid var(--border2);border-radius:0 0 8px 8px;max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.25s;opacity:0;z-index:50;}
-#cmd-res.open{max-height:300px;opacity:1;overflow-y:auto;}
+#cmd-res{position:absolute;top:100%;left:50%;transform:translateX(-50%);width:460px;margin-top:1px;background:var(--bg2);border:1px solid var(--border2);border-radius:0 0 8px 8px;max-height:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.25s;opacity:0;z-index:50;}
+#cmd-res.open{max-height:340px;opacity:1;overflow-y:auto;}
 .crs{padding:11px 18px 8px;border-bottom:1px solid var(--border);}
 .crs:last-child{border-bottom:none;}
 .crs-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.28em;text-transform:uppercase;color:var(--brown3);margin-bottom:7px;}
@@ -144,27 +133,38 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .criw{font-family:var(--mono);font-size:8px;color:var(--brown3);white-space:nowrap;}
 .criw.u{color:var(--danger);}
 .criw.s{color:var(--warn);}
-#hp-right{padding:56px 40px 56px 32px;display:flex;flex-direction:column;justify-content:center;}
-.n-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.25s;}
+/* What Needs You — below command */
+#home-needs{width:100%;max-width:520px;margin-top:22px;}
+.home-needs-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.32em;text-transform:uppercase;color:var(--brown4);margin-bottom:10px;}
+.n-item{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:all 0.2s;}
 .n-item:last-child{border-bottom:none;}
-.n-item:hover{padding-left:5px;}
+.n-item:hover{padding-left:4px;}
 .n-item:hover .nit{color:var(--esp);}
 .norb{width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--brown4);}
-.norb.u{background:var(--danger);box-shadow:0 0 6px rgba(139,48,32,0.3);}
+.norb.u{background:var(--danger);box-shadow:0 0 5px rgba(139,48,32,0.3);}
 .norb.s{background:var(--warn);}
-.nit{font-family:var(--sans);font-size:14px;font-weight:300;color:var(--brown2);flex:1;transition:color 0.25s;line-height:1.3;}
-.ntag{font-family:var(--mono);font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:var(--brown3);border:1px solid var(--border);border-radius:20px;padding:1px 7px;}
+.nit{font-family:var(--sans);font-size:13px;font-weight:300;color:var(--brown2);flex:1;transition:color 0.2s;line-height:1.3;}
+.ntag{font-family:var(--mono);font-size:7px;letter-spacing:0.06em;text-transform:uppercase;color:var(--brown3);border:1px solid var(--border);border-radius:20px;padding:1px 7px;flex-shrink:0;}
 .niw{font-family:var(--mono);font-size:8px;color:var(--brown3);white-space:nowrap;}
 .niw.u{color:var(--danger);}
 .niw.s{color:var(--warn);}
-#home-habits{position:absolute;bottom:54px;left:50%;transform:translateX(-50%);display:flex;gap:20px;align-items:flex-end;}
+/* Bottom info row */
+#home-bottom{position:absolute;bottom:28px;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 40px;}
+/* Habit arcs */
+#home-habits{display:flex;gap:16px;align-items:flex-end;}
 .harc{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:opacity 0.25s;}
 .harc:hover{opacity:0.75;}
-.harc svg{width:56px;height:32px;overflow:visible;}
-.harc-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.14em;text-transform:uppercase;color:var(--brown3);}
-#home-goal{position:absolute;bottom:56px;right:40px;max-width:240px;text-align:right;}
-.hg-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.3em;text-transform:uppercase;color:var(--brown4);margin-bottom:5px;}
-.hg-text{font-family:var(--serif);font-size:14px;font-weight:300;font-style:italic;color:var(--brown3);line-height:1.5;transition:opacity 0.4s;}
+.harc svg{width:52px;height:30px;overflow:visible;}
+.harc-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--brown3);}
+/* Center bottom: workout */
+#home-wod-block{text-align:center;}
+.home-wod-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.28em;text-transform:uppercase;color:var(--brown4);margin-bottom:4px;}
+.home-wod-val{font-family:var(--serif);font-size:17px;font-weight:300;color:var(--amber);letter-spacing:0.03em;}
+/* Right bottom: market + goal */
+#home-right-block{text-align:right;max-width:220px;}
+.corner-sb{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;color:var(--brown4);text-transform:uppercase;margin-bottom:6px;}
+.corner-sb.live{color:rgba(46,110,56,0.5);}
+.hg-text{font-family:var(--serif);font-size:13px;font-weight:300;font-style:italic;color:var(--brown3);line-height:1.5;transition:opacity 0.4s;}
 
 /* ===================== TASKS ===================== */
 #tab-tasks .pscroll{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;align-items:start;}
@@ -473,7 +473,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .concept-refresh{margin-top:28px;display:flex;gap:10px;align-items:center;}
 
 /* FOCUS */
-#sec-focus{background:var(--esp);display:flex;align-items:center;justify-content:center;}
+#sec-focus{background:var(--esp);}
+#sec-focus.show{display:flex;align-items:center;justify-content:center;}
 .focus-layout{text-align:center;}
 .focus-time-disp{font-family:var(--serif);font-size:clamp(80px,14vw,160px);font-weight:200;color:rgba(237,232,223,0.85);line-height:1;letter-spacing:-0.02em;margin-bottom:12px;cursor:default;}
 .focus-label{font-family:var(--mono);font-size:9px;letter-spacing:0.35em;text-transform:uppercase;color:rgba(237,232,223,0.2);margin-bottom:36px;}
@@ -578,7 +579,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .week-tile-weather{font-family:var(--mono);font-size:9px;color:var(--brown2);margin-top:8px;}
 
 /* LOCK IN */
-#sec-lockin{background:var(--esp);display:flex;align-items:center;justify-content:center;}
+#sec-lockin{background:var(--esp);}
+#sec-lockin.show{display:flex;align-items:center;justify-content:center;}
 .lockin-layout{text-align:center;max-width:500px;padding:40px;}
 .lockin-label{font-family:var(--mono);font-size:8px;letter-spacing:0.4em;text-transform:uppercase;color:rgba(237,232,223,0.2);margin-bottom:22px;}
 .lockin-task{font-family:var(--serif);font-size:32px;font-weight:300;color:rgba(237,232,223,0.85);line-height:1.4;margin-bottom:32px;letter-spacing:0.01em;}
@@ -600,7 +602,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .ver-feat-text{font-family:var(--sans);font-size:14px;font-weight:300;color:var(--brown2);}
 
 /* FLIP */
-#sec-flip{background:var(--bg);display:flex;align-items:center;justify-content:center;}
+#sec-flip{background:var(--bg);}
+#sec-flip.show{display:flex;align-items:center;justify-content:center;}
 .flip-layout{text-align:center;}
 .flip-coin{width:120px;height:120px;border-radius:50%;background:var(--amber);border:3px solid var(--amber-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;cursor:pointer;transition:transform 0.15s;font-family:var(--serif);font-size:42px;font-weight:300;color:var(--bg);}
 .flip-coin:hover{transform:scale(1.04);}
@@ -1056,6 +1059,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <!-- HOME -->
     <div class="tab active" id="tab-home">
       <div id="home-surface">
+        <!-- Corners: greeting (TL) + time (TR) -->
         <div id="home-tl">
           <div class="corner-mark">3401</div>
           <div class="corner-greeting" id="home-greeting">—</div>
@@ -1063,44 +1067,39 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
         <div id="home-tr">
           <div class="corner-time" id="home-time">—</div>
         </div>
-        <div id="home-bl">
-          <div class="corner-wod-lbl">Today</div>
-          <div class="corner-wod" id="home-wod">—</div>
-        </div>
-        <div id="home-br">
-          <div class="corner-sb live" id="home-market">—</div>
-          <div class="corner-sb" id="home-habit-sb">—</div>
-        </div>
-        <div id="home-panels">
-          <div class="vline" style="left:260px;"></div>
-          <div class="vline" style="right:260px;"></div>
-          <div id="hp-left">
-            <div class="hp-ew">Terminals</div>
-            <div id="home-term-list"></div>
+        <!-- Terminal pills -->
+        <div id="home-terminals"></div>
+        <!-- Command center -->
+        <div id="hp-center">
+          <div id="cmd-outer">
+            <input id="cmd-in" type="text" placeholder="type anything..." autocomplete="off" spellcheck="false"/>
+            <div id="cmd-res"></div>
           </div>
-          <div id="hp-center">
-            <div id="cmd-outer">
-              <input id="cmd-in" type="text" placeholder="type anything..." autocomplete="off" spellcheck="false"/>
-              <div id="cmd-res"></div>
-            </div>
-            <div id="cmd-hint">type anything · enter to navigate</div>
-            <div id="cmd-sugs">
-              <div class="csug" data-cmd="tasks">tasks</div>
-              <div class="csug" data-cmd="habits">habits</div>
-              <div class="csug" data-cmd="workout">workout</div>
-              <div class="csug" data-cmd="nhl">nhl</div>
-              <div class="csug" data-cmd="today">today</div>
-            </div>
-          </div>
-          <div id="hp-right">
-            <div class="hp-ew">What needs you</div>
-            <div id="home-needs-list"></div>
+          <div id="cmd-hint">type anything · enter to navigate</div>
+          <div id="cmd-sugs">
+            <div class="csug" data-cmd="tasks">tasks</div>
+            <div class="csug" data-cmd="habits">habits</div>
+            <div class="csug" data-cmd="workout">workout</div>
+            <div class="csug" data-cmd="nhl">nhl</div>
+            <div class="csug" data-cmd="today">today</div>
           </div>
         </div>
-        <div id="home-habits"></div>
-        <div id="home-goal">
-          <div class="hg-lbl">Goal</div>
-          <div class="hg-text" id="hg-text">—</div>
+        <!-- What Needs You -->
+        <div id="home-needs" style="display:none;">
+          <div class="home-needs-lbl">What needs you</div>
+          <div id="home-needs-list"></div>
+        </div>
+        <!-- Bottom row: habits | workout | market + goal -->
+        <div id="home-bottom">
+          <div id="home-habits"></div>
+          <div id="home-wod-block">
+            <div class="home-wod-lbl">Today</div>
+            <div class="home-wod-val" id="home-wod">—</div>
+          </div>
+          <div id="home-right-block">
+            <div class="corner-sb" id="home-market">—</div>
+            <div class="hg-text" id="hg-text">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1303,8 +1302,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
   <div id="statusbar">
     <div class="sb begin">Let's begin.</div>
-    <div class="sb live" id="sb-market">—</div>
-    <div class="sb" id="sb-habits">—</div>
+    <div class="sb" id="sb-market" style="display:none;"></div>
+    <div class="sb" id="sb-habits" style="display:none;"></div>
   </div>
 </div>
 
@@ -1619,18 +1618,19 @@ function renderCmdRes(qL,showAll=false){
 function renderHome(){renderHomeTerminals();renderHomeNeeds();renderHomeHabits();renderHomeGoal();renderHomeWod();renderMarket(new Date().getHours());checkNudges();}
 function renderHomeTerminals(){
   const favs=S.terminals.filter(t=>t.fav).slice(0,4);
-  el('home-term-list').innerHTML=favs.length?favs.map(t=>`<a class="t-link" href="${escAttr(t.url)}" target="_blank" onclick="logTermClick('${t.id}')"><div><div class="tln">${t.icon} ${t.name}</div><div class="tls">${t.url.startsWith('http')?'Live':'Local'}</div></div><div class="tla">↗</div></a>`).join(''):'<div class="noitems" style="padding:12px 0;text-align:left;font-size:9px;">No favourited terminals.</div>';
+  const row=el('home-terminals');if(!row)return;
+  row.innerHTML=favs.map(t=>`<a class="t-pill" href="${escAttr(t.url)}" target="_blank" onclick="logTermClick('${t.id}')"><span class="t-pill-name">${t.name}</span></a>`).join('');
 }
 function renderHomeNeeds(){
-  const items=[...S.todos.filter(t=>!t.done).map(t=>({text:t.text,tag:'Task',p:t.priority,w:'',c:''})),...S.reminders.filter(r=>!r.done).map(r=>{const t=tu(r.date,r.time);return{text:r.text,tag:'Reminder',w:t.l,c:t.c};})].slice(0,6);
-  const list=el('home-needs-list');
-  if(!items.length){list.innerHTML='<div class="noitems" style="text-align:left;padding:10px 0;font-size:9px;">Nothing needs you right now.</div>';return;}
+  const items=[...S.todos.filter(t=>!t.done).map(t=>({text:t.text,tag:'Task',p:t.priority,w:'',c:''})),...S.reminders.filter(r=>!r.done).map(r=>{const t=tu(r.date,r.time);return{text:r.text,tag:'Reminder',w:t.l,c:t.c};})].slice(0,5);
+  const list=el('home-needs-list');if(!list)return;
+  const needsBlock=el('home-needs');
+  if(!items.length){if(needsBlock)needsBlock.style.display='none';return;}
+  if(needsBlock)needsBlock.style.display='block';
   list.innerHTML=items.map(i=>{const isU=i.c==='u'||i.p==='extreme'||i.p==='high';const isS=i.c==='s'||i.p==='medium';return`<div class="n-item"><div class="norb ${isU?'u':isS?'s':''}"></div><div class="nit">${i.text}</div><div class="ntag">${i.tag}</div><div class="niw ${isU?'u':isS?'s':''}">${i.w||i.p||''}</div></div>`;}).join('');
 }
 function renderHomeHabits(){
-  const log=getTodayLog();const done=S.habits.filter(h=>log[h.id]).length;
-  if(el('sb-habits'))el('sb-habits').textContent=done+' / '+S.habits.length+' habits';
-  if(el('home-habit-sb'))el('home-habit-sb').textContent=done+' / '+S.habits.length+' habits today';
+  const log=getTodayLog();
   const row=el('home-habits');if(!row)return;
   row.innerHTML=S.habits.map(h=>{const isDone=log[h.id];const streak=S.habitStreaks[h.id]||0;const op=isDone?0.65:0.1;const offset=isDone?0:82;
     return`<div class="harc" onclick="toggleHabit('${h.id}')"><svg viewBox="0 0 60 34"><path d="M4 32 A26 26 0 0 1 56 32" fill="none" stroke="rgba(74,46,18,0.1)" stroke-width="3" stroke-linecap="round"/><path d="M4 32 A26 26 0 0 1 56 32" fill="none" stroke="rgba(154,104,32,${op})" stroke-width="3" stroke-linecap="round" stroke-dasharray="82" stroke-dashoffset="${offset}" style="transition:stroke-dashoffset 0.5s ease;"/><text x="30" y="22" text-anchor="middle" fill="rgba(74,46,18,0.35)" font-family="DM Mono" font-size="7">${streak}d</text></svg><div class="harc-lbl">${h.name.split(' ')[0]}</div></div>`;
@@ -1638,21 +1638,22 @@ function renderHomeHabits(){
 }
 let goalIdx=0,goalIv=null;
 function renderHomeGoal(){
-  if(!S.goals||!S.goals.length){if(el('hg-text'))el('hg-text').textContent='No goals set.';return;}
+  const gt=el('hg-text');const rb=el('home-right-block');if(!gt)return;
+  if(!S.goals||!S.goals.length){gt.textContent='';return;}
   if(goalIdx>=S.goals.length)goalIdx=0;
-  if(el('hg-text'))el('hg-text').textContent='"'+S.goals[goalIdx].title+'"';
+  gt.textContent='"'+S.goals[goalIdx].title+'"';
   clearInterval(goalIv);
-  if(S.goals.length>1)goalIv=setInterval(()=>{goalIdx=(goalIdx+1)%S.goals.length;el('hg-text').style.opacity='0';setTimeout(()=>{el('hg-text').textContent='"'+S.goals[goalIdx].title+'"';el('hg-text').style.opacity='1';},400);},7000);
+  if(S.goals.length>1)goalIv=setInterval(()=>{goalIdx=(goalIdx+1)%S.goals.length;gt.style.opacity='0';setTimeout(()=>{gt.textContent='"'+S.goals[goalIdx].title+'"';gt.style.opacity='1';},400);},7000);
 }
-function renderHomeWod(){if(el('home-wod'))el('home-wod').textContent=S.workout[new Date().getDay()]||'—';}
+function renderHomeWod(){const w=el('home-wod');if(w)w.textContent=S.workout[new Date().getDay()]||'—';}
 function renderMarket(h){
   const openS=SESS_DATA.filter(s=>isOpen(s,h));const overlap=openS.length>=2;
-  const sbM=el('sb-market');const hmM=el('home-market');
-  if(overlap){if(sbM)sbM.textContent='● Session overlap';if(hmM)hmM.textContent='● Overlap active';}
-  else if(openS.length){if(sbM)sbM.textContent='● '+openS[0].name+' open';if(hmM)hmM.textContent='● '+openS[0].name+' open';}
-  else{if(sbM)sbM.textContent='All sessions closed';if(hmM)hmM.textContent='All closed';}
-  if(sbM)sbM.className='sb'+(openS.length?' live':'');
-  if(hmM)hmM.className='corner-sb'+(openS.length?' live':'');
+  const hmM=el('home-market');
+  if(!hmM)return;
+  if(overlap){hmM.textContent='● Overlap active';}
+  else if(openS.length){hmM.textContent='● '+openS[0].name+' open';}
+  else{hmM.textContent='All sessions closed';}
+  hmM.className='corner-sb'+(openS.length?' live':'');
 }
 
 /* NUDGES */
