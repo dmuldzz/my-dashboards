@@ -1,4 +1,4 @@
-// Proxy v4 — updated 2026-03-31 — news & rumours sources expanded
+// Proxy v5 — updated 2026-03-31 — improved headers to fix RSS 403s
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -40,29 +40,23 @@ export default async function handler(req, res) {
     // Anthropic
     'api.anthropic.com',
  
-    // -----------------------------------------------
-    // NEWS SOURCES (4 feeds)
-    // -----------------------------------------------
-    'thehockeywriters.com',         // Hockey Writers — general NHL news
-    'prohockeynews.com',            // Pro Hockey News — broad coverage
-    'www.sportsnet.ca',             // Sportsnet — Canadian insiders
+    // NEWS SOURCES
+    'thehockeywriters.com',
+    'prohockeynews.com',
+    'www.sportsnet.ca',
     'sportsnet.ca',
-    'www.tsn.ca',                   // TSN — Canadian insiders
+    'www.tsn.ca',
     'tsn.ca',
  
-    // -----------------------------------------------
-    // RUMOUR SOURCES (6 feeds)
-    // -----------------------------------------------
-    'www.prohockeyrumors.com',      // Pro Hockey Rumors — primary rumour source
-    'nhlrumors.com',                // NHL Rumors — trade/injury rumours
-    'www.spectorshockey.net',       // Spector's Hockey — daily rumour roundup
-    'www.hockeybuzz.com',           // Hockey Buzz — insider rumours
-    'feeds.feedburner.com',         // Kukla's Korner (via FeedBurner)
-    'www.nhltraderumor.com',        // NHL Trade Rumor — active rumour site
+    // RUMOUR SOURCES
+    'www.prohockeyrumors.com',
+    'nhlrumors.com',
+    'www.spectorshockey.net',
+    'www.hockeybuzz.com',
+    'feeds.feedburner.com',
+    'www.nhltraderumor.com',
  
-    // -----------------------------------------------
-    // PREVIOUSLY EXISTING — kept for other features
-    // -----------------------------------------------
+    // PREVIOUSLY EXISTING
     'rss.cbssports.com',
     'sportsnaut.com',
     'www.reddit.com',
@@ -85,15 +79,29 @@ export default async function handler(req, res) {
   }
  
   try {
+    // Detect RSS requests — they need browser-style headers or many servers 403
+    const isRSS = targetUrl.includes('/feed') || targetUrl.includes('rss') || targetUrl.includes('feedburner');
+ 
     const headers = {
-      'Accept': 'application/json, text/plain, */*',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+      'Accept': isRSS
+        ? 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
+        : 'application/json, text/plain, */*',
       'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Sec-Fetch-Dest': isRSS ? 'document' : 'empty',
+      'Sec-Fetch-Mode': isRSS ? 'navigate' : 'cors',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Ch-Ua': '"Google Chrome";v="123", "Not:A-Brand";v="8"',
+      'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Platform': '"Windows"',
     };
  
     if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
  
-    // Inject Anthropic headers server-side (avoids CORS preflight issues)
+    // Inject Anthropic headers server-side
     if (hostname === 'api.anthropic.com') {
       headers['x-api-key'] = '';
       headers['anthropic-version'] = '2023-06-01';
@@ -127,3 +135,5 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({ error: 'Proxy fetch failed', message: error.message });
   }
+}
+ 
