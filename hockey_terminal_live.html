@@ -499,20 +499,39 @@ select option{background:var(--surface2);}
 <div id="news" class="section">
   <div class="slabel">News & Rumours</div>
   <div style="display:flex;gap:7px;margin-bottom:1rem;flex-wrap:wrap;align-items:center;">
-    <select id="news-filter" onchange="filterNews()" style="font-size:12px;padding:6px 10px;width:auto;">
-      <option value="all">All</option>
-      <option value="trade">Trades</option>
-      <option value="rumour">Rumours</option>
-      <option value="injury">Injuries</option>
-      <option value="contract">Contracts</option>
-      <option value="prospect">Prospects</option>
-      <option value="business">Business</option>
-    </select>
     <button class="btn" onclick="loadNews()" style="font-size:11px;">Refresh</button>
     <span class="ts" id="ts-news-tab"></span>
   </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">📰 NHL News <span class="live-badge">LIVE</span></div>
+      <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;">
+        <select id="news-filter-news" onchange="filterNewsPanel('news')" style="font-size:11px;padding:4px 7px;width:auto;">
+          <option value="all">All Types</option>
+          <option value="trade">Trades</option>
+          <option value="injury">Injuries</option>
+          <option value="contract">Contracts</option>
+          <option value="prospect">Prospects</option>
+          <option value="business">Business</option>
+        </select>
+      </div>
+      <div id="news-feed-news"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">🔥 Trade Rumours <span class="live-badge">LIVE</span></div>
+      <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;">
+        <select id="news-filter-rumours" onchange="filterNewsPanel('rumours')" style="font-size:11px;padding:4px 7px;width:auto;">
+          <option value="all">All Teams</option>
+          <option value="trade">Trades</option>
+          <option value="contract">Contracts</option>
+          <option value="rumour">Rumours</option>
+        </select>
+      </div>
+      <div id="news-feed-rumours"><div class="skel"></div><div class="skel" style="width:80%;"></div></div>
+    </div>
+  </div>
   <div class="grid-main">
-    <div class="card" style="margin-bottom:0;"><div id="news-feed"><div class="skel"></div><div class="skel" style="width:80%;"></div></div></div>
+    <div></div>
     <div>
       <div class="card"><div class="card-title">Insider Sources</div><div class="ql-grid">
         <a href="https://www.dailyfaceoff.com/rumors" target="_blank" class="ql-item">Daily Faceoff</a>
@@ -791,6 +810,8 @@ let YDAY_GAMES=[];
 let TODAY_GAMES=[];
 let TXN_ALL=[];
 let ALL_NEWS=[];
+let ALL_NEWS_PANEL=[];
+let ALL_RUMOURS_PANEL=[];
 let DRAFT_ALL=[];
 let TOP_PERFORMER={name:'',playerId:null,pts:0};
 let INJ_ALL=[];
@@ -1274,41 +1295,57 @@ function renderFullTxns(){
 }
 
 // =============================================
-// NEWS - ESPN NHL JSON API + CBS fallback
+// NEWS & RUMOURS - Split dual-panel feeds
 // =============================================
+const NEWS_SOURCES=[
+  {url:'https://thehockeywriters.com/feed',label:'Hockey Writers',type:'news'},
+  {url:'https://prohockeynews.com/feed',label:'Pro Hockey News',type:'news'},
+  {url:'https://www.sportsnet.ca/feed/',label:'Sportsnet',type:'news'},
+  {url:'https://www.tsn.ca/rss/news',label:'TSN',type:'news'},
+  {url:'https://www.prohockeyrumors.com/feed',label:'Pro Hockey Rumors',type:'rumour'},
+  {url:'https://nhlrumors.com/feed',label:'NHL Rumors',type:'rumour'},
+  {url:'https://www.spectorshockey.net/feed',label:"Spector's Hockey",type:'rumour'},
+  {url:'https://www.hockeybuzz.com/feed',label:'Hockey Buzz',type:'rumour'},
+  {url:'https://feeds.feedburner.com/KuklasKorner-hockey',label:"Kukla's Korner",type:'rumour'},
+  {url:'https://www.nhltraderumor.com/feed',label:'NHL Trade Rumor',type:'rumour'},
+];
+
+async function fetchFeed(src){
+  try{
+    const r=await fetch(PROXY+encodeURIComponent(src.url));
+    if(!r.ok)return[];
+    const txt=await r.text();
+    const xml=new DOMParser().parseFromString(txt,'text/xml');
+    const items=Array.from(xml.querySelectorAll('item')).slice(0,15);
+    return items.map(item=>{
+      const title=item.querySelector('title')?.textContent||'';
+      const link=(item.querySelector('link')?.textContent||item.querySelector('link')?.nextSibling?.textContent||'#').trim();
+      const pub=item.querySelector('pubDate')?.textContent||'';
+      const desc=(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200);
+      return title?{title,url:link,created_utc:pub?new Date(pub).getTime()/1000:Date.now()/1000,source:src.label,type:src.type,desc}:null;
+    }).filter(Boolean);
+  }catch(e){return[];}
+}
+
 async function loadNews(){
-  const els={home:document.getElementById('home-news'),feed:document.getElementById('news-feed')};
-  const sources=[
-    {url:'https://www.prohockeyrumors.com/feed',label:'Pro Hockey Rumors'},
-    {url:'https://nhlrumors.com/feed',label:'NHL Rumors'},
-    {url:'https://thehockeywriters.com/feed',label:'Hockey Writers'},
-  ];
-  let fetched=[];
-  for(const src of sources){
-    try{
-      const r=await fetch(PROXY+encodeURIComponent(src.url));
-      if(!r.ok)continue;
-      const txt=await r.text();
-      const xml=new DOMParser().parseFromString(txt,'text/xml');
-      const items=Array.from(xml.querySelectorAll('item')).slice(0,12);
-      items.forEach(item=>{
-        const title=item.querySelector('title')?.textContent||'';
-        const link=(item.querySelector('link')?.textContent||item.querySelector('link')?.nextSibling?.textContent||'#').trim();
-        const pub=item.querySelector('pubDate')?.textContent||'';
-        const desc=(item.querySelector('description')?.textContent||'').replace(/<[^>]+>/g,'').substring(0,200);
-        if(title)fetched.push({title,url:link,created_utc:pub?new Date(pub).getTime()/1000:Date.now()/1000,source:src.label,desc});
-      });
-    }catch(e){}
-  }
-  fetched.sort((a,b)=>b.created_utc-a.created_utc);
-  ALL_NEWS=fetched;
-  if(!ALL_NEWS.length){
-    const msg='<div style="font-size:12px;color:var(--text2);padding:8px 0;">News sources unavailable. <a href="https://www.nhl.com/news" target="_blank" style="color:var(--gold);">NHL.com</a> &nbsp; <a href="https://nhlrumors.com" target="_blank" style="color:var(--gold);">NHL Rumors</a></div>';
-    Object.values(els).forEach(el=>{if(el)el.innerHTML=msg;});
-    return;
-  }
-  renderNews(ALL_NEWS.slice(0,4),els.home,true);
-  renderNews(ALL_NEWS,els.feed,false);
+  const homeEl=document.getElementById('home-news');
+  const newsEl=document.getElementById('news-feed-news');
+  const rumourEl=document.getElementById('news-feed-rumours');
+  if(newsEl)newsEl.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
+  if(rumourEl)rumourEl.innerHTML='<div class="skel"></div><div class="skel" style="width:80%;"></div>';
+
+  const results=await Promise.allSettled(NEWS_SOURCES.map(src=>fetchFeed(src)));
+  const allItems=results.flatMap(r=>r.status==='fulfilled'?r.value:[]);
+
+  ALL_NEWS_PANEL=allItems.filter(n=>n.type==='news').sort((a,b)=>b.created_utc-a.created_utc);
+  ALL_RUMOURS_PANEL=allItems.filter(n=>n.type==='rumour').sort((a,b)=>b.created_utc-a.created_utc);
+
+  // Home panel shows mix of both, most recent first
+  const homeItems=[...ALL_NEWS_PANEL,...ALL_RUMOURS_PANEL].sort((a,b)=>b.created_utc-a.created_utc);
+  if(homeEl)renderNews(homeItems.slice(0,4),homeEl,true);
+
+  renderNews(ALL_NEWS_PANEL,newsEl,false);
+  renderNews(ALL_RUMOURS_PANEL,rumourEl,false);
   setTS('ts-news');setTS('ts-news-tab');
 }
 
@@ -1325,23 +1362,30 @@ function guessTag(title,source){
 
 function renderNews(items,el,compact){
   if(!el)return;
-  if(!items.length){el.innerHTML='<div class="section-note">No news available.</div>';return;}
-  el.innerHTML=items.slice(0,compact?4:20).map(n=>{
+  if(!items||!items.length){el.innerHTML='<div class="section-note">No articles available right now.</div>';return;}
+  el.innerHTML=items.slice(0,compact?4:25).map(n=>{
     const tag=guessTag(n.title,n.source);
     const ago=timeSince(new Date(n.created_utc*1000));
-    return `<div class="news-item">
-      <div class="news-meta"><span class="news-src">${n.source||'-'}</span><span class="news-time">${ago}</span><span class="news-tag ${tag.cls}">${tag.label}</span></div>
-      <div class="news-hl"><a href="${n.url}" target="_blank">${n.title}</a></div>
-      ${!compact&&n.desc?`<div class="news-sum">${n.desc}</div>`:''}
-    </div>`;
+    return '<div class="news-item">' +
+      '<div class="news-meta"><span class="news-src">' + (n.source||'-') + '</span><span class="news-time">' + ago + '</span><span class="news-tag ' + tag.cls + '">' + tag.label + '</span></div>' +
+      '<div class="news-hl"><a href="' + n.url + '" target="_blank">' + n.title + '</a></div>' +
+      (!compact&&n.desc?'<div class="news-sum">' + n.desc + '</div>':'') +
+    '</div>';
   }).join('');
 }
 
-function filterNews(){
-  const f=document.getElementById('news-filter').value;
-  if(f==='all'){renderNews(ALL_NEWS,document.getElementById('news-feed'),false);return;}
-  const filtered=ALL_NEWS.filter(n=>guessTag(n.title).cls.includes(f)||guessTag(n.title).label.toLowerCase()===f);
-  renderNews(filtered,document.getElementById('news-feed'),false);
+function filterNewsPanel(panel){
+  if(panel==='news'){
+    const f=document.getElementById('news-filter-news').value;
+    const el=document.getElementById('news-feed-news');
+    const filtered=f==='all'?ALL_NEWS_PANEL:ALL_NEWS_PANEL.filter(n=>guessTag(n.title).cls.includes(f)||guessTag(n.title).label.toLowerCase()===f);
+    renderNews(filtered,el,false);
+  } else {
+    const f=document.getElementById('news-filter-rumours').value;
+    const el=document.getElementById('news-feed-rumours');
+    const filtered=f==='all'?ALL_RUMOURS_PANEL:ALL_RUMOURS_PANEL.filter(n=>guessTag(n.title).cls.includes(f)||guessTag(n.title).label.toLowerCase()===f);
+    renderNews(filtered,el,false);
+  }
 }
 
 // =============================================
