@@ -1311,10 +1311,11 @@ const NEWS_SOURCES=[
 ];
 
 async function fetchFeed(src){
-  // Build rss2json URL, then wrap the whole thing in the proxy — single encode only
-  const rss2jsonBase='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(src.url)+'&count=20';
+  // Pass rss2json URL through proxy. Do NOT pre-encode src.url — proxy encodes the whole URL once.
+  // rss2json receives: rss_url=https://www.prohockeyrumors.com/feed (clean, un-encoded)
+  const rss2jsonUrl='https://api.rss2json.com/v1/api.json?rss_url='+src.url+'&count=20';
   try{
-    const r=await fetch(PROXY+encodeURIComponent(rss2jsonBase));
+    const r=await fetch(PROXY+encodeURIComponent(rss2jsonUrl));
     if(!r.ok)throw new Error('rss2json '+r.status);
     const txt=await r.text();
     const json=JSON.parse(txt);
