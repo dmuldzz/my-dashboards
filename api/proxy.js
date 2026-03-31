@@ -1,4 +1,4 @@
-// api/proxy.js — hosted in my-dashboards repo
+// Proxy v4 — updated 2026-03-31 — news & rumours sources expanded
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -14,23 +14,61 @@ export default async function handler(req, res) {
   }
  
   const allowedDomains = [
-    // NHL
-    'api-web.nhle.com', 'api.nhle.com', 'suggest.svc.nhl.com',
-    'records.nhl.com', 'stats.nhl.com', 'www.nhl.com', 'nhl.com',
-    // Market data
-    'finnhub.io', 'api.coingecko.com', 'api.alternative.me',
-    'query1.finance.yahoo.com', 'query2.finance.yahoo.com', 'finance.yahoo.com',
-    // FMP
+    // NHL APIs
+    'api-web.nhle.com',
+    'api.nhle.com',
+    'suggest.svc.nhl.com',
+    'records.nhl.com',
+    'stats.nhl.com',
+    'www.nhl.com',
+    'nhl.com',
+ 
+    // Sports data
+    'site.api.espn.com',
+    'api.mysportsfeeds.com',
     'financialmodelingprep.com',
+ 
+    // Finance / misc
+    'api.coingecko.com',
+    'finnhub.io',
+    'api.alternative.me',
+    'query1.finance.yahoo.com',
+    'query2.finance.yahoo.com',
+    'finance.yahoo.com',
+    'sports.yahoo.com',
+ 
     // Anthropic
     'api.anthropic.com',
-    // News
-    'sports.yahoo.com', 'www.prohockeyrumors.com', 'nhlrumors.com',
-    'thehockeywriters.com', 'www.dailyfaceoff.com',
-    'site.api.espn.com', 'rss.cbssports.com',
-    // Other
-    'api.mysportsfeeds.com', 'www.tsn.ca', 'tsn.ca',
-    'www.sportsnet.ca', 'sportsnet.ca',
+ 
+    // -----------------------------------------------
+    // NEWS SOURCES (4 feeds)
+    // -----------------------------------------------
+    'thehockeywriters.com',         // Hockey Writers — general NHL news
+    'prohockeynews.com',            // Pro Hockey News — broad coverage
+    'www.sportsnet.ca',             // Sportsnet — Canadian insiders
+    'sportsnet.ca',
+    'www.tsn.ca',                   // TSN — Canadian insiders
+    'tsn.ca',
+ 
+    // -----------------------------------------------
+    // RUMOUR SOURCES (6 feeds)
+    // -----------------------------------------------
+    'www.prohockeyrumors.com',      // Pro Hockey Rumors — primary rumour source
+    'nhlrumors.com',                // NHL Rumors — trade/injury rumours
+    'www.spectorshockey.net',       // Spector's Hockey — daily rumour roundup
+    'www.hockeybuzz.com',           // Hockey Buzz — insider rumours
+    'feeds.feedburner.com',         // Kukla's Korner (via FeedBurner)
+    'www.nhltraderumor.com',        // NHL Trade Rumor — active rumour site
+ 
+    // -----------------------------------------------
+    // PREVIOUSLY EXISTING — kept for other features
+    // -----------------------------------------------
+    'rss.cbssports.com',
+    'sportsnaut.com',
+    'www.reddit.com',
+    'reddit.com',
+    'api.rss2json.com',
+    'www.dailyfaceoff.com',
   ];
  
   let parsedUrl;
@@ -55,7 +93,7 @@ export default async function handler(req, res) {
  
     if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
  
-    // Inject Anthropic required headers server-side
+    // Inject Anthropic headers server-side (avoids CORS preflight issues)
     if (hostname === 'api.anthropic.com') {
       headers['x-api-key'] = '';
       headers['anthropic-version'] = '2023-06-01';
@@ -73,13 +111,15 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const errText = await response.text();
       return res.status(response.status).json({
-        error: 'Upstream error', status: response.status,
+        error: 'Upstream error',
+        status: response.status,
         detail: errText.substring(0, 200),
       });
     }
  
     const contentType = response.headers.get('content-type') || 'application/json';
     const data = await response.text();
+ 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).send(data);
@@ -87,4 +127,3 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({ error: 'Proxy fetch failed', message: error.message });
   }
-}
