@@ -616,9 +616,27 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
 
 <script>
 const TID=141, BASE='https://statsapi.mlb.com/api/v1';
+
+// Robust fetcher: try direct first, then two CORS proxies
 async function mlb(p){
-  try{const r=await fetch(BASE+p);if(!r.ok)throw 0;return r.json();}
-  catch{try{const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(BASE+p));return r.json();}catch{return null;}}
+  const url = BASE + p;
+  // 1) Direct (works in many browsers / local file)
+  try {
+    const r = await fetch(url, {headers:{'Accept':'application/json'}});
+    if(r.ok) return r.json();
+  } catch(e){}
+  // 2) allorigins.win proxy
+  try {
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    if(r.ok){ const j=await r.json(); return JSON.parse(j.contents); }
+  } catch(e){}
+  // 3) corsproxy.io (last resort)
+  try {
+    const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`);
+    if(r.ok) return r.json();
+  } catch(e){}
+  console.warn('All proxies failed for:', p);
+  return null;
 }
 const ds=d=>d.toISOString().split('T')[0];
 const logo=id=>`https://www.mlbstatic.com/team-logos/${id}.svg`;
@@ -631,7 +649,7 @@ document.getElementById('s-footer-dt').textContent=`${NOW.getFullYear()} MLB Sea
 
 /* ── STANDINGS ── */
 async function loadStandings(){
-  const d=await mlb('/standings?leagueId=103,104&season=2025&standingsTypes=regularSeason&hydrate=team,record');
+  const season=new Date().getFullYear();const d=await mlb(`/standings?leagueId=103,104&season=${season}&standingsTypes=regularSeason&hydrate=team,record`);
   if(!d) return;
   let jays;
   for(const div of d.records||[]) for(const t of div.teamRecords||[]) if(t.team.id===TID){jays=t;break;}
@@ -660,8 +678,12 @@ async function loadStandings(){
 }
 
 async function loadTeamStats(){
-  const d=await mlb(`/teams/${TID}/stats?stats=season&group=pitching,hitting&season=2025&sportId=1`);
-  if(!d) return;
+  const season=new Date().getFullYear();
+  const[dp,dh]=await Promise.all([
+    mlb(`/teams/${TID}/stats?stats=season&group=pitching&season=${season}&sportId=1`),
+    mlb(`/teams/${TID}/stats?stats=season&group=hitting&season=${season}&sportId=1`)
+  ]);
+  const d={stats:[...(dp?.stats||[]),...(dh?.stats||[])]};
   for(const s of d.stats||[]){
     const st=s.splits?.[0]?.stat||{};
     if(s.group?.displayName==='pitching') document.getElementById('r-era').textContent=st.era||'—';
@@ -706,20 +728,42 @@ const PG={C:'Catchers','1B':'Infielders','2B':'Infielders','3B':'Infielders',SS:
 const PO={C:0,'1B':1,'2B':2,'3B':3,SS:4,LF:5,CF:6,RF:7,OF:8,DH:9};
 
 async function loadRoster(){
-  const[active,inj]=await Promise.all([mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`),mlb(`/roster/${TID}?rosterType=injuries&season=2025&hydrate=person`)]);
-  const all=active?.roster||[];const pp=new Set(['P','SP','RP']);
+  // Correct endpoint: /teams/{id}/roster (not /roster/{id})
+  const season = new Date().getFullYear();
+  const[active,inj]=await Promise.all([
+    mlb(`/teams/${TID}/roster?rosterType=active&season=${season}&hydrate=person`),
+    mlb(`/teams/${TID}/roster?rosterType=injuries&season=${season}&hydrate=person`)
+  ]);
+  const all=active?.roster||[];
+  const pp=new Set(['P','SP','RP']);
   BAT=all.filter(p=>!pp.has(p.position?.abbreviation));
   PIT=all.filter(p=>pp.has(p.position?.abbreviation));
   IL=inj?.roster||[];
-  const[bs,ps]=await Promise.all([loadStats(BAT.map(p=>p.person.id),'hitting'),loadStats(PIT.map(p=>p.person.id),'pitching')]);
-  BAT.forEach(p=>p._s=bs[p.person.id]||{});PIT.forEach(p=>p._s=ps[p.person.id]||{});
+  // Fetch stats individually (parallel) to avoid broken hydrate encoding through proxies
+  const[bs,ps]=await Promise.all([
+    loadStatsBatch(BAT.map(p=>p.person.id),'hitting'),
+    loadStatsBatch(PIT.map(p=>p.person.id),'pitching')
+  ]);
+  BAT.forEach(p=>p._s=bs[p.person.id]||{});
+  PIT.forEach(p=>p._s=ps[p.person.id]||{});
   showBat();
 }
 
-async function loadStats(ids,group){
-  const map={};if(!ids.length) return map;
-  const d=await mlb(`/people?personIds=${ids.slice(0,25).join(',')}&hydrate=stats(group=${group},type=season,season=2025)`);
-  for(const p of d?.people||[]){const s=p.stats?.find(x=>x.group?.displayName?.toLowerCase()===group)?.splits?.[0]?.stat||{};map[p.id]=s;}
+async function loadStatsBatch(ids, group){
+  const map={};
+  if(!ids.length) return map;
+  const season = new Date().getFullYear();
+  // Fetch up to 20 players in parallel; individual endpoint avoids hydrate encoding bugs
+  const toFetch=ids.slice(0,20);
+  const results=await Promise.allSettled(
+    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&season=${season}&group=${group}&sportId=1`))
+  );
+  results.forEach((res,i)=>{
+    if(res.status==='fulfilled' && res.value){
+      const splits=res.value?.stats?.[0]?.splits||[];
+      if(splits.length) map[toFetch[i]]=splits[splits.length-1]?.stat||{};
+    }
+  });
   return map;
 }
 
@@ -821,23 +865,25 @@ async function openPlayerCard(playerId, posHint='') {
   document.querySelectorAll('.pc-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   document.querySelectorAll('.pc-pane').forEach((p,i)=>p.classList.toggle('active',i===0));
 
-  // Fetch bio + stats in parallel
-  const [bio, seasonHit, seasonPit, careerHit, careerPit, awards, gamelog] = await Promise.all([
-    mlb(`/people/${playerId}?hydrate=currentTeam,birthPlace,draft,education,stats(type=season,season=2025,group=hitting),stats(type=season,season=2025,group=pitching)`),
-    mlb(`/people/${playerId}/stats?stats=season&season=2025&group=hitting&sportId=1`),
-    mlb(`/people/${playerId}/stats?stats=season&season=2025&group=pitching&sportId=1`),
-    mlb(`/people/${playerId}/stats?stats=career&group=hitting&sportId=1`),
-    mlb(`/people/${playerId}/stats?stats=career&group=pitching&sportId=1`),
-    mlb(`/people/${playerId}/stats?stats=season&season=2025&group=hitting&sportId=1`), // placeholder for awards
-    mlb(`/people/${playerId}/stats?stats=gameLog&season=2025&group=hitting&sportId=1`),
-  ]);
+  const season = new Date().getFullYear();
 
+  // Step 1: fetch bio (simple endpoint, no complex hydrate)
+  const bio = await mlb(`/people/${playerId}`);
   const person = bio?.people?.[0];
   if(!person) { document.getElementById('pc-name').textContent='Player not found'; return; }
 
-  const isPitcher = person.primaryPosition?.abbreviation==='P' || person.primaryPosition?.type==='Pitcher';
+  const isPitcher = person.primaryPosition?.type==='Pitcher' || person.primaryPosition?.abbreviation==='P';
   const pos = person.primaryPosition?.abbreviation||posHint||'?';
   const jersey = person.primaryNumber||'';
+
+  // Step 2: fetch stats (all in parallel, simple endpoints)
+  const [seasonHit, seasonPit, careerHit, careerPit, gamelog] = await Promise.all([
+    mlb(`/people/${playerId}/stats?stats=season&season=${season}&group=hitting&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=season&season=${season}&group=pitching&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=career&group=hitting&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=career&group=pitching&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=gameLog&season=${season}&group=${isPitcher?'pitching':'hitting'}&sportId=1`),
+  ]);
 
   // ── HERO ──
   document.getElementById('pc-hero').setAttribute('data-num', jersey);
@@ -882,11 +928,7 @@ async function openPlayerCard(playerId, posHint='') {
   buildCareerPane(isPitcher, careerHitSplits, careerPitSplits);
 
   // ── GAME LOG ──
-  // re-fetch as pitcher if needed
-  const logData = isPitcher
-    ? await mlb(`/people/${playerId}/stats?stats=gameLog&season=2025&group=pitching&sportId=1`)
-    : gamelog;
-  buildGameLog(isPitcher, logData?.stats?.[0]?.splits||[]);
+  buildGameLog(isPitcher, gamelog?.stats?.[0]?.splits||[]);
 
   // ── BIO ──
   buildBioPane(person);
@@ -913,7 +955,8 @@ function switchTab(name, el){
 /* ACCOLADES */
 async function buildAccolades(person, playerId){
   const el = document.getElementById('pc-accolades');
-  const awards = await mlb(`/people/${playerId}/awards`);
+  // Awards endpoint: note this may return empty for many players
+  const awards = await mlb(`/people/${playerId}/awards?sportId=1`);
   const awardList = awards?.awards || [];
 
   // Known award mappings
