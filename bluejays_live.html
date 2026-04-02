@@ -290,25 +290,98 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
 
 .pc-chip strong{color:var(--ice);font-weight:500;}
 
-/* ACCOLADES strip */
-.pc-accolades{
-  padding:10px 20px;
-  border-bottom:1px solid var(--rim);
-  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
-  flex-shrink:0;
-  min-height:42px;
+/* ACCOLADES TAB */
+.ac-section{ margin-bottom:28px; }
+
+.ac-section-label{
+  font-family:var(--mono);font-size:8.5px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--fog);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.ac-section-label::after{content:'';flex:1;height:1px;background:var(--rim);}
+
+.ac-grid{
+  display:flex;flex-wrap:wrap;gap:7px;
 }
 
-.pc-accolade{
-  display:inline-flex;align-items:center;gap:5px;
-  font-family:var(--mono);font-size:9.5px;font-weight:600;
-  padding:3px 10px;border-radius:4px;
-  letter-spacing:.04em;
+/* Individual award badge — collapsed, hoverable */
+.ac-badge{
+  position:relative;
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  padding:6px 12px;border-radius:6px;
+  letter-spacing:.03em;cursor:default;
+  transition:border-color .15s, background .15s;
+  user-select:none;
 }
 
-.pc-accolade.as{background:rgba(245,197,24,.15);color:var(--gold);border:1px solid rgba(245,197,24,.3);}
-.pc-accolade.aw{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);}
-.pc-accolade.df{background:rgba(16,87,183,.25);color:#60a5fa;border:1px solid rgba(16,87,183,.35);}
+/* count bubble */
+.ac-count{
+  font-family:var(--disp);font-size:13px;font-weight:700;
+  display:inline-block;min-width:20px;text-align:center;
+  line-height:1;
+}
+
+/* colour tiers */
+.ac-badge.tier-gold{background:rgba(245,197,24,.12);color:var(--gold);border:1px solid rgba(245,197,24,.28);}
+.ac-badge.tier-green{background:rgba(34,197,94,.10);color:#4ade80;border:1px solid rgba(34,197,94,.22);}
+.ac-badge.tier-blue{background:rgba(16,87,183,.22);color:#7ab8f5;border:1px solid rgba(16,87,183,.38);}
+.ac-badge.tier-steel{background:rgba(106,143,175,.10);color:var(--steel);border:1px solid rgba(106,143,175,.2);}
+
+/* hover state — lift + brighten border */
+.ac-badge:hover{filter:brightness(1.15);}
+.ac-badge.tier-gold:hover{border-color:rgba(245,197,24,.55);}
+.ac-badge.tier-green:hover{border-color:rgba(34,197,94,.5);}
+.ac-badge.tier-blue:hover{border-color:rgba(16,87,183,.65);}
+
+/* TOOLTIP — year list */
+.ac-tooltip{
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;transform:translateX(-50%);
+  background:#0a1829;
+  border:1px solid rgba(16,87,183,.5);
+  border-radius:7px;
+  padding:8px 12px;
+  white-space:nowrap;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .15s ease;
+  z-index:9999;
+  min-width:120px;
+  text-align:center;
+}
+
+.ac-tooltip::after{
+  content:'';position:absolute;
+  top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#0a1829;
+}
+
+.ac-badge:hover .ac-tooltip{ opacity:1; }
+
+.ac-tooltip-title{
+  font-family:var(--disp);font-size:11px;font-weight:600;
+  color:var(--white);letter-spacing:.04em;
+  margin-bottom:5px;display:block;
+}
+
+.ac-tooltip-years{
+  display:flex;flex-wrap:wrap;gap:4px;justify-content:center;
+}
+
+.ac-year-chip{
+  font-family:var(--mono);font-size:9px;font-weight:500;
+  background:rgba(16,87,183,.3);color:var(--sky);
+  padding:1px 6px;border-radius:3px;
+}
+
+/* empty state */
+.ac-empty{
+  font-family:var(--mono);font-size:11px;color:var(--fog);
+  letter-spacing:.06em;padding:32px 0;text-align:center;
+}
 
 /* TABS */
 .pc-tabs{
@@ -576,16 +649,12 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
       </div>
     </div>
 
-    <!-- ACCOLADES -->
-    <div class="pc-accolades" id="pc-accolades">
-      <div class="pc-loading" style="padding:6px 0"><div class="spin"></div></div>
-    </div>
-
     <!-- TABS -->
     <div class="pc-tabs">
       <div class="pc-tab active" onclick="switchTab('stats',this)">Season Stats</div>
       <div class="pc-tab" onclick="switchTab('log',this)">Game Log</div>
       <div class="pc-tab" onclick="switchTab('career',this)">Career</div>
+      <div class="pc-tab" onclick="switchTab('accolades',this)">Accolades</div>
       <div class="pc-tab" onclick="switchTab('bio',this)">Bio & Draft</div>
     </div>
 
@@ -604,6 +673,11 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
       <!-- CAREER PANE -->
       <div class="pc-pane" id="pane-career">
         <div class="pc-loading"><div class="spin"></div>&nbsp;Loading career stats...</div>
+      </div>
+
+      <!-- ACCOLADES PANE -->
+      <div class="pc-pane" id="pane-accolades">
+        <div class="pc-loading"><div class="spin"></div>&nbsp;Loading accolades...</div>
       </div>
 
       <!-- BIO PANE -->
@@ -857,10 +931,10 @@ async function openPlayerCard(playerId, posHint='') {
   document.getElementById('pc-name-sub').textContent='—';
   document.getElementById('pc-pos-badge').textContent='Loading...';
   document.getElementById('pc-chips').innerHTML='';
-  document.getElementById('pc-accolades').innerHTML='<div class="pc-loading" style="padding:6px 0"><div class="spin"></div></div>';
+  document.getElementById('pc-accolades') && (document.getElementById('pc-accolades').innerHTML='');
   document.getElementById('pc-hero').setAttribute('data-num','');
   document.getElementById('pc-photo-wrap').innerHTML='<div class="pc-loading"><div class="spin"></div></div>';
-  ['stats','log','career','bio'].forEach(p=>document.getElementById(`pane-${p}`).innerHTML=`<div class="pc-loading"><div class="spin"></div>&nbsp;Loading...</div>`);
+  ['stats','log','career','accolades','bio'].forEach(p=>document.getElementById(`pane-${p}`).innerHTML=`<div class="pc-loading"><div class="spin"></div>&nbsp;Loading...</div>`);
   // reset to stats tab
   document.querySelectorAll('.pc-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   document.querySelectorAll('.pc-pane').forEach((p,i)=>p.classList.toggle('active',i===0));
@@ -914,7 +988,7 @@ async function openPlayerCard(playerId, posHint='') {
   const chips = [age,ht,wt,born,debut].filter(Boolean);
   document.getElementById('pc-chips').innerHTML = chips.map(c=>`<span class="pc-chip">${c}</span>`).join('');
 
-  // ── ACCOLADES ──
+  // ── ACCOLADES PANE (async, fires independently) ──
   buildAccolades(person, playerId);
 
   // ── STATS PANE ──
@@ -952,47 +1026,159 @@ function switchTab(name, el){
   document.getElementById(`pane-${name}`).classList.add('active');
 }
 
-/* ACCOLADES */
+/* ══════════════════════════════════════
+   ACCOLADES — grouped, hoverable badges
+══════════════════════════════════════ */
 async function buildAccolades(person, playerId){
-  const el = document.getElementById('pc-accolades');
-  // Awards endpoint: note this may return empty for many players
+  const el = document.getElementById('pane-accolades');
+
   const awards = await mlb(`/people/${playerId}/awards?sportId=1`);
-  const awardList = awards?.awards || [];
+  const raw = awards?.awards || [];
 
-  // Known award mappings
-  const awardLabels = {
-    'MLBHOF':'Hall of Fame','ALMVP':'AL MVP','NLMVP':'NL MVP','ALCY':'AL Cy Young',
-    'NLCY':'NL Cy Young','ALROY':'AL Rookie of Year','NLROY':'NL Rookie of Year',
-    'SSALB':'Silver Slugger','GGALB':'Gold Glove','ALCOM':'All-Star',
-    'NLCOM':'All-Star','WSMVP':'World Series MVP','LCSALMVP':'ALCS MVP','LCSNLMVP':'NLCS MVP'
-  };
-
-  let chips = [];
-
-  // All-Star appearances — count unique years
-  const asYears = [...new Set(awardList.filter(a=>a.awardId?.includes('COM')||a.awardId?.includes('AS')).map(a=>a.season))];
-  if(asYears.length) chips.push({cls:'as', label:`⭐ ${asYears.length}× All-Star`});
-
-  // Other awards
-  awardList.forEach(a=>{
-    const lbl = awardLabels[a.awardId]||a.name;
-    if(a.awardId?.includes('COM')) return; // already counted as AS
-    const cls = a.awardId?.includes('MVP')||a.awardId?.includes('CY')||a.awardId?.includes('ROY') ? 'aw' : 'df';
-    if(lbl) chips.push({cls, label:`🏆 ${a.season} ${lbl}`});
-  });
-
-  // Service time note
-  if(person.mlbDebutDate){
-    const yrs = new Date().getFullYear()-new Date(person.mlbDebutDate).getFullYear();
-    if(yrs>0) chips.push({cls:'df',label:`${yrs} yr MLB service`});
+  if(!raw.length){
+    // Build minimal chips from bio data only
+    const chips = [];
+    if(person.mlbDebutDate){
+      const yrs = new Date().getFullYear()-new Date(person.mlbDebutDate).getFullYear();
+      if(yrs>0) chips.push({tier:'steel',icon:'◈',label:`${yrs} yr MLB service`,years:[]});
+    }
+    if(person.draftYear) chips.push({tier:'steel',icon:'◈',label:`${person.draftYear} Draft`,years:[]});
+    el.innerHTML = chips.length
+      ? renderAccoladesHTML([{title:'Player Info', items:chips}])
+      : '<div class="ac-empty">No awards data available</div>';
+    return;
   }
 
-  // Draft / acquisition type
-  if(person.draftYear) chips.push({cls:'df',label:`${person.draftYear} Draft`});
+  // ── CATEGORISE & COLLAPSE ──
+  // Map each award entry to a canonical "group key" + display label + tier
+  const AWARD_MAP = {
+    // Major awards — gold
+    'ALMVP':        {label:'AL MVP',              tier:'gold', icon:'🏆'},
+    'NLMVP':        {label:'NL MVP',              tier:'gold', icon:'🏆'},
+    'ALCY':         {label:'AL Cy Young',         tier:'gold', icon:'🏆'},
+    'NLCY':         {label:'NL Cy Young',         tier:'gold', icon:'🏆'},
+    'ALROY':        {label:'AL Rookie of Year',   tier:'gold', icon:'🏆'},
+    'NLROY':        {label:'NL Rookie of Year',   tier:'gold', icon:'🏆'},
+    'MLBHOF':       {label:'Hall of Fame',        tier:'gold', icon:'🏛'},
+    'WSMVP':        {label:'World Series MVP',    tier:'gold', icon:'🏆'},
+    'LCSALMVP':     {label:'ALCS MVP',            tier:'gold', icon:'🏆'},
+    'LCSNLMVP':     {label:'NLCS MVP',            tier:'gold', icon:'🏆'},
+    // Championships
+    'WSC':          {label:'World Series Champion',tier:'gold',icon:'💍'},
+    // All-Star — green
+    'ALCOM':        {label:'AL All-Star',         tier:'green',icon:'⭐'},
+    'NLCOM':        {label:'NL All-Star',         tier:'green',icon:'⭐'},
+    // Individual honours — green
+    'SSALB':        {label:'Silver Slugger',      tier:'green',icon:'🥈'},
+    'GGALB':        {label:'Gold Glove',          tier:'green',icon:'🥇'},
+    'GGALP':        {label:'Gold Glove',          tier:'green',icon:'🥇'},
+    'GGALE':        {label:'Gold Glove',          tier:'green',icon:'🥇'},
+    'ROBBIE':       {label:'Roberto Clemente',    tier:'green',icon:'🏆'},
+    'HANK':         {label:'Hank Aaron Award',    tier:'green',icon:'🏆'},
+    'EDGAR':        {label:'Edgar Martinez DH Award',tier:'green',icon:'🏆'},
+    // All-MLB teams — blue
+    'ALLMLB1':      {label:'All-MLB 1st Team',   tier:'blue', icon:'◈'},
+    'ALLMLB2':      {label:'All-MLB 2nd Team',   tier:'blue', icon:'◈'},
+    // Monthly/Weekly — blue
+    'ALPOW':        {label:'AL Player of the Week',tier:'blue',icon:'◈'},
+    'NLPOW':        {label:'NL Player of the Week',tier:'blue',icon:'◈'},
+    'ALPITM':       {label:'AL Pitcher of the Month',tier:'blue',icon:'◈'},
+    'NLPITM':       {label:'NL Pitcher of the Month',tier:'blue',icon:'◈'},
+    'ALPLYM':       {label:'AL Player of the Month',tier:'blue',icon:'◈'},
+    'NLPLYM':       {label:'NL Player of the Month',tier:'blue',icon:'◈'},
+    'ALPITW':       {label:'AL Pitcher of the Week',tier:'blue',icon:'◈'},
+    'NLPITW':       {label:'NL Pitcher of the Week',tier:'blue',icon:'◈'},
+  };
 
-  el.innerHTML = chips.length
-    ? chips.map(c=>`<span class="pc-accolade ${c.cls}">${c.label}</span>`).join('')
-    : '<span style="font-family:var(--mono);font-size:10px;color:var(--fog);padding:0 4px">No awards data</span>';
+  // Tier priority for section ordering
+  const TIER_ORDER = {gold:0, green:1, blue:2, steel:3};
+
+  // Section containers: key → {label, tier, icon, years[]}
+  const groups = {};
+
+  raw.forEach(a => {
+    const id = a.awardId||'';
+    const season = a.season||a.date?.slice(0,4)||'?';
+    const name = a.name||id;
+
+    // Find mapping — try exact match first, then substring match
+    let mapped = AWARD_MAP[id];
+    if(!mapped){
+      const key = Object.keys(AWARD_MAP).find(k=>id.startsWith(k)||id.includes(k));
+      if(key) mapped = AWARD_MAP[key];
+    }
+
+    // Fallback: use the raw name, classify by heuristic
+    if(!mapped){
+      let tier='steel', icon='◈';
+      if(/mvp|cy young|hall of fame|world series mvp/i.test(name)) { tier='gold'; icon='🏆'; }
+      else if(/all.star|silver slugger|gold glove|rookie of year|champion/i.test(name)) { tier='green'; icon='⭐'; }
+      else if(/player of the|pitcher of the|month|week/i.test(name)) { tier='blue'; icon='◈'; }
+      mapped = {label:name, tier, icon};
+    }
+
+    const gKey = mapped.label; // group by canonical label
+    if(!groups[gKey]){
+      groups[gKey] = {label:mapped.label, tier:mapped.tier, icon:mapped.icon, years:[]};
+    }
+    if(!groups[gKey].years.includes(season)) groups[gKey].years.push(season);
+  });
+
+  // Add bio chips
+  if(person.mlbDebutDate){
+    const yrs = new Date().getFullYear()-new Date(person.mlbDebutDate).getFullYear();
+    if(yrs>0 && !groups['MLB Service']){
+      groups['MLB Service']={label:`${yrs} yr MLB service`,tier:'steel',icon:'◈',years:[]};
+    }
+  }
+  if(person.draftYear && !groups['Draft']){
+    groups['Draft']={label:`${person.draftYear} Draft`,tier:'steel',icon:'◈',years:[]};
+  }
+
+  // Sort years descending within each group
+  Object.values(groups).forEach(g=>{ g.years.sort((a,b)=>b-a); });
+
+  // Group into sections by tier
+  const sections = {};
+  const sectionNames = {gold:'Major Awards',green:'Individual Honors',blue:'Monthly & Weekly',steel:'Career Info'};
+  Object.values(groups).forEach(g=>{
+    const s = sectionNames[g.tier]||'Other';
+    if(!sections[s]) sections[s]={title:s,tierOrder:TIER_ORDER[g.tier]||9,items:[]};
+    sections[s].items.push(g);
+  });
+
+  // Sort sections by tier priority, items within by year count desc
+  const sorted = Object.values(sections).sort((a,b)=>a.tierOrder-b.tierOrder);
+  sorted.forEach(s=>{ s.items.sort((a,b)=>b.years.length-a.years.length); });
+
+  el.innerHTML = sorted.length
+    ? renderAccoladesHTML(sorted)
+    : '<div class="ac-empty">No awards data available</div>';
+}
+
+function renderAccoladesHTML(sections){
+  return sections.map(sec=>`
+    <div class="ac-section">
+      <div class="ac-section-label">${sec.title}</div>
+      <div class="ac-grid">
+        ${sec.items.map(item=>{
+          const count = item.years.length;
+          const countStr = count > 1 ? `<span class="ac-count">${count}×</span>` : '';
+          const hasYears = count > 0;
+          const tooltipYears = hasYears ? item.years.map(y=>`<span class="ac-year-chip">${y}</span>`).join('') : '';
+          const tooltip = hasYears ? `
+            <div class="ac-tooltip">
+              <span class="ac-tooltip-title">${item.label}</span>
+              <div class="ac-tooltip-years">${tooltipYears}</div>
+            </div>` : '';
+          return `<span class="ac-badge tier-${item.tier}">
+            ${item.icon} ${countStr}${item.label}
+            ${tooltip}
+          </span>`;
+        }).join('')}
+      </div>
+    </div>`
+  ).join('');
 }
 
 /* STATS PANE */
