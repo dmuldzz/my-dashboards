@@ -1021,15 +1021,23 @@ let MLB_SEASON = NOW.getFullYear();
 const SEASON = MLB_SEASON; // kept for any remaining references
 
 async function detectMLBSeason() {
-  // Try current year first, then previous year
-  for (const yr of [NOW.getFullYear(), NOW.getFullYear()-1]) {
-    const d = await mlb(`/schedule?teamId=${TID}&sportId=1&season=${yr}&gameType=R`);
-    if (d?.totalGames > 0 || d?.dates?.length > 0) {
-      MLB_SEASON = yr;
-      return yr;
+  // Detect the correct MLB API season by testing the roster endpoint.
+  // The roster endpoint is the most reliable indicator — if it returns players, that season exists.
+  // Try no-season first (API returns current), then explicit years.
+  const noSeason = await mlb(`/roster/${TID}?rosterType=active`);
+  if (noSeason?.roster?.length) {
+    // Extract season from the response if available, otherwise use schedule
+    const sched = await mlb(`/schedule?teamId=${TID}&sportId=1&startDate=${ds(NOW)}&endDate=${ds(NOW)}`);
+    const seasonFromSched = sched?.dates?.[0]?.games?.[0]?.season || sched?.dates?.[0]?.season;
+    if (seasonFromSched) { MLB_SEASON = parseInt(seasonFromSched); return MLB_SEASON; }
+    // Fall back to checking explicit years
+    for (const yr of [NOW.getFullYear(), NOW.getFullYear()-1]) {
+      const d = await mlb(`/roster/${TID}?rosterType=active&season=${yr}`);
+      if (d?.roster?.length) { MLB_SEASON = yr; return yr; }
     }
   }
-  MLB_SEASON = NOW.getFullYear() - 1; // safe fallback
+  // If nothing works, default to previous calendar year (safe for most of the year)
+  MLB_SEASON = NOW.getFullYear() - 1;
   return MLB_SEASON;
 }
 
@@ -1116,11 +1124,9 @@ const PG={C:'Catchers','1B':'Infielders','2B':'Infielders','3B':'Infielders',SS:
 const PO={C:0,'1B':1,'2B':2,'3B':3,SS:4,LF:5,CF:6,RF:7,OF:8,DH:9};
 
 async function loadRoster(){
-  // Correct endpoint: /teams/{id}/roster (not /roster/{id})
-  const season = new Date().getFullYear();
   const[active,inj]=await Promise.all([
-    mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`),
-    mlb(`/roster/${TID}?rosterType=injuries&season=${MLB_SEASON}&hydrate=person`)
+    mlb(`/roster/${TID}?rosterType=active&hydrate=person`),
+    mlb(`/roster/${TID}?rosterType=injuries&hydrate=person`)
   ]);
   const all=active?.roster||[];
   const pp=new Set(['P','SP','RP']);
@@ -1142,13 +1148,48 @@ async function loadStatsBatch(ids, group){
   if(!ids.length) return map;
   // Fetch up to 20 players in parallel; individual endpoint avoids hydrate encoding bugs
   const toFetch=ids.slice(0,20);
+  // Try without season first (returns current season automatically), fall back to explicit
   const results=await Promise.allSettled(
-    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&season=${MLB_SEASON}&group=${group}&sportId=1`))
+    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&group=${group}&sportId=1`))
   );
   results.forEach((res,i)=>{
     if(res.status==='fulfilled' && res.value){
       const splits=res.value?.stats?.[0]?.splits||[];
       if(splits.length) map[toFetch[i]]=splits[splits.length-1]?.stat||{};
+    }
+  });
+  return map;
+}
+
+async function loadStatsBatch14(ids, group){
+  const map={};
+  if(!ids.length) return map;
+  const toFetch=ids.slice(0,20);
+  const results=await Promise.allSettled(
+    toFetch.map(id=>mlb(`/people/${id}/stats?stats=lastXGames&limit=14&group=${group}&sportId=1`))
+  );
+  results.forEach((res,i)=>{
+    if(res.status==='fulfilled' && res.value){
+      const splits=res.value?.stats?.[0]?.splits||[];
+      // Aggregate last 14 game splits into one stat object
+      if(splits.length){
+        const agg={};
+        splits.forEach(s=>{
+          Object.entries(s.stat||{}).forEach(([k,v])=>{
+            if(typeof v==='number') agg[k]=(agg[k]||0)+v;
+            else agg[k]=v; // take last string value (avg, ops etc.)
+          });
+        });
+        // Recalculate rate stats
+        if(agg.atBats>0){
+          agg.avg=((agg.hits||0)/agg.atBats).toFixed(3);
+          agg.ops=((agg.onBasePercentage||0)+(agg.sluggingPercentage||0)).toFixed(3);
+        }
+        if(agg.inningsPitched>0 && agg.earnedRuns!=null){
+          agg.era=((agg.earnedRuns*9)/agg.inningsPitched).toFixed(2);
+        }
+        map[toFetch[i]]=agg;
+      }
     }
   });
   return map;
@@ -1759,14 +1800,17 @@ function navigate(page, el) {
 async function loadRosterPage() {
   const el = document.getElementById('pg-roster-body');
   const [activeD, injD] = await Promise.all([
-    mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`),
-    mlb(`/roster/${TID}?rosterType=injuries&season=${MLB_SEASON}&hydrate=person`)
+    mlb(`/roster/${TID}?rosterType=active&hydrate=person`),
+    mlb(`/roster/${TID}?rosterType=injuries&hydrate=person`)
   ]);
   const all = activeD?.roster || [];
   const pp = new Set(['P','SP','RP']);
-  const batters = all.filter(p => !pp.has(p.position?.abbreviation));
-  const starters = all.filter(p => p.position?.abbreviation === 'SP');
-  const relievers = all.filter(p => p.position?.abbreviation !== 'SP' && pp.has(p.position?.abbreviation));
+  // Position abbreviation can be 'P', 'SP', or 'RP' depending on roster type
+  const batters  = all.filter(p => !['P','SP','RP'].includes(p.position?.abbreviation));
+  const pitchers = all.filter(p => ['P','SP','RP'].includes(p.position?.abbreviation));
+  // Distinguish starters vs relievers by position type or abbreviation
+  const starters  = pitchers.filter(p => p.position?.abbreviation === 'SP' || p.position?.type === 'Starter');
+  const relievers = pitchers.filter(p => p.position?.abbreviation !== 'SP' && p.position?.type !== 'Starter');
   const il = injD?.roster || [];
 
   const [bs, ps] = await Promise.all([
@@ -1791,6 +1835,11 @@ async function loadRosterPage() {
   }
   function rs2(v,l){ return `<div class="rps"><span class="rps-v">${v||'—'}</span><span class="rps-l">${l}</span></div>`; }
 
+  if (!all.length) {
+    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">Roster data unavailable — try refreshing</div>';
+    return;
+  }
+
   let html = '<div class="rp-grid">';
 
   // Batters by group
@@ -1806,21 +1855,24 @@ async function loadRosterPage() {
     html += '</div>';
   });
 
-  // Starters
-  html += `<div class="rp-section"><div class="rp-section-head">Starting Pitchers</div>`;
-  starters.forEach(p => {
-    const s = p._s||{};
-    html += rpRow(p, rs2(s.era,'ERA')+rs2(s.whip,'WHIP')+rs2(s.inningsPitched,'IP')+rs2(s.strikeOuts,'K'));
-  });
-  html += '</div>';
-
-  // Relievers
-  html += `<div class="rp-section"><div class="rp-section-head">Relievers</div>`;
-  relievers.forEach(p => {
-    const s = p._s||{};
-    html += rpRow(p, rs2(s.era,'ERA')+rs2(s.whip,'WHIP')+rs2(s.saves,'SV')+rs2(s.strikeOuts,'K'));
-  });
-  html += '</div>';
+  // Pitchers — split into Starters / Relievers if we have position data, otherwise show all together
+  if (starters.length) {
+    html += `<div class="rp-section"><div class="rp-section-head">Starting Pitchers</div>`;
+    starters.forEach(p => {
+      const s = p._s||{};
+      html += rpRow(p, rs2(s.era,'ERA')+rs2(s.whip,'WHIP')+rs2(s.inningsPitched,'IP')+rs2(s.strikeOuts,'K'));
+    });
+    html += '</div>';
+  }
+  if (relievers.length || (!starters.length && pitchers.length)) {
+    const group = relievers.length ? relievers : pitchers;
+    html += `<div class="rp-section"><div class="rp-section-head">${starters.length ? 'Relievers' : 'Pitchers'}</div>`;
+    group.forEach(p => {
+      const s = p._s||{};
+      html += rpRow(p, rs2(s.era,'ERA')+rs2(s.whip,'WHIP')+rs2(s.saves,'SV')+rs2(s.strikeOuts,'K'));
+    });
+    html += '</div>';
+  }
 
   // IL
   if (il.length) {
@@ -1962,7 +2014,11 @@ async function loadDepthChart() {
   const el = document.getElementById('pg-depth-body');
 
   // Try official depth chart endpoint (no season param needed)
-  const d = await mlb(`/depthcharts?teamId=${TID}&season=${MLB_SEASON}`);
+  // Try depth chart with and without season param
+  let d = await mlb(`/depthcharts?teamId=${TID}`);
+  if (!d?.depthCharts?.[0]?.positions?.length) {
+    d = await mlb(`/depthcharts?teamId=${TID}&season=${MLB_SEASON}`);
+  }
   const positions = d?.depthCharts?.[0]?.positions || [];
 
   if (positions.length) {
@@ -1971,7 +2027,7 @@ async function loadDepthChart() {
   }
 
   // Fallback: build depth chart from active roster grouped by position
-  const rD = await mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`);
+  const rD = await mlb(`/roster/${TID}?rosterType=active&hydrate=person`);
   const roster = rD?.roster || [];
   if (!roster.length) {
     el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">Depth chart unavailable — roster data could not be loaded</div>';
@@ -2041,7 +2097,7 @@ async function loadTrending(group='hitting') {
   el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Calculating...</div>';
 
   // Get active roster, then fetch last14 vs season stats
-  const rosterD = await mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`);
+  const rosterD = await mlb(`/roster/${TID}?rosterType=active&hydrate=person`);
   const all = rosterD?.roster || [];
   const pp = new Set(['P','SP','RP']);
   const players = group==='pitching'
@@ -2051,25 +2107,23 @@ async function loadTrending(group='hitting') {
   const ids = players.slice(0,25).map(p=>p.person.id);
   if (!ids.length) { el.innerHTML = '<div class="srow" style="color:var(--fog);padding:40px">No data</div>'; return; }
 
-  const [seasonD, last14D] = await Promise.all([
-    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=season,season=${MLB_SEASON})`),
-    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=lastXGames,season=${MLB_SEASON},limit=14)`)
+  // Use individual stat calls (more reliable than hydrate through proxies)
+  const [seasonStats, last14Stats] = await Promise.all([
+    loadStatsBatch(ids, group),
+    loadStatsBatch14(ids, group)
   ]);
-
+  const seasonD = null, last14D = null; // unused now
   const season={}, last14={};
-  (seasonD?.people||[]).forEach(p => {
-    const s = p.stats?.find(x=>x.group?.displayName?.toLowerCase()===group)?.splits?.[0]?.stat||{};
-    season[p.id]=s;
-  });
-  (last14D?.people||[]).forEach(p => {
-    const s = p.stats?.find(x=>x.group?.displayName?.toLowerCase()===group)?.splits?.[0]?.stat||{};
-    last14[p.id]=s;
-  });
+  Object.assign(season, seasonStats);
+  Object.assign(last14, last14Stats);
+
+  // season and last14 already populated above
 
   // Compute delta
   const results = players.map(p => {
     const pid = p.person.id;
     const s = season[pid]||{}, r = last14[pid]||{};
+    // season/last14 are now stat objects directly
     let delta=0, statLabel='', recentVal='', seasonVal='';
     if (group==='hitting') {
       const sOPS = parseFloat(s.ops)||0, rOPS = parseFloat(r.ops)||0;
@@ -2125,13 +2179,22 @@ async function loadProspects() {
   const yr = document.getElementById('prospect-year')?.value || '2025';
 
   // MLB Pipeline prospect list via Stats API
-  const d = await mlb(`/draft/prospects?teamId=${TID}&year=${yr}&limit=30`);
-  const prospects = d?.prospects || d?.draftProspects || [];
+  // Prospect rankings via MLB Pipeline aren't in the public Stats API
+  // Use minor league roster as best available proxy
+  const d = null;
+  const prospects = [];
 
   if (!prospects.length) {
     // Fallback: use minor league affiliates roster
-    const minors = await mlb(`/teams?parentOrgPk=${TID}&sportIds=11,12,13,14&season=${yr}&hydrate=roster(person)`);
-    const players = minors?.teams?.flatMap(t => t.roster?.roster||[]).slice(0,30)||[];
+    // Get Blue Jays minor league affiliates for this season
+    const affiliates = await mlb(`/teams?parentOrgPk=${TID}&sportIds=11,12,13,14,15,16`);
+    const affTeams = affiliates?.teams || [];
+    // Fetch rosters for top affiliates (AAA, AA first)
+    const sortedAffs = affTeams.sort((a,b)=>(a.sport?.id||99)-(b.sport?.id||99));
+    const rosterResults = await Promise.all(
+      sortedAffs.slice(0,4).map(t=>mlb(`/roster/${t.id}?rosterType=active&hydrate=person`))
+    );
+    const players = rosterResults.flatMap(r=>r?.roster||[]).slice(0,30);
     if (!players.length) {
       el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No prospect data available for this season</div>';
       return;
@@ -2335,7 +2398,7 @@ async function loadFormerJays() {
 async function loadOrganization() {
   const el = document.getElementById('pg-org-body');
   const [coaches, front] = await Promise.all([
-    mlb(`/teams/${TID}/coaches?season=${MLB_SEASON}`),
+    mlb(`/teams/${TID}/coaches`),
     mlb(`/teams/${TID}?hydrate=person(role)&season=${MLB_SEASON}`)
   ]);
 
@@ -2453,7 +2516,7 @@ function renderNewsPage() {
 async function loadStatcast() {
   const el = document.getElementById('pg-statcast-body');
   // Pull advanced stats for all batters and pitchers
-  const rD = await mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`);
+  const rD = await mlb(`/roster/${TID}?rosterType=active&hydrate=person`);
   const all = rD?.roster||[];
   const pp = new Set(['P','SP','RP']);
   const bats = all.filter(p=>!pp.has(p.position?.abbreviation));
@@ -2486,10 +2549,14 @@ async function loadStatcast() {
   const maxHR  = hrSorted[0]?._s.homeRuns||1;
   const maxK   = kSorted[0]?._s.strikeOuts||1;
 
+  if (!batSorted.length && !pitSorted.length) {
+    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No Statcast data available — stats may not yet be recorded for this season</div>';
+    return;
+  }
   el.innerHTML = `<div class="statcast-grid">
     <div class="sc-card">
       <div class="sc-card-head">OPS Leaders</div>
-      ${batSorted.slice(0,8).map(p=>scRow(p,p._s.ops?.replace(/^0/,'')||'—',maxOPS)).join('')}
+      ${batSorted.length ? batSorted.slice(0,8).map(p=>scRow(p,p._s.ops?.replace(/^0/,'')||'—',maxOPS)).join('') : '<div class="srow" style="color:var(--fog);padding:20px">No data yet</div>'}
     </div>
     <div class="sc-card">
       <div class="sc-card-head">ERA Leaders (Pitchers)</div>
