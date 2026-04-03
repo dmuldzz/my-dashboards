@@ -1021,23 +1021,20 @@ let MLB_SEASON = NOW.getFullYear();
 const SEASON = MLB_SEASON; // kept for any remaining references
 
 async function detectMLBSeason() {
-  // Detect the correct MLB API season by testing the roster endpoint.
-  // The roster endpoint is the most reliable indicator — if it returns players, that season exists.
-  // Try no-season first (API returns current), then explicit years.
-  const noSeason = await mlb(`/roster/${TID}?rosterType=active`);
-  if (noSeason?.roster?.length) {
-    // Extract season from the response if available, otherwise use schedule
-    const sched = await mlb(`/schedule?teamId=${TID}&sportId=1&startDate=${ds(NOW)}&endDate=${ds(NOW)}`);
-    const seasonFromSched = sched?.dates?.[0]?.games?.[0]?.season || sched?.dates?.[0]?.season;
-    if (seasonFromSched) { MLB_SEASON = parseInt(seasonFromSched); return MLB_SEASON; }
-    // Fall back to checking explicit years
-    for (const yr of [NOW.getFullYear(), NOW.getFullYear()-1]) {
-      const d = await mlb(`/roster/${TID}?rosterType=active&season=${yr}`);
-      if (d?.roster?.length) { MLB_SEASON = yr; return yr; }
-    }
+  // Try to get season from a schedule call (most reliable)
+  const today = ds(NOW);
+  const sched = await mlb(`/schedule?teamId=${TID}&sportId=1&startDate=${today}&endDate=${today}`);
+  const fromSched = sched?.dates?.[0]?.games?.[0]?.season;
+  if (fromSched) { MLB_SEASON = parseInt(fromSched); return MLB_SEASON; }
+  
+  // Try standings which always includes current season
+  for (const yr of [NOW.getFullYear(), NOW.getFullYear()-1]) {
+    const s = await mlb(`/standings?leagueId=103&season=${yr}`);
+    if (s?.records?.length) { MLB_SEASON = yr; return yr; }
   }
-  // If nothing works, default to previous calendar year (safe for most of the year)
-  MLB_SEASON = NOW.getFullYear() - 1;
+  
+  // Hard fallback: 2025 (current baseball season as of 2026 calendar year)
+  MLB_SEASON = 2025;
   return MLB_SEASON;
 }
 
@@ -1125,8 +1122,8 @@ const PO={C:0,'1B':1,'2B':2,'3B':3,SS:4,LF:5,CF:6,RF:7,OF:8,DH:9};
 
 async function loadRoster(){
   const[active,inj]=await Promise.all([
-    mlb(`/roster/${TID}?rosterType=active&hydrate=person`),
-    mlb(`/roster/${TID}?rosterType=injuries&hydrate=person`)
+    mlb(`/teams/${TID}/roster?rosterType=active`),
+    mlb(`/teams/${TID}/roster?rosterType=injuries`)
   ]);
   const all=active?.roster||[];
   const pp=new Set(['P','SP','RP']);
@@ -1150,7 +1147,7 @@ async function loadStatsBatch(ids, group){
   const toFetch=ids.slice(0,20);
   // Try without season first (returns current season automatically), fall back to explicit
   const results=await Promise.allSettled(
-    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&group=${group}&sportId=1`))
+    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&season=${MLB_SEASON}&group=${group}&sportId=1`))
   );
   results.forEach((res,i)=>{
     if(res.status==='fulfilled' && res.value){
@@ -1166,7 +1163,7 @@ async function loadStatsBatch14(ids, group){
   if(!ids.length) return map;
   const toFetch=ids.slice(0,20);
   const results=await Promise.allSettled(
-    toFetch.map(id=>mlb(`/people/${id}/stats?stats=lastXGames&limit=14&group=${group}&sportId=1`))
+    toFetch.map(id=>mlb(`/people/${id}/stats?stats=lastXGames&limit=14&season=${MLB_SEASON}&group=${group}&sportId=1`))
   );
   results.forEach((res,i)=>{
     if(res.status==='fulfilled' && res.value){
@@ -1800,8 +1797,8 @@ function navigate(page, el) {
 async function loadRosterPage() {
   const el = document.getElementById('pg-roster-body');
   const [activeD, injD] = await Promise.all([
-    mlb(`/roster/${TID}?rosterType=active&hydrate=person`),
-    mlb(`/roster/${TID}?rosterType=injuries&hydrate=person`)
+    mlb(`/teams/${TID}/roster?rosterType=active`),
+    mlb(`/teams/${TID}/roster?rosterType=injuries`)
   ]);
   const all = activeD?.roster || [];
   const pp = new Set(['P','SP','RP']);
@@ -2014,20 +2011,12 @@ async function loadDepthChart() {
   const el = document.getElementById('pg-depth-body');
 
   // Try official depth chart endpoint (no season param needed)
-  // Try depth chart with and without season param
-  let d = await mlb(`/depthcharts?teamId=${TID}`);
-  if (!d?.depthCharts?.[0]?.positions?.length) {
-    d = await mlb(`/depthcharts?teamId=${TID}&season=${MLB_SEASON}`);
-  }
-  const positions = d?.depthCharts?.[0]?.positions || [];
+  const positions = []; // depthcharts endpoint not publicly available
 
-  if (positions.length) {
-    renderDepthFromAPI(el, positions);
-    return;
-  }
+
 
   // Fallback: build depth chart from active roster grouped by position
-  const rD = await mlb(`/roster/${TID}?rosterType=active&hydrate=person`);
+  const rD = await mlb(`/teams/${TID}/roster?rosterType=active`);
   const roster = rD?.roster || [];
   if (!roster.length) {
     el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">Depth chart unavailable — roster data could not be loaded</div>';
@@ -2097,7 +2086,7 @@ async function loadTrending(group='hitting') {
   el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Calculating...</div>';
 
   // Get active roster, then fetch last14 vs season stats
-  const rosterD = await mlb(`/roster/${TID}?rosterType=active&hydrate=person`);
+  const rosterD = await mlb(`/teams/${TID}/roster?rosterType=active`);
   const all = rosterD?.roster || [];
   const pp = new Set(['P','SP','RP']);
   const players = group==='pitching'
@@ -2192,7 +2181,7 @@ async function loadProspects() {
     // Fetch rosters for top affiliates (AAA, AA first)
     const sortedAffs = affTeams.sort((a,b)=>(a.sport?.id||99)-(b.sport?.id||99));
     const rosterResults = await Promise.all(
-      sortedAffs.slice(0,4).map(t=>mlb(`/roster/${t.id}?rosterType=active&hydrate=person`))
+      sortedAffs.slice(0,4).map(t=>mlb(`/teams/${t.id}/roster?rosterType=active`))
     );
     const players = rosterResults.flatMap(r=>r?.roster||[]).slice(0,30);
     if (!players.length) {
@@ -2516,7 +2505,7 @@ function renderNewsPage() {
 async function loadStatcast() {
   const el = document.getElementById('pg-statcast-body');
   // Pull advanced stats for all batters and pitchers
-  const rD = await mlb(`/roster/${TID}?rosterType=active&hydrate=person`);
+  const rD = await mlb(`/teams/${TID}/roster?rosterType=active`);
   const all = rD?.roster||[];
   const pp = new Set(['P','SP','RP']);
   const bats = all.filter(p=>!pp.has(p.position?.abbreviation));
