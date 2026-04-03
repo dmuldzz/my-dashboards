@@ -1014,14 +1014,31 @@ const logo=id=>`https://www.mlbstatic.com/team-logos/${id}.svg`;
 const shot=id=>`https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:best/v1/people/${id}/headshot/67/current`;
 const shotFull=id=>`https://img.mlbstatic.com/mlb-photos/image/upload/w_320,q_auto:best/v1/people/${id}/headshot/67/current`;
 const NOW=new Date();
-const SEASON=NOW.getFullYear();
+// MLB API season != calendar year. The API uses the baseball season year.
+// We detect it by checking which season returns a valid roster.
+// Start by assuming current calendar year, fall back to previous year.
+let MLB_SEASON = NOW.getFullYear();
+const SEASON = MLB_SEASON; // kept for any remaining references
+
+async function detectMLBSeason() {
+  // Try current year first, then previous year
+  for (const yr of [NOW.getFullYear(), NOW.getFullYear()-1]) {
+    const d = await mlb(`/schedule?teamId=${TID}&sportId=1&season=${yr}&gameType=R`);
+    if (d?.totalGames > 0 || d?.dates?.length > 0) {
+      MLB_SEASON = yr;
+      return yr;
+    }
+  }
+  MLB_SEASON = NOW.getFullYear() - 1; // safe fallback
+  return MLB_SEASON;
+}
 
 document.getElementById('hero-date').textContent=NOW.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
 document.getElementById('s-footer-dt').textContent=`${NOW.getFullYear()} MLB Season`;
 
 /* ── STANDINGS ── */
 async function loadStandings(){
-  const season=new Date().getFullYear();const d=await mlb(`/standings?leagueId=103,104&season=${season}&standingsTypes=regularSeason&hydrate=team,record`);
+  const d=await mlb(`/standings?leagueId=103,104&season=${MLB_SEASON}&standingsTypes=regularSeason&hydrate=team,record`);
   if(!d) return;
   let jays;
   for(const div of d.records||[]) for(const t of div.teamRecords||[]) if(t.team.id===TID){jays=t;break;}
@@ -1050,10 +1067,9 @@ async function loadStandings(){
 }
 
 async function loadTeamStats(){
-  const season=new Date().getFullYear();
   const[dp,dh]=await Promise.all([
-    mlb(`/teams/${TID}/stats?stats=season&group=pitching&season=${season}&sportId=1`),
-    mlb(`/teams/${TID}/stats?stats=season&group=hitting&season=${season}&sportId=1`)
+    mlb(`/teams/${TID}/stats?stats=season&group=pitching&season=${MLB_SEASON}&sportId=1`),
+    mlb(`/teams/${TID}/stats?stats=season&group=hitting&season=${MLB_SEASON}&sportId=1`)
   ]);
   const d={stats:[...(dp?.stats||[]),...(dh?.stats||[])]};
   for(const s of d.stats||[]){
@@ -1103,8 +1119,8 @@ async function loadRoster(){
   // Correct endpoint: /teams/{id}/roster (not /roster/{id})
   const season = new Date().getFullYear();
   const[active,inj]=await Promise.all([
-    mlb(`/teams/${TID}/roster?rosterType=active&season=${season}&hydrate=person`),
-    mlb(`/teams/${TID}/roster?rosterType=injuries&season=${season}&hydrate=person`)
+    mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`),
+    mlb(`/roster/${TID}?rosterType=injuries&season=${MLB_SEASON}&hydrate=person`)
   ]);
   const all=active?.roster||[];
   const pp=new Set(['P','SP','RP']);
@@ -1124,11 +1140,10 @@ async function loadRoster(){
 async function loadStatsBatch(ids, group){
   const map={};
   if(!ids.length) return map;
-  const season = new Date().getFullYear();
   // Fetch up to 20 players in parallel; individual endpoint avoids hydrate encoding bugs
   const toFetch=ids.slice(0,20);
   const results=await Promise.allSettled(
-    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&season=${season}&group=${group}&sportId=1`))
+    toFetch.map(id=>mlb(`/people/${id}/stats?stats=season&season=${MLB_SEASON}&group=${group}&sportId=1`))
   );
   results.forEach((res,i)=>{
     if(res.status==='fulfilled' && res.value){
@@ -1185,7 +1200,7 @@ function showIL(){
 /* ── TRANSACTIONS ── */
 async function loadTx(){
   const s=new Date(NOW);s.setDate(NOW.getDate()-30);
-  const d=await mlb(`/transactions?teamId=${TID}&startDate=${ds(s)}&endDate=${ds(NOW)}`);
+  const d=await mlb(`/transactions?teamId=${TID}&startDate=${ds(s)}&endDate=${ds(NOW)}&season=${MLB_SEASON}`);
   const txs=(d?.transactions||[]).slice(0,8);
   document.getElementById('tx-badge').textContent=txs.length||'—';
   const pip={Trade:'pip-trade',Activation:'pip-recall',Placed:'pip-il',Selected:'pip-claim',Designated:'pip-dfa',Released:'pip-other',Optioned:'pip-il',Recalled:'pip-recall',Claimed:'pip-claim'};
@@ -1250,11 +1265,11 @@ async function openPlayerCard(playerId, posHint='') {
 
   // Step 2: fetch stats (all in parallel, simple endpoints)
   const [seasonHit, seasonPit, careerHit, careerPit, gamelog] = await Promise.all([
-    mlb(`/people/${playerId}/stats?stats=season&season=${season}&group=hitting&sportId=1`),
-    mlb(`/people/${playerId}/stats?stats=season&season=${season}&group=pitching&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=season&season=${MLB_SEASON}&group=hitting&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=season&season=${MLB_SEASON}&group=pitching&sportId=1`),
     mlb(`/people/${playerId}/stats?stats=career&group=hitting&sportId=1`),
     mlb(`/people/${playerId}/stats?stats=career&group=pitching&sportId=1`),
-    mlb(`/people/${playerId}/stats?stats=gameLog&season=${season}&group=${isPitcher?'pitching':'hitting'}&sportId=1`),
+    mlb(`/people/${playerId}/stats?stats=gameLog&season=${MLB_SEASON}&group=${isPitcher?'pitching':'hitting'}&sportId=1`),
   ]);
 
   // ── HERO ──
@@ -1744,8 +1759,8 @@ function navigate(page, el) {
 async function loadRosterPage() {
   const el = document.getElementById('pg-roster-body');
   const [activeD, injD] = await Promise.all([
-    mlb(`/roster/${TID}?rosterType=active&season=2026&hydrate=person`),
-    mlb(`/roster/${TID}?rosterType=injuries&season=2026&hydrate=person`)
+    mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`),
+    mlb(`/roster/${TID}?rosterType=injuries&season=${MLB_SEASON}&hydrate=person`)
   ]);
   const all = activeD?.roster || [];
   const pp = new Set(['P','SP','RP']);
@@ -1841,7 +1856,7 @@ async function loadSchedule(date) {
   monthLabel.textContent = _schDate.toLocaleDateString('en-US', {month:'long', year:'numeric'}).toUpperCase();
 
   const ds2 = d => d.toISOString().split('T')[0];
-  const d = await mlb(`/schedule?teamId=${TID}&sportId=1&startDate=${ds2(start)}&endDate=${ds2(end)}&hydrate=team,linescore,venue`);
+  const d = await mlb(`/schedule?teamId=${TID}&sportId=1&season=${MLB_SEASON}&startDate=${ds2(start)}&endDate=${ds2(end)}&hydrate=team,linescore,venue`);
   const games = {};
   (d?.dates || []).forEach(dt => dt.games?.forEach(g => { games[g.gameDate.split('T')[0]] = g; }));
 
@@ -1947,7 +1962,7 @@ async function loadDepthChart() {
   const el = document.getElementById('pg-depth-body');
 
   // Try official depth chart endpoint (no season param needed)
-  const d = await mlb(`/depthcharts?teamId=${TID}`);
+  const d = await mlb(`/depthcharts?teamId=${TID}&season=${MLB_SEASON}`);
   const positions = d?.depthCharts?.[0]?.positions || [];
 
   if (positions.length) {
@@ -1956,7 +1971,7 @@ async function loadDepthChart() {
   }
 
   // Fallback: build depth chart from active roster grouped by position
-  const rD = await mlb(`/roster/${TID}?rosterType=active&season=2026&hydrate=person`);
+  const rD = await mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`);
   const roster = rD?.roster || [];
   if (!roster.length) {
     el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">Depth chart unavailable — roster data could not be loaded</div>';
@@ -2026,7 +2041,7 @@ async function loadTrending(group='hitting') {
   el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Calculating...</div>';
 
   // Get active roster, then fetch last14 vs season stats
-  const rosterD = await mlb(`/roster/${TID}?rosterType=active&season=2026&hydrate=person`);
+  const rosterD = await mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`);
   const all = rosterD?.roster || [];
   const pp = new Set(['P','SP','RP']);
   const players = group==='pitching'
@@ -2037,8 +2052,8 @@ async function loadTrending(group='hitting') {
   if (!ids.length) { el.innerHTML = '<div class="srow" style="color:var(--fog);padding:40px">No data</div>'; return; }
 
   const [seasonD, last14D] = await Promise.all([
-    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=season,season=2026)`),
-    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=lastXGames,season=2026,limit=14)`)
+    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=season,season=${MLB_SEASON})`),
+    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=lastXGames,season=${MLB_SEASON},limit=14)`)
   ]);
 
   const season={}, last14={};
@@ -2320,8 +2335,8 @@ async function loadFormerJays() {
 async function loadOrganization() {
   const el = document.getElementById('pg-org-body');
   const [coaches, front] = await Promise.all([
-    mlb(`/teams/${TID}/coaches?season=2026`),
-    mlb(`/teams/${TID}?hydrate=person(role)&season=${SEASON}`)
+    mlb(`/teams/${TID}/coaches?season=${MLB_SEASON}`),
+    mlb(`/teams/${TID}?hydrate=person(role)&season=${MLB_SEASON}`)
   ]);
 
   const coachList = coaches?.roster || [];
@@ -2438,7 +2453,7 @@ function renderNewsPage() {
 async function loadStatcast() {
   const el = document.getElementById('pg-statcast-body');
   // Pull advanced stats for all batters and pitchers
-  const rD = await mlb(`/roster/${TID}?rosterType=active&season=${SEASON}&hydrate=person`);
+  const rD = await mlb(`/roster/${TID}?rosterType=active&season=${MLB_SEASON}&hydrate=person`);
   const all = rD?.roster||[];
   const pp = new Set(['P','SP','RP']);
   const bats = all.filter(p=>!pp.has(p.position?.abbreviation));
@@ -2492,7 +2507,10 @@ async function loadStatcast() {
 }
 
 /* ── BOOT ── */
-Promise.all([loadStandings(),loadTeamStats(),loadGames(),loadTx(),loadNews(),loadRoster()]);
+(async function boot() {
+  await detectMLBSeason();
+  await Promise.all([loadStandings(),loadTeamStats(),loadGames(),loadTx(),loadNews(),loadRoster()]);
+})();
 </script>
 </body>
 </html>
