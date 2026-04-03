@@ -854,7 +854,7 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
       <div class="pg-toolbar-left"><span class="pg-label">TOP 30 PROSPECTS — TORONTO BLUE JAYS</span></div>
       <div class="pg-toolbar-right">
         <select class="pg-select" id="prospect-year" onchange="loadProspects()">
-          <option>2025</option><option>2024</option><option>2023</option><option>2022</option>
+          <option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option>
         </select>
       </div>
     </div>
@@ -973,25 +973,20 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
 <script>
 const TID=141, BASE='https://statsapi.mlb.com/api/v1';
 
-// Robust fetcher: try direct first, then two CORS proxies
+// MLB Stats API fetcher - direct first (works in browser), corsproxy.io fallback
 async function mlb(p){
   const url = BASE + p;
-  // 1) Direct (works in many browsers / local file)
+  // 1) Direct — MLB's API allows browser fetches without auth; no custom headers to avoid CORS preflight
   try {
-    const r = await fetch(url, {headers:{'Accept':'application/json'}});
+    const r = await fetch(url);
     if(r.ok) return r.json();
   } catch(e){}
-  // 2) allorigins.win proxy
+  // 2) corsproxy.io — correct format is ?<url> not ?url=<url>
   try {
-    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-    if(r.ok){ const j=await r.json(); return JSON.parse(j.contents); }
-  } catch(e){}
-  // 3) corsproxy.io (last resort)
-  try {
-    const r = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`);
+    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
     if(r.ok) return r.json();
   } catch(e){}
-  console.warn('All proxies failed for:', p);
+  console.warn('MLB API unavailable for:', p);
   return null;
 }
 const ds=d=>d.toISOString().split('T')[0];
@@ -999,6 +994,7 @@ const logo=id=>`https://www.mlbstatic.com/team-logos/${id}.svg`;
 const shot=id=>`https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_auto:best/v1/people/${id}/headshot/67/current`;
 const shotFull=id=>`https://img.mlbstatic.com/mlb-photos/image/upload/w_320,q_auto:best/v1/people/${id}/headshot/67/current`;
 const NOW=new Date();
+const SEASON=NOW.getFullYear();
 
 document.getElementById('hero-date').textContent=NOW.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).toUpperCase();
 document.getElementById('s-footer-dt').textContent=`${NOW.getFullYear()} MLB Season`;
@@ -1728,8 +1724,8 @@ function navigate(page, el) {
 async function loadRosterPage() {
   const el = document.getElementById('pg-roster-body');
   const [activeD, injD] = await Promise.all([
-    mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`),
-    mlb(`/roster/${TID}?rosterType=injuries&season=2025&hydrate=person`)
+    mlb(`/roster/${TID}?rosterType=active&season=2026&hydrate=person`),
+    mlb(`/roster/${TID}?rosterType=injuries&season=2026&hydrate=person`)
   ]);
   const all = activeD?.roster || [];
   const pp = new Set(['P','SP','RP']);
@@ -1739,8 +1735,8 @@ async function loadRosterPage() {
   const il = injD?.roster || [];
 
   const [bs, ps] = await Promise.all([
-    loadStats(batters.map(p => p.person.id), 'hitting'),
-    loadStats([...starters,...relievers].map(p => p.person.id), 'pitching')
+    loadStatsBatch(batters.map(p => p.person.id), 'hitting'),
+    loadStatsBatch([...starters,...relievers].map(p => p.person.id), 'pitching')
   ]);
   batters.forEach(p => p._s = bs[p.person.id] || {});
   starters.forEach(p => p._s = ps[p.person.id] || {});
@@ -1929,7 +1925,7 @@ async function loadTxPage() {
 /* ══ DEPTH CHART ══ */
 async function loadDepthChart() {
   const el = document.getElementById('pg-depth-body');
-  const d = await mlb(`/depthcharts?teamId=${TID}&season=2025`);
+  const d = await mlb(`/depthcharts?teamId=${TID}&season=${SEASON}`);
   const positions = d?.depthCharts?.[0]?.positions || [];
 
   if (!positions.length) {
@@ -1968,7 +1964,7 @@ async function loadTrending(group='hitting') {
   el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Calculating...</div>';
 
   // Get active roster, then fetch last14 vs season stats
-  const rosterD = await mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`);
+  const rosterD = await mlb(`/roster/${TID}?rosterType=active&season=2026&hydrate=person`);
   const all = rosterD?.roster || [];
   const pp = new Set(['P','SP','RP']);
   const players = group==='pitching'
@@ -1979,8 +1975,8 @@ async function loadTrending(group='hitting') {
   if (!ids.length) { el.innerHTML = '<div class="srow" style="color:var(--fog);padding:40px">No data</div>'; return; }
 
   const [seasonD, last14D] = await Promise.all([
-    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=season,season=2025)`),
-    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=lastXGames,season=2025,limit=14)`)
+    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=season,season=2026)`),
+    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=lastXGames,season=2026,limit=14)`)
   ]);
 
   const season={}, last14={};
@@ -2117,28 +2113,15 @@ async function loadHistory() {
       <div class="ws-sub">Defeated Philadelphia Phillies 4–2 · Joe Carter walk-off HR in Game 6</div>
     </div></div>`;
 
-  // Fetch franchise leaders
-  const [hitLeaders, pitLeaders] = await Promise.all([
-    mlb(`/stats/leaders?leaderCategories=homeRuns,rbi,hits,stolenBases&teamId=${TID}&season=allTime&statGroup=hitting&sportId=1&limit=1`),
-    mlb(`/stats/leaders?leaderCategories=strikeouts,wins&teamId=${TID}&season=allTime&statGroup=pitching&sportId=1&limit=1`)
-  ]);
-
-  function leaderRows(leaders, cats) {
-    return cats.map(cat => {
-      const row = leaders?.leagueLeaders?.find(l=>l.leaderCategory===cat)?.leaders?.[0];
-      if (!row) return '';
-      return `<div class="history-row">
-        <span class="history-label">${cat.charAt(0).toUpperCase()+cat.slice(1)} Leader</span>
-        <div style="text-align:right">
-          <span class="history-val">${row.value??'—'}</span>
-          <div class="history-year" style="margin-top:2px">${row.person?.fullName||'—'}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  const hRows = leaderRows(hitLeaders, ['homeRuns','rbi','hits','stolenBases']);
-  const pRows = leaderRows(pitLeaders, ['strikeouts','wins']);
+  // Franchise leaders — hardcoded all-time records (API allTime param is unreliable)
+  const hRows = `
+    <div class="history-row"><span class="history-label">Home Run Leader</span><div style="text-align:right"><span class="history-val">336</span><div style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:2px">Carlos Delgado</div></div></div>
+    <div class="history-row"><span class="history-label">RBI Leader</span><div style="text-align:right"><span class="history-val">1,058</span><div style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:2px">Carlos Delgado</div></div></div>
+    <div class="history-row"><span class="history-label">Hits Leader</span><div style="text-align:right"><span class="history-val">2,012</span><div style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:2px">Tony Fernandez</div></div></div>
+    <div class="history-row"><span class="history-label">SB Leader</span><div style="text-align:right"><span class="history-val">255</span><div style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:2px">Lloyd Moseby</div></div></div>`;
+  const pRows = `
+    <div class="history-row"><span class="history-label">Strikeout Leader</span><div style="text-align:right"><span class="history-val">1,658</span><div style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:2px">Dave Stieb</div></div></div>
+    <div class="history-row"><span class="history-label">Wins Leader</span><div style="text-align:right"><span class="history-val">175</span><div style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-top:2px">Dave Stieb</div></div></div>`;
 
   el.innerHTML = wsHtml + `<div class="history-grid">
     <div class="history-card">
@@ -2179,7 +2162,7 @@ async function loadFormerJays() {
   // Fetch all active MLB players, filter those with Jays history
   // Strategy: get all teams, then cross-reference via transaction log
   // For now: use the known alumni list approach via career stats
-  const d = await mlb(`/sports/1/players?season=2025&gameType=R`);
+  const d = await mlb(`/sports/1/players?season=${SEASON}&gameType=R`);
   const allPlayers = d?.people || [];
 
   // Filter: active, not currently on Jays, born before 2003 (had time to play)
@@ -2187,12 +2170,13 @@ async function loadFormerJays() {
     p.active && p.currentTeam?.id !== TID && p.mlbDebutDate
   );
 
-  // Fetch career team history for a subset — check who played for TID
-  // Use the team's historical roster API — get past rosters to find alumni
-  const years = ['2024','2023','2022','2021','2020','2019','2018','2017','2016'];
-  const pastRosters = await Promise.all(
-    years.map(yr => mlb(`/roster/${TID}?rosterType=fullRoster&season=${yr}&hydrate=person`))
-  );
+  // Use sequential year roster fetches (not parallel) to avoid hammering the API
+  const years = ['2024','2023','2022','2021','2020','2019','2018','2017'];
+  const pastRosters = [];
+  for (const yr of years) {
+    const r = await mlb(`/roster/${TID}?rosterType=40Man&season=${yr}&hydrate=person`);
+    pastRosters.push(r);
+  }
 
   // Build set of player IDs who appeared on Jays rosters
   const formerIdMap = {}; // id -> {firstYr, lastYr, gamesEst}
@@ -2208,27 +2192,32 @@ async function loadFormerJays() {
     });
   });
 
-  // Cross-reference with currently active players
-  const active = allPlayers.filter(p => p.active && p.currentTeam?.id !== TID);
-  const activeIds = new Set(active.map(p=>p.id));
+  // Fetch current active rosters for all teams to cross-reference
+  const curRosterResults = await Promise.all(
+    allTeams.slice(0,30).map(t => mlb(`/roster/${t.id}?rosterType=active&season=2026&hydrate=person,currentTeam`))
+  );
+  const activePeople = new Map();
+  curRosterResults.forEach(r => {
+    (r?.roster||[]).forEach(p => {
+      if (p.person?.id && p.parentTeamId !== TID) activePeople.set(p.person.id, p);
+    });
+  });
+  const activeIds = new Set(activePeople.keys());
 
   const formers = Object.values(formerIdMap)
     .filter(x => activeIds.has(x.p.person.id))
     .sort((a,b) => (b.lastYr-b.firstYr+1)-(a.lastYr-a.firstYr+1) || b.lastYr-a.lastYr);
 
   if (!formers.length) {
-    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No former Jays data available. Try again — the API may be loading.</div>';
+    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No former Jays found in active rosters. Try refreshing.</div>';
     return;
   }
 
-  // Get current team info for each
-  const activePeople = new Map(active.map(p=>[p.id,p]));
-
   // Load current-season stats for the first batch
-  const fIds = formers.slice(0,40).map(x=>x.p.person.id);
+  const fIds = formers.slice(0,30).map(x=>x.p.person.id);
   const [fHit, fPit] = await Promise.all([
-    loadStats(fIds, 'hitting'),
-    loadStats(fIds, 'pitching')
+    loadStatsBatch(fIds, 'hitting'),
+    loadStatsBatch(fIds, 'pitching')
   ]);
 
   el.innerHTML = `<table class="fj-table">
@@ -2247,10 +2236,9 @@ async function loadFormerJays() {
         const pid = p.person.id;
         const curr = activePeople.get(pid);
         const hs = fHit[pid]||{}, ps = fPit[pid]||{};
-        const isPit = p.position?.abbreviation==='P';
         const yrs = firstYr===lastYr ? `${firstYr}` : `${firstYr}–${lastYr}`;
-        const currTeamId = curr?.currentTeam?.id;
-        const currAbv = curr?.currentTeam?.abbreviation||'—';
+        const currTeamId = curr?.parentTeamId || curr?.person?.currentTeam?.id;
+        const currAbv = curr?.parentTeamId ? allTeams.find(t=>t.id===curr.parentTeamId)?.abbreviation||'—' : '—';
         return `<tr onclick="openPlayerCard(${pid})">
           <td><div class="fj-player">
             <div class="fj-shot"><img src="${shot(pid)}" onerror="this.style.display='none'"></div>
@@ -2276,8 +2264,8 @@ async function loadFormerJays() {
 async function loadOrganization() {
   const el = document.getElementById('pg-org-body');
   const [coaches, front] = await Promise.all([
-    mlb(`/teams/${TID}/coaches?season=2025`),
-    mlb(`/teams/${TID}?hydrate=person(role)&season=2025`)
+    mlb(`/teams/${TID}/coaches?season=2026`),
+    mlb(`/teams/${TID}?hydrate=person(role)&season=${SEASON}`)
   ]);
 
   const coachList = coaches?.roster || [];
@@ -2392,15 +2380,15 @@ function renderNewsPage() {
 async function loadStatcast() {
   const el = document.getElementById('pg-statcast-body');
   // Pull advanced stats for all batters and pitchers
-  const rD = await mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`);
+  const rD = await mlb(`/roster/${TID}?rosterType=active&season=${SEASON}&hydrate=person`);
   const all = rD?.roster||[];
   const pp = new Set(['P','SP','RP']);
   const bats = all.filter(p=>!pp.has(p.position?.abbreviation));
   const pits = all.filter(p=>pp.has(p.position?.abbreviation));
 
   const [bStats, pStats] = await Promise.all([
-    loadStats(bats.map(p=>p.person.id),'hitting'),
-    loadStats(pits.map(p=>p.person.id),'pitching')
+    loadStatsBatch(bats.map(p=>p.person.id),'hitting'),
+    loadStatsBatch(pits.map(p=>p.person.id),'pitching')
   ]);
   bats.forEach(p=>p._s=bStats[p.person.id]||{});
   pits.forEach(p=>p._s=pStats[p.person.id]||{});
