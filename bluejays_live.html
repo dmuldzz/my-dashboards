@@ -497,6 +497,150 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
 .log-hr{color:var(--gold)!important;font-weight:600;}
 .log-win{color:#4ade80;}.log-loss{color:#f87171;}
 
+/* ══ PAGE SYSTEM ══ */
+.page{display:none;flex:1;flex-direction:column;animation:pgIn .2s ease both;}
+.page.active{display:flex;}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pg-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--rim);background:var(--panel);flex-shrink:0;gap:12px;}
+.pg-toolbar-left{display:flex;align-items:center;gap:10px;}
+.pg-toolbar-right{display:flex;align-items:center;gap:8px;}
+.pg-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--fog);}
+.pg-btn{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;padding:5px 12px;border-radius:5px;border:1px solid var(--rim);background:rgba(255,255,255,.04);color:var(--steel);cursor:pointer;transition:all .14s;white-space:nowrap;}
+.pg-btn:hover{background:rgba(16,87,183,.15);color:var(--sky);border-color:rgba(16,87,183,.3);}
+.pg-btn.active,.pg-btn.pg-btn-active{background:var(--blue);color:var(--white);border-color:var(--blue);}
+.pg-month-label{font-family:var(--disp);font-size:18px;font-weight:600;color:var(--white);letter-spacing:.04em;min-width:180px;text-align:center;}
+.pg-select{font-family:var(--mono);font-size:11px;background:var(--card);color:var(--ice);border:1px solid var(--rim);border-radius:5px;padding:5px 10px;cursor:pointer;}
+.pg-legend{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--fog);}
+.legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.pg-body{flex:1;overflow-y:auto;padding:20px 22px 32px;}
+.pg-body::-webkit-scrollbar{width:4px;}
+.pg-body::-webkit-scrollbar-thumb{background:var(--rim-hi);border-radius:2px;}
+.sch-cal{padding:16px 22px 32px;}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:2px;}
+.cal-dow{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fog);text-align:center;padding:6px 0;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day{background:var(--card);border:1px solid var(--rim);border-radius:7px;min-height:80px;padding:7px 8px;display:flex;flex-direction:column;position:relative;transition:border-color .15s;}
+.cal-day:hover{border-color:var(--rim-hi);}
+.cal-day.empty{background:transparent;border-color:transparent;}
+.cal-day.today-cell{border-color:rgba(16,87,183,.5);background:rgba(16,87,183,.07);}
+.cal-day-num{font-family:var(--mono);font-size:10px;color:var(--fog);margin-bottom:4px;flex-shrink:0;}
+.cal-day.today-cell .cal-day-num{color:var(--blue);font-weight:600;}
+.cal-game{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;flex:1;justify-content:center;}
+.cal-opp-logo{width:28px;height:28px;object-fit:contain;}
+.cal-opp-abv{font-family:var(--disp);font-size:11px;font-weight:600;color:var(--ice);line-height:1;}
+.cal-game-time{font-family:var(--mono);font-size:8.5px;color:var(--fog);}
+.cal-result{font-family:var(--disp);font-size:12px;font-weight:700;letter-spacing:.04em;}
+.cal-result.w{color:#4ade80;}.cal-result.l{color:#f87171;}
+.cal-ha{position:absolute;top:7px;right:7px;font-family:var(--mono);font-size:8px;color:var(--fog);}
+.cal-ha.home{color:var(--blue);}
+.rp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.rp-section{background:var(--card);border:1px solid var(--rim);border-radius:10px;overflow:hidden;}
+.rp-section-head{font-family:var(--mono);font-size:8.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--red);background:rgba(232,0,45,.06);border-bottom:1px solid rgba(232,0,45,.12);padding:8px 16px;}
+.rp-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:background .12s;}
+.rp-row:hover{background:rgba(16,87,183,.1);}
+.rp-row:last-child{border-bottom:none;}
+.rp-num{font-family:var(--mono);font-size:10px;color:var(--fog);width:22px;text-align:right;flex-shrink:0;}
+.rp-shot{width:30px;height:30px;border-radius:50%;background:var(--blue-deep);border:1.5px solid rgba(16,87,183,.35);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--fog);}
+.rp-shot img{width:100%;height:100%;object-fit:cover;}
+.rp-info{flex:1;min-width:0;}
+.rp-name{font-size:13px;font-weight:500;color:var(--ice);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rp-pos{font-family:var(--mono);font-size:9px;color:var(--fog);margin-top:1px;}
+.rp-stats{display:flex;gap:14px;flex-shrink:0;}
+.rps{text-align:right;}
+.rps-v{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ice);display:block;line-height:1;}
+.rps-l{font-family:var(--mono);font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fog);display:block;margin-top:2px;}
+.depth-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.depth-pos-card{background:var(--card);border:1px solid var(--rim);border-radius:10px;overflow:hidden;}
+.depth-pos-head{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--white);background:rgba(16,87,183,.2);border-bottom:1px solid rgba(16,87,183,.2);padding:9px 14px;}
+.depth-player{display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:background .12s;}
+.depth-player:hover{background:rgba(16,87,183,.1);}
+.depth-player:last-child{border-bottom:none;}
+.depth-rank{font-family:var(--mono);font-size:10px;color:var(--fog);width:14px;flex-shrink:0;}
+.depth-shot{width:26px;height:26px;border-radius:50%;background:var(--blue-deep);border:1px solid rgba(16,87,183,.3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--fog);}
+.depth-shot img{width:100%;height:100%;object-fit:cover;}
+.depth-name{font-size:12.5px;font-weight:500;color:var(--ice);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.depth-num{font-family:var(--mono);font-size:10px;color:var(--fog);}
+.trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.trend-section{background:var(--card);border:1px solid var(--rim);border-radius:10px;overflow:hidden;}
+.trend-head{padding:12px 16px;border-bottom:1px solid var(--rim);display:flex;align-items:center;gap:8px;}
+.trend-head-title{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;}
+.trend-head.hot .trend-head-title{color:#f87171;}.trend-head.cold .trend-head-title{color:#60a5fa;}
+.trend-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:background .12s;}
+.trend-row:hover{background:rgba(16,87,183,.08);}
+.trend-row:last-child{border-bottom:none;}
+.trend-shot{width:28px;height:28px;border-radius:50%;background:var(--blue-deep);border:1px solid rgba(16,87,183,.3);overflow:hidden;flex-shrink:0;}
+.trend-shot img{width:100%;height:100%;object-fit:cover;}
+.trend-name{font-size:13px;font-weight:500;color:var(--ice);flex:1;}
+.trend-delta{font-family:var(--mono);font-size:11px;font-weight:600;}
+.trend-delta.pos{color:#4ade80;}.trend-delta.neg{color:#f87171;}
+.trend-stat{font-family:var(--mono);font-size:10px;color:var(--fog);}
+.prospect-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--rim);cursor:pointer;transition:background .12s;background:var(--card);margin-bottom:3px;border-radius:8px;}
+.prospect-row:hover{background:var(--card-hi);}
+.prospect-rank{font-family:var(--disp);font-size:28px;font-weight:700;color:rgba(16,87,183,.35);width:36px;text-align:center;flex-shrink:0;line-height:1;}
+.prospect-rank.top5{color:rgba(245,197,24,.6);}
+.prospect-shot{width:44px;height:44px;border-radius:50%;background:var(--blue-deep);border:2px solid rgba(16,87,183,.4);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--fog);}
+.prospect-shot img{width:100%;height:100%;object-fit:cover;}
+.prospect-info{flex:1;min-width:0;}
+.prospect-name{font-size:14px;font-weight:600;color:var(--white);margin-bottom:3px;}
+.prospect-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.prospect-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;background:rgba(16,87,183,.2);color:var(--sky);border:1px solid rgba(16,87,183,.3);}
+.prospect-eta{font-family:var(--mono);font-size:9px;color:var(--fog);}
+.prospect-grade{text-align:center;flex-shrink:0;}
+.prospect-grade-val{font-family:var(--disp);font-size:24px;font-weight:700;color:var(--gold);line-height:1;display:block;}
+.prospect-grade-lbl{font-family:var(--mono);font-size:8px;color:var(--fog);letter-spacing:.1em;text-transform:uppercase;}
+.history-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.history-card{background:var(--card);border:1px solid var(--rim);border-radius:10px;overflow:hidden;}
+.history-card-head{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);padding:12px 16px;border-bottom:1px solid var(--rim);display:flex;align-items:center;gap:7px;}
+.history-card-head::before{content:'';width:3px;height:13px;background:var(--blue);border-radius:2px;flex-shrink:0;}
+.history-row{display:flex;align-items:center;justify-content:space-between;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.03);}
+.history-row:last-child{border-bottom:none;}
+.history-label{font-size:12.5px;color:var(--ice);}
+.history-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold);}
+.ws-banner{background:linear-gradient(135deg,var(--blue-deep),var(--card));border:1px solid rgba(245,197,24,.3);border-radius:10px;padding:20px 24px;margin-bottom:16px;display:flex;align-items:center;gap:20px;}
+.ws-trophy{font-size:40px;flex-shrink:0;}
+.ws-title{font-family:var(--disp);font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px;letter-spacing:.04em;}
+.ws-sub{font-family:var(--mono);font-size:11px;color:var(--steel);line-height:1.6;}
+.fj-table{width:100%;border-collapse:collapse;}
+.fj-table th{font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);padding:8px 12px;text-align:left;border-bottom:1px solid var(--rim);background:rgba(0,0,0,.2);white-space:nowrap;}
+.fj-table th.r{text-align:right;}
+.fj-table td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.fj-table td.r{text-align:right;font-family:var(--mono);font-size:11px;color:var(--ice);}
+.fj-table tr:hover td{background:rgba(16,87,183,.06);cursor:pointer;}
+.fj-player{display:flex;align-items:center;gap:10px;}
+.fj-shot{width:28px;height:28px;border-radius:50%;background:var(--blue-deep);border:1px solid rgba(16,87,183,.3);overflow:hidden;flex-shrink:0;}
+.fj-shot img{width:100%;height:100%;object-fit:cover;}
+.fj-name{font-size:13px;font-weight:500;color:var(--ice);}
+.fj-curr-team{display:flex;align-items:center;gap:6px;}
+.fj-curr-logo{width:20px;height:20px;object-fit:contain;}
+.fj-curr-abv{font-family:var(--mono);font-size:10px;color:var(--sky);}
+.fj-years{font-family:var(--mono);font-size:9.5px;color:var(--fog);}
+.org-section{margin-bottom:24px;}
+.org-section-head{font-family:var(--disp);font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);border-bottom:2px solid var(--blue);padding-bottom:8px;margin-bottom:12px;}
+.org-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.org-card{background:var(--card);border:1px solid var(--rim);border-radius:9px;padding:14px 16px;}
+.org-role{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);margin-bottom:5px;}
+.org-name{font-size:13.5px;font-weight:500;color:var(--ice);}
+.news-full-row{display:flex;gap:16px;padding:16px;border-bottom:1px solid var(--rim);cursor:pointer;transition:background .12s;border-radius:8px;margin-bottom:4px;background:var(--card);}
+.news-full-row:hover{background:var(--card-hi);}
+.news-full-tag{font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:3px;flex-shrink:0;margin-top:2px;height:fit-content;}
+.nft-news{background:rgba(16,87,183,.25);color:#60a5fa;border:1px solid rgba(16,87,183,.35);}
+.nft-rumour{background:rgba(245,197,24,.15);color:var(--gold);border:1px solid rgba(245,197,24,.25);}
+.news-full-body{flex:1;min-width:0;}
+.news-full-hl{font-size:14px;font-weight:600;color:var(--white);line-height:1.4;margin-bottom:5px;}
+.news-full-meta{font-family:var(--mono);font-size:10px;color:var(--fog);}
+.statcast-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.sc-card{background:var(--card);border:1px solid var(--rim);border-radius:10px;overflow:hidden;}
+.sc-card-head{font-family:var(--disp);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sky);padding:12px 16px;border-bottom:1px solid var(--rim);display:flex;align-items:center;gap:7px;}
+.sc-card-head::before{content:'';width:3px;height:13px;background:var(--blue);border-radius:2px;flex-shrink:0;}
+.sc-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:background .12s;}
+.sc-row:hover{background:rgba(16,87,183,.08);}
+.sc-row:last-child{border-bottom:none;}
+.sc-shot{width:26px;height:26px;border-radius:50%;background:var(--blue-deep);border:1px solid rgba(16,87,183,.3);overflow:hidden;flex-shrink:0;}
+.sc-shot img{width:100%;height:100%;object-fit:cover;}
+.sc-name{font-size:12.5px;font-weight:500;color:var(--ice);flex:1;}
+.sc-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--white);}
+.sc-bar-wrap{width:60px;height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.sc-bar{height:100%;background:var(--blue);border-radius:3px;}
 /* loading / empty inside card */
 .pc-loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px;font-family:var(--mono);font-size:11px;color:var(--fog);letter-spacing:.08em;}
 .pc-empty{text-align:center;padding:32px;font-family:var(--mono);font-size:11px;color:var(--fog);letter-spacing:.06em;}
@@ -522,20 +666,20 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
   <div class="s-streak" id="s-streak" style="display:none"></div>
   <div class="s-nav">
     <div class="s-grp">Main</div>
-    <div class="nav-item active"><span class="nav-icon">⊞</span>Dashboard</div>
-    <div class="nav-item"><span class="nav-icon">◈</span>Roster</div>
-    <div class="nav-item"><span class="nav-icon">◷</span>Schedule</div>
-    <div class="nav-item"><span class="nav-icon">⇄</span>Transactions<span class="nav-badge" id="tx-badge">—</span></div>
+    <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard',this)"><span class="nav-icon">⊞</span>Dashboard</div>
+    <div class="nav-item" data-page="roster" onclick="navigate('roster',this)"><span class="nav-icon">◈</span>Roster</div>
+    <div class="nav-item" data-page="schedule" onclick="navigate('schedule',this)"><span class="nav-icon">◷</span>Schedule</div>
+    <div class="nav-item" data-page="transactions" onclick="navigate('transactions',this)"><span class="nav-icon">⇄</span>Transactions<span class="nav-badge" id="tx-badge">—</span></div>
     <div class="s-grp">Analysis</div>
-    <div class="nav-item"><span class="nav-icon">◎</span>Depth Chart</div>
-    <div class="nav-item"><span class="nav-icon">⇅</span>Trending</div>
-    <div class="nav-item"><span class="nav-icon">◇</span>Prospects</div>
-    <div class="nav-item"><span class="nav-icon">⚡</span>Statcast</div>
+    <div class="nav-item" data-page="depth" onclick="navigate('depth',this)"><span class="nav-icon">◎</span>Depth Chart</div>
+    <div class="nav-item" data-page="trending" onclick="navigate('trending',this)"><span class="nav-icon">⇅</span>Trending</div>
+    <div class="nav-item" data-page="prospects" onclick="navigate('prospects',this)"><span class="nav-icon">◇</span>Prospects</div>
+    <div class="nav-item" data-page="statcast" onclick="navigate('statcast',this)"><span class="nav-icon">⚡</span>Statcast</div>
     <div class="s-grp">Franchise</div>
-    <div class="nav-item"><span class="nav-icon">◌</span>History</div>
-    <div class="nav-item"><span class="nav-icon">↩</span>Former Jays</div>
-    <div class="nav-item"><span class="nav-icon">✦</span>Organization</div>
-    <div class="nav-item"><span class="nav-icon">▤</span>News & Rumours</div>
+    <div class="nav-item" data-page="history" onclick="navigate('history',this)"><span class="nav-icon">◌</span>History</div>
+    <div class="nav-item" data-page="formerjays" onclick="navigate('formerjays',this)"><span class="nav-icon">↩</span>Former Jays</div>
+    <div class="nav-item" data-page="organization" onclick="navigate('organization',this)"><span class="nav-icon">✦</span>Organization</div>
+    <div class="nav-item" data-page="news" onclick="navigate('news',this)"><span class="nav-icon">▤</span>News & Rumours</div>
   </div>
   <div class="s-footer"><div class="s-footer-txt" id="s-footer-dt">2025 MLB SEASON</div></div>
 </nav>
@@ -579,7 +723,7 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
     <div class="hero-content">
       <div>
         <div class="hero-date" id="hero-date">Loading...</div>
-        <div class="hero-title">Dashboard</div>
+        <div class="hero-title" id="hero-title">Dashboard</div>
       </div>
       <div class="hero-pills">
         <div class="hpill"><span class="hpill-v" id="hp-gb">—</span><span class="hpill-l">Games Back</span></div>
@@ -590,6 +734,8 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
     </div>
   </div>
 
+  <!-- ═══ PAGE VIEWS ═══ -->
+  <div id="page-dashboard" class="page active">
   <div class="sboard" id="sboard">
     <div class="sg yesterday"><div class="g-accent"></div><div class="sg-inner"><div class="srow"><div class="spin"></div></div></div></div>
     <div class="sg today"><div class="g-accent"></div><div class="sg-inner"><div class="srow"><div class="spin"></div></div></div></div>
@@ -606,12 +752,12 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
     </div>
 
     <div class="card" style="grid-column:1;grid-row:2;">
-      <div class="ch"><div class="ch-t">Transactions</div><div class="ch-a">View all →</div></div>
+      <div class="ch"><div class="ch-t">Transactions</div><div class="ch-a" onclick="navigate('transactions',document.querySelector('[data-page=transactions]'))">View all →</div></div>
       <div id="tx-list"><div class="srow"><div class="spin"></div>&nbsp;Loading...</div></div>
     </div>
 
     <div class="card" style="grid-column:2;grid-row:2;">
-      <div class="ch"><div class="ch-t">News & Rumours</div><div class="ch-a">View all →</div></div>
+      <div class="ch"><div class="ch-t">News & Rumours</div><div class="ch-a" onclick="navigate('news',document.querySelector('[data-page=news]'))">View all →</div></div>
       <div id="news-list"><div class="srow"><div class="spin"></div>&nbsp;Loading...</div></div>
     </div>
 
@@ -627,6 +773,142 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
       <div class="rscroll" id="roster"><div class="srow"><div class="spin"></div>&nbsp;Loading...</div></div>
     </div>
   </div>
+  </div><!-- /page-dashboard -->
+
+  <!-- ── ROSTER PAGE ── -->
+  <div id="page-roster" class="page">
+    <div class="pg-body" id="pg-roster-body">
+      <div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading roster...</div>
+    </div>
+  </div>
+
+  <!-- ── SCHEDULE PAGE ── -->
+  <div id="page-schedule" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left">
+        <button class="pg-btn" id="sch-prev" onclick="scheduleNav(-1)">← Prev</button>
+        <span class="pg-month-label" id="sch-month-label">—</span>
+        <button class="pg-btn" id="sch-next" onclick="scheduleNav(1)">Next →</button>
+      </div>
+      <div class="pg-toolbar-right">
+        <span class="pg-legend"><span class="legend-dot" style="background:var(--green)"></span>Win</span>
+        <span class="pg-legend"><span class="legend-dot" style="background:var(--red)"></span>Loss</span>
+        <span class="pg-legend"><span class="legend-dot" style="background:var(--fog)"></span>Away</span>
+        <span class="pg-legend"><span class="legend-dot" style="background:var(--blue)"></span>Home</span>
+      </div>
+    </div>
+    <div class="sch-cal" id="sch-cal">
+      <div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading schedule...</div>
+    </div>
+  </div>
+
+  <!-- ── TRANSACTIONS PAGE ── -->
+  <div id="page-transactions" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left">
+        <select class="pg-select" id="tx-filter" onchange="loadTxPage()">
+          <option value="">All Types</option>
+          <option value="Trade">Trades</option>
+          <option value="Activation">Activations</option>
+          <option value="Placed">IL Placements</option>
+          <option value="Recalled">Recalls</option>
+          <option value="Optioned">Options</option>
+          <option value="Designated">DFA</option>
+          <option value="Released">Releases</option>
+          <option value="Selected">Selections</option>
+        </select>
+      </div>
+      <div class="pg-toolbar-right" id="tx-count" style="font-family:var(--mono);font-size:11px;color:var(--fog)"></div>
+    </div>
+    <div id="pg-tx-list" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading transactions...</div></div>
+  </div>
+
+  <!-- ── DEPTH CHART PAGE ── -->
+  <div id="page-depth" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left">
+        <span class="pg-label">TORONTO BLUE JAYS DEPTH CHART</span>
+      </div>
+      <div class="pg-toolbar-right">
+        <span style="font-family:var(--mono);font-size:10px;color:var(--fog)">Click a player to open their card</span>
+      </div>
+    </div>
+    <div id="pg-depth-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading depth chart...</div></div>
+  </div>
+
+  <!-- ── TRENDING PAGE ── -->
+  <div id="page-trending" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left"><span class="pg-label">HOT &amp; COLD TRACKER — LAST 14 DAYS</span></div>
+      <div class="pg-toolbar-right">
+        <button class="pg-btn" onclick="loadTrending('hitting')">Batters</button>
+        <button class="pg-btn" onclick="loadTrending('pitching')">Pitchers</button>
+      </div>
+    </div>
+    <div id="pg-trending-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading...</div></div>
+  </div>
+
+  <!-- ── PROSPECTS PAGE ── -->
+  <div id="page-prospects" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left"><span class="pg-label">TOP 30 PROSPECTS — TORONTO BLUE JAYS</span></div>
+      <div class="pg-toolbar-right">
+        <select class="pg-select" id="prospect-year" onchange="loadProspects()">
+          <option>2025</option><option>2024</option><option>2023</option><option>2022</option>
+        </select>
+      </div>
+    </div>
+    <div id="pg-prospects-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading prospects...</div></div>
+  </div>
+
+  <!-- ── HISTORY PAGE ── -->
+  <div id="page-history" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left"><span class="pg-label">TORONTO BLUE JAYS — FRANCHISE HISTORY</span></div>
+    </div>
+    <div id="pg-history-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading history...</div></div>
+  </div>
+
+  <!-- ── FORMER JAYS PAGE ── -->
+  <div id="page-formerjays" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left"><span class="pg-label">FORMER BLUE JAYS — ACTIVE IN MLB</span></div>
+      <div class="pg-toolbar-right" style="font-family:var(--mono);font-size:10px;color:var(--fog)">Sorted by games played with TOR</div>
+    </div>
+    <div id="pg-formerjays-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading...</div></div>
+  </div>
+
+  <!-- ── ORGANIZATION PAGE ── -->
+  <div id="page-organization" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left"><span class="pg-label">TORONTO BLUE JAYS — ORGANIZATION &amp; STAFF</span></div>
+    </div>
+    <div id="pg-org-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading staff...</div></div>
+  </div>
+
+  <!-- ── NEWS PAGE ── -->
+  <div id="page-news" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left">
+        <span class="pg-label">NEWS &amp; RUMOURS</span>
+      </div>
+      <div class="pg-toolbar-right">
+        <button class="pg-btn pg-btn-active" id="nf-all" onclick="filterNews('all',this)">All</button>
+        <button class="pg-btn" id="nf-news" onclick="filterNews('news',this)">News</button>
+        <button class="pg-btn" id="nf-rumour" onclick="filterNews('rumour',this)">Rumours</button>
+      </div>
+    </div>
+    <div id="pg-news-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading news...</div></div>
+  </div>
+
+  <!-- ── STATCAST PAGE ── -->
+  <div id="page-statcast" class="page">
+    <div class="pg-toolbar">
+      <div class="pg-toolbar-left"><span class="pg-label">STATCAST &amp; ADVANCED METRICS — 2025</span></div>
+    </div>
+    <div id="pg-statcast-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading Statcast data...</div></div>
+  </div>
+
 </main>
 
 <!-- ════════════════════════════════════════════
@@ -1394,6 +1676,773 @@ function buildBioPane(person){
     <div class="pc-bio-grid">
       ${rows.map(([l,v])=>`<div class="pc-bio-row"><span class="pc-bio-label">${l}</span><span class="pc-bio-val">${v}</span></div>`).join('')}
     </div>`;
+}
+
+/* ══════════════════════════════════════════
+   PAGE ROUTER
+══════════════════════════════════════════ */
+const PAGE_TITLES = {
+  dashboard:'Dashboard', roster:'Roster', schedule:'Schedule',
+  transactions:'Transactions', depth:'Depth Chart', trending:'Trending',
+  prospects:'Prospects', history:'History', formerjays:'Former Jays',
+  organization:'Organization', news:'News & Rumours', statcast:'Statcast'
+};
+
+const _loaded = new Set();
+
+function navigate(page, el) {
+  // Update nav active state
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  // Swap page visibility
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.add('active');
+
+  // Update hero title
+  const titleEl = document.getElementById('hero-title');
+  if (titleEl) titleEl.textContent = PAGE_TITLES[page] || page;
+
+  // Lazy-load each page once
+  if (!_loaded.has(page)) {
+    _loaded.add(page);
+    const loaders = {
+      roster:       loadRosterPage,
+      schedule:     () => loadSchedule(new Date()),
+      transactions: loadTxPage,
+      depth:        loadDepthChart,
+      trending:     () => loadTrending('hitting'),
+      prospects:    loadProspects,
+      history:      loadHistory,
+      formerjays:   loadFormerJays,
+      organization: loadOrganization,
+      news:         loadNewsPage,
+      statcast:     loadStatcast,
+    };
+    loaders[page]?.();
+  }
+}
+
+/* ══ ROSTER FULL PAGE ══ */
+async function loadRosterPage() {
+  const el = document.getElementById('pg-roster-body');
+  const [activeD, injD] = await Promise.all([
+    mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`),
+    mlb(`/roster/${TID}?rosterType=injuries&season=2025&hydrate=person`)
+  ]);
+  const all = activeD?.roster || [];
+  const pp = new Set(['P','SP','RP']);
+  const batters = all.filter(p => !pp.has(p.position?.abbreviation));
+  const starters = all.filter(p => p.position?.abbreviation === 'SP');
+  const relievers = all.filter(p => p.position?.abbreviation !== 'SP' && pp.has(p.position?.abbreviation));
+  const il = injD?.roster || [];
+
+  const [bs, ps] = await Promise.all([
+    loadStats(batters.map(p => p.person.id), 'hitting'),
+    loadStats([...starters,...relievers].map(p => p.person.id), 'pitching')
+  ]);
+  batters.forEach(p => p._s = bs[p.person.id] || {});
+  starters.forEach(p => p._s = ps[p.person.id] || {});
+  relievers.forEach(p => p._s = ps[p.person.id] || {});
+
+  const PG2 = {C:'Catchers','1B':'Infielders','2B':'Infielders','3B':'Infielders',SS:'Infielders',LF:'Outfielders',CF:'Outfielders',RF:'Outfielders',OF:'Outfielders',DH:'DH'};
+  const grps = {};
+  batters.forEach(p => { const g = PG2[p.position?.abbreviation]||'Other'; (grps[g]=grps[g]||[]).push(p); });
+
+  function rpRow(p, stats) {
+    return `<div class="rp-row" onclick="openPlayerCard(${p.person.id})">
+      <span class="rp-num">${p.jerseyNumber||''}</span>
+      <div class="rp-shot"><img src="${shot(p.person.id)}" onerror="this.outerHTML='<span>${p.position?.abbreviation||'?'}</span>'"></div>
+      <div class="rp-info"><div class="rp-name">${p.person.fullName}</div><div class="rp-pos">${p.position?.name||''}</div></div>
+      <div class="rp-stats">${stats}</div>
+    </div>`;
+  }
+  function rs2(v,l){ return `<div class="rps"><span class="rps-v">${v||'—'}</span><span class="rps-l">${l}</span></div>`; }
+
+  let html = '<div class="rp-grid">';
+
+  // Batters by group
+  ['Catchers','Infielders','Outfielders','DH'].forEach(g => {
+    if (!grps[g]?.length) return;
+    html += `<div class="rp-section"><div class="rp-section-head">${g}</div>`;
+    grps[g].forEach(p => {
+      const s = p._s||{};
+      const avg = s.avg ? s.avg.replace(/^0/,'') : '.---';
+      const ops = s.ops ? s.ops.replace(/^0/,'') : '.---';
+      html += rpRow(p, rs2(avg,'AVG')+rs2(s.homeRuns,'HR')+rs2(s.rbi,'RBI')+rs2(ops,'OPS'));
+    });
+    html += '</div>';
+  });
+
+  // Starters
+  html += `<div class="rp-section"><div class="rp-section-head">Starting Pitchers</div>`;
+  starters.forEach(p => {
+    const s = p._s||{};
+    html += rpRow(p, rs2(s.era,'ERA')+rs2(s.whip,'WHIP')+rs2(s.inningsPitched,'IP')+rs2(s.strikeOuts,'K'));
+  });
+  html += '</div>';
+
+  // Relievers
+  html += `<div class="rp-section"><div class="rp-section-head">Relievers</div>`;
+  relievers.forEach(p => {
+    const s = p._s||{};
+    html += rpRow(p, rs2(s.era,'ERA')+rs2(s.whip,'WHIP')+rs2(s.saves,'SV')+rs2(s.strikeOuts,'K'));
+  });
+  html += '</div>';
+
+  // IL
+  if (il.length) {
+    html += `<div class="rp-section"><div class="rp-section-head">Injured List</div>`;
+    il.forEach(p => {
+      const tag = (p.status?.description||'IL').replace(' Day Injured List','d IL');
+      const dt = p.statusDate ? new Date(p.statusDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+      html += `<div class="rp-row" onclick="openPlayerCard(${p.person.id})">
+        <span class="rp-num">${p.jerseyNumber||''}</span>
+        <div class="rp-shot"><img src="${shot(p.person.id)}" onerror="this.style.display='none'"></div>
+        <div class="rp-info"><div class="rp-name">${p.person.fullName}</div><div class="rp-pos">${p.position?.abbreviation||''}</div></div>
+        <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:4px;background:var(--red-dim);color:#f87171;border:1px solid rgba(232,0,45,.2);margin-left:auto;">${tag}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--fog);margin-left:10px;">${dt}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ══ SCHEDULE CALENDAR ══ */
+let _schDate = new Date();
+
+async function loadSchedule(date) {
+  _schDate = new Date(date.getFullYear(), date.getMonth(), 1);
+  const el = document.getElementById('sch-cal');
+  const monthLabel = document.getElementById('sch-month-label');
+
+  const y = _schDate.getFullYear(), m = _schDate.getMonth();
+  const start = new Date(y, m, 1), end = new Date(y, m+1, 0);
+  monthLabel.textContent = _schDate.toLocaleDateString('en-US', {month:'long', year:'numeric'}).toUpperCase();
+
+  const ds2 = d => d.toISOString().split('T')[0];
+  const d = await mlb(`/schedule?teamId=${TID}&sportId=1&startDate=${ds2(start)}&endDate=${ds2(end)}&hydrate=team,linescore,venue`);
+  const games = {};
+  (d?.dates || []).forEach(dt => dt.games?.forEach(g => { games[g.gameDate.split('T')[0]] = g; }));
+
+  const todayStr = ds2(new Date());
+  const firstDOW = start.getDay(); // 0=Sun
+  const daysInMonth = end.getDate();
+
+  let html = `<div class="cal-header">`;
+  ['SUN','MON','TUE','WED','THU','FRI','SAT'].forEach(d => html += `<div class="cal-dow">${d}</div>`);
+  html += `</div><div class="cal-grid">`;
+
+  // Empty leading cells
+  for (let i = 0; i < firstDOW; i++) html += `<div class="cal-day empty"></div>`;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isToday = dateStr === todayStr;
+    const g = games[dateStr];
+
+    html += `<div class="cal-day${isToday?' today-cell':''}">`;
+    html += `<div class="cal-day-num">${day}</div>`;
+
+    if (g) {
+      const isHome = g.teams.home.team.id === TID;
+      const opp = isHome ? g.teams.away : g.teams.home;
+      const jt  = isHome ? g.teams.home : g.teams.away;
+      const isFinal = g.status.abstractGameState === 'Final';
+      const isLive  = g.status.abstractGameState === 'Live';
+      const won  = isFinal && jt.score > opp.score;
+      const lost = isFinal && jt.score < opp.score;
+      const timeStr = new Date(g.gameDate).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+
+      html += `<span class="cal-ha ${isHome?'home':''}">${isHome?'H':'A'}</span>`;
+      html += `<div class="cal-game" onclick="openPlayerCard&&console.log(${g.gamePk})">
+        <img class="cal-opp-logo" src="${logo(opp.team.id)}" onerror="this.style.display='none'">
+        <div class="cal-opp-abv">${opp.team.abbreviation}</div>`;
+      if (isFinal) {
+        html += `<div class="cal-result ${won?'w':'l'}">${jt.score??''}–${opp.score??''} ${won?'W':'L'}</div>`;
+      } else if (isLive) {
+        html += `<div class="cal-result" style="color:var(--red)">${jt.score??0}–${opp.score??0} ▸${g.linescore?.currentInningOrdinal||''}</div>`;
+      } else {
+        html += `<div class="cal-game-time">${timeStr}</div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+function scheduleNav(dir) {
+  const d = new Date(_schDate.getFullYear(), _schDate.getMonth() + dir, 1);
+  loadSchedule(d);
+}
+
+/* ══ TRANSACTIONS FULL PAGE ══ */
+async function loadTxPage() {
+  const el = document.getElementById('pg-tx-list');
+  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Loading...</div>';
+  const filter = document.getElementById('tx-filter')?.value || '';
+  const s = new Date(NOW); s.setDate(NOW.getDate()-90);
+  const d = await mlb(`/transactions?teamId=${TID}&startDate=${ds(s)}&endDate=${ds(NOW)}`);
+  let txs = d?.transactions || [];
+  if (filter) txs = txs.filter(t => t.typeDesc?.includes(filter)||t.description?.includes(filter));
+  const countEl = document.getElementById('tx-count');
+  if (countEl) countEl.textContent = `${txs.length} transactions`;
+  document.getElementById('tx-badge').textContent = txs.length || '—';
+
+  const PIP = {Trade:'pip-trade',Activation:'pip-recall',Placed:'pip-il',Selected:'pip-claim',Designated:'pip-dfa',Released:'pip-other',Optioned:'pip-il',Recalled:'pip-recall',Claimed:'pip-claim'};
+
+  if (!txs.length) { el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No transactions found</div>'; return; }
+
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr>
+      <th style="font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);padding:8px 12px;text-align:left;border-bottom:1px solid var(--rim);background:rgba(0,0,0,.2);">Type</th>
+      <th style="font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);padding:8px 12px;text-align:left;border-bottom:1px solid var(--rim);background:rgba(0,0,0,.2);">Player</th>
+      <th style="font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);padding:8px 12px;text-align:left;border-bottom:1px solid var(--rim);background:rgba(0,0,0,.2);">Description</th>
+      <th style="font-family:var(--mono);font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:var(--fog);padding:8px 12px;text-align:right;border-bottom:1px solid var(--rim);background:rgba(0,0,0,.2);">Date</th>
+    </tr></thead>
+    <tbody>
+      ${txs.map(tx => {
+        const key = Object.keys(PIP).find(k=>tx.typeDesc?.includes(k)||tx.description?.includes(k))||'other';
+        const pip = PIP[key]||'pip-other';
+        const name = tx.person?.fullName || '—';
+        const pid = tx.person?.id;
+        const dt = tx.date ? new Date(tx.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+        const desc = (tx.description||tx.typeDesc||'').slice(0,100);
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,.03);cursor:${pid?'pointer':'default'}" ${pid?`onclick="openPlayerCard(${pid})"`:''}>
+          <td style="padding:9px 12px;vertical-align:middle;"><div style="display:flex;align-items:center;gap:7px;"><div class="tx-pip ${pip}" style="flex-shrink:0"></div><span style="font-family:var(--mono);font-size:9px;color:var(--fog)">${tx.typeDesc||'—'}</span></div></td>
+          <td style="padding:9px 12px;font-size:13px;font-weight:500;color:var(--ice)">${name}</td>
+          <td style="padding:9px 12px;font-size:11.5px;color:var(--steel)">${desc}</td>
+          <td style="padding:9px 12px;font-family:var(--mono);font-size:10px;color:var(--fog);text-align:right;white-space:nowrap">${dt}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ══ DEPTH CHART ══ */
+async function loadDepthChart() {
+  const el = document.getElementById('pg-depth-body');
+  const d = await mlb(`/depthcharts?teamId=${TID}&season=2025`);
+  const positions = d?.depthCharts?.[0]?.positions || [];
+
+  if (!positions.length) {
+    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No depth chart data available</div>';
+    return;
+  }
+
+  // Order positions sensibly
+  const POS_ORDER_DEPTH = ['C','1B','2B','SS','3B','LF','CF','RF','DH','SP','RP','CL'];
+  const sorted = [...positions].sort((a,b) => {
+    const ai = POS_ORDER_DEPTH.indexOf(a.position?.abbreviation);
+    const bi = POS_ORDER_DEPTH.indexOf(b.position?.abbreviation);
+    return (ai===-1?99:ai) - (bi===-1?99:bi);
+  });
+
+  el.innerHTML = `<div class="depth-grid">` +
+    sorted.map(pos => {
+      const players = pos.players || [];
+      return `<div class="depth-pos-card">
+        <div class="depth-pos-head">${pos.position?.name||pos.position?.abbreviation||'—'} <span>${pos.position?.abbreviation||''}</span></div>
+        ${players.slice(0,4).map((p,i) => `
+          <div class="depth-player" onclick="openPlayerCard(${p.playerId||p.person?.id||0})">
+            <span class="depth-rank">${i+1}</span>
+            <div class="depth-shot"><img src="${shot(p.playerId||p.person?.id)}" onerror="this.style.display='none'"></div>
+            <span class="depth-name">${p.player?.fullName||p.person?.fullName||'—'}</span>
+            <span class="depth-num">#${p.jerseyNumber||'—'}</span>
+          </div>`).join('')}
+      </div>`;
+    }).join('') +
+  `</div>`;
+}
+
+/* ══ TRENDING / HOT-COLD ══ */
+async function loadTrending(group='hitting') {
+  const el = document.getElementById('pg-trending-body');
+  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Calculating...</div>';
+
+  // Get active roster, then fetch last14 vs season stats
+  const rosterD = await mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`);
+  const all = rosterD?.roster || [];
+  const pp = new Set(['P','SP','RP']);
+  const players = group==='pitching'
+    ? all.filter(p => pp.has(p.position?.abbreviation))
+    : all.filter(p => !pp.has(p.position?.abbreviation));
+
+  const ids = players.slice(0,25).map(p=>p.person.id);
+  if (!ids.length) { el.innerHTML = '<div class="srow" style="color:var(--fog);padding:40px">No data</div>'; return; }
+
+  const [seasonD, last14D] = await Promise.all([
+    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=season,season=2025)`),
+    mlb(`/people?personIds=${ids.join(',')}&hydrate=stats(group=${group},type=lastXGames,season=2025,limit=14)`)
+  ]);
+
+  const season={}, last14={};
+  (seasonD?.people||[]).forEach(p => {
+    const s = p.stats?.find(x=>x.group?.displayName?.toLowerCase()===group)?.splits?.[0]?.stat||{};
+    season[p.id]=s;
+  });
+  (last14D?.people||[]).forEach(p => {
+    const s = p.stats?.find(x=>x.group?.displayName?.toLowerCase()===group)?.splits?.[0]?.stat||{};
+    last14[p.id]=s;
+  });
+
+  // Compute delta
+  const results = players.map(p => {
+    const pid = p.person.id;
+    const s = season[pid]||{}, r = last14[pid]||{};
+    let delta=0, statLabel='', recentVal='', seasonVal='';
+    if (group==='hitting') {
+      const sOPS = parseFloat(s.ops)||0, rOPS = parseFloat(r.ops)||0;
+      delta = rOPS - sOPS;
+      statLabel='OPS';
+      recentVal = r.ops?.replace(/^0/,'')||'—';
+      seasonVal = s.ops?.replace(/^0/,'')||'—';
+    } else {
+      const sERA = parseFloat(s.era)||5, rERA = parseFloat(r.era)||5;
+      delta = sERA - rERA; // positive = improvement
+      statLabel='ERA';
+      recentVal = r.era||'—';
+      seasonVal = s.era||'—';
+    }
+    return {p, pid, delta, statLabel, recentVal, seasonVal};
+  }).filter(x => x.recentVal !== '—');
+
+  results.sort((a,b) => b.delta-a.delta);
+  const hot = results.slice(0,7);
+  const cold = [...results].sort((a,b)=>a.delta-b.delta).slice(0,7);
+
+  function tRow({p, delta, statLabel, recentVal, seasonVal}) {
+    const sign = delta>0?'+':'';
+    const pos = delta>=0;
+    return `<div class="trend-row" onclick="openPlayerCard(${p.person.id})">
+      <div class="trend-shot"><img src="${shot(p.person.id)}" onerror="this.style.display='none'"></div>
+      <span class="trend-name">${p.person.fullName}</span>
+      <span class="trend-stat">${statLabel}: ${recentVal} <span style="color:var(--fog)">(${seasonVal} season)</span></span>
+      <span class="trend-delta ${pos?'pos':'neg'}">${sign}${delta.toFixed(3)}</span>
+    </div>`;
+  }
+
+  el.innerHTML = `<div style="margin-bottom:12px;display:flex;gap:10px;justify-content:flex-end">
+    <button class="pg-btn ${group==='hitting'?'active':''}" onclick="loadTrending('hitting')">Batters</button>
+    <button class="pg-btn ${group==='pitching'?'active':''}" onclick="loadTrending('pitching')">Pitchers</button>
+  </div>
+  <div class="trend-grid">
+    <div class="trend-section">
+      <div class="trend-head hot"><div class="trend-head-title">🔥 Hot — Last 14 Days</div></div>
+      ${hot.map(tRow).join('')}
+    </div>
+    <div class="trend-section">
+      <div class="trend-head cold"><div class="trend-head-title">❄️ Cold — Last 14 Days</div></div>
+      ${cold.map(tRow).join('')}
+    </div>
+  </div>`;
+}
+
+/* ══ PROSPECTS ══ */
+async function loadProspects() {
+  const el = document.getElementById('pg-prospects-body');
+  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Loading prospects...</div>';
+  const yr = document.getElementById('prospect-year')?.value || '2025';
+
+  // MLB Pipeline prospect list via Stats API
+  const d = await mlb(`/draft/prospects?teamId=${TID}&year=${yr}&limit=30`);
+  const prospects = d?.prospects || d?.draftProspects || [];
+
+  if (!prospects.length) {
+    // Fallback: use minor league affiliates roster
+    const minors = await mlb(`/teams?parentOrgPk=${TID}&sportIds=11,12,13,14&season=${yr}&hydrate=roster(person)`);
+    const players = minors?.teams?.flatMap(t => t.roster?.roster||[]).slice(0,30)||[];
+    if (!players.length) {
+      el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No prospect data available for this season</div>';
+      return;
+    }
+
+    el.innerHTML = players.map((p,i) => {
+      const pos = p.position?.abbreviation||'?';
+      const level = p.parentTeamId ? 'MiLB' : 'AAA';
+      return `<div class="prospect-row" onclick="openPlayerCard(${p.person.id})">
+        <div class="prospect-rank ${i<5?'top5':''}">${i+1}</div>
+        <div class="prospect-shot"><img src="${shot(p.person.id)}" onerror="this.outerHTML='<span>${pos}</span>'"></div>
+        <div class="prospect-info">
+          <div class="prospect-name">${p.person.fullName}</div>
+          <div class="prospect-meta">
+            <span class="prospect-tag">${pos}</span>
+            <span class="prospect-tag">${level}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  el.innerHTML = prospects.slice(0,30).map((p,i) => {
+    const pos = p.primaryPosition?.abbreviation || p.position?.abbreviation || '?';
+    const school = p.school?.name || '';
+    const eta = p.eta || '';
+    return `<div class="prospect-row" onclick="openPlayerCard(${p.id||p.person?.id||0})">
+      <div class="prospect-rank ${i<5?'top5':''}">${i+1}</div>
+      <div class="prospect-shot"><img src="${shot(p.id||p.person?.id)}" onerror="this.outerHTML='<span>${pos}</span>'"></div>
+      <div class="prospect-info">
+        <div class="prospect-name">${p.fullName||p.person?.fullName||'—'}</div>
+        <div class="prospect-meta">
+          <span class="prospect-tag">${pos}</span>
+          ${school?`<span class="prospect-tag">${school}</span>`:''}
+          ${eta?`<span class="prospect-eta">ETA: ${eta}</span>`:''}
+        </div>
+      </div>
+      ${p.grade?`<div class="prospect-grade"><span class="prospect-grade-val">${p.grade}</span><span class="prospect-grade-lbl">Grade</span></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+/* ══ HISTORY ══ */
+async function loadHistory() {
+  const el = document.getElementById('pg-history-body');
+
+  // World Series wins (1992, 1993)
+  const wsHtml = `
+    <div class="ws-banner"><div class="ws-trophy">🏆</div><div>
+      <div class="ws-title">1992 World Series Champions</div>
+      <div class="ws-sub">Defeated Atlanta Braves 4–2 · Dave Winfield's clutch double in Game 6 sealed it</div>
+    </div></div>
+    <div class="ws-banner"><div class="ws-trophy">🏆</div><div>
+      <div class="ws-title">1993 World Series Champions</div>
+      <div class="ws-sub">Defeated Philadelphia Phillies 4–2 · Joe Carter walk-off HR in Game 6</div>
+    </div></div>`;
+
+  // Fetch franchise leaders
+  const [hitLeaders, pitLeaders] = await Promise.all([
+    mlb(`/stats/leaders?leaderCategories=homeRuns,rbi,hits,stolenBases&teamId=${TID}&season=allTime&statGroup=hitting&sportId=1&limit=1`),
+    mlb(`/stats/leaders?leaderCategories=strikeouts,wins&teamId=${TID}&season=allTime&statGroup=pitching&sportId=1&limit=1`)
+  ]);
+
+  function leaderRows(leaders, cats) {
+    return cats.map(cat => {
+      const row = leaders?.leagueLeaders?.find(l=>l.leaderCategory===cat)?.leaders?.[0];
+      if (!row) return '';
+      return `<div class="history-row">
+        <span class="history-label">${cat.charAt(0).toUpperCase()+cat.slice(1)} Leader</span>
+        <div style="text-align:right">
+          <span class="history-val">${row.value??'—'}</span>
+          <div class="history-year" style="margin-top:2px">${row.person?.fullName||'—'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const hRows = leaderRows(hitLeaders, ['homeRuns','rbi','hits','stolenBases']);
+  const pRows = leaderRows(pitLeaders, ['strikeouts','wins']);
+
+  el.innerHTML = wsHtml + `<div class="history-grid">
+    <div class="history-card">
+      <div class="history-card-head">Franchise Hitting Leaders (All-Time)</div>
+      ${hRows || '<div class="srow" style="color:var(--fog)">Loading...</div>'}
+      <div class="history-row"><span class="history-label">Franchise Founded</span><span class="history-val">1977</span></div>
+      <div class="history-row"><span class="history-label">Home Stadium</span><span class="history-val">Rogers Centre</span></div>
+      <div class="history-row"><span class="history-label">Division Titles</span><span class="history-val">6</span></div>
+    </div>
+    <div class="history-card">
+      <div class="history-card-head">Franchise Pitching Leaders (All-Time)</div>
+      ${pRows || ''}
+      <div class="history-row"><span class="history-label">World Series Titles</span><span class="history-val">2</span></div>
+      <div class="history-row"><span class="history-label">AL Pennants</span><span class="history-val">2</span></div>
+      <div class="history-row"><span class="history-label">Retired Numbers</span><span class="history-val">#12 · #32 · #42</span></div>
+    </div>
+    <div class="history-card">
+      <div class="history-card-head">Individual Awards</div>
+      <div class="history-row"><span class="history-label">Cy Young Awards</span><span class="history-val">4</span></div>
+      <div class="history-row"><span class="history-label">MVP Awards</span><span class="history-val">2</span></div>
+      <div class="history-row"><span class="history-label">Rookie of the Year</span><span class="history-val">2</span></div>
+      <div class="history-row"><span class="history-label">Hall of Famers</span><span class="history-val">4</span></div>
+    </div>
+    <div class="history-card">
+      <div class="history-card-head">Milestones</div>
+      <div class="history-row"><span class="history-label">First Game</span><span class="history-val">Apr 7, 1977</span></div>
+      <div class="history-row"><span class="history-label">First WS Title</span><span class="history-val">Oct 24, 1992</span></div>
+      <div class="history-row"><span class="history-label">Consecutive WS</span><span class="history-val">1992 &amp; 1993</span></div>
+      <div class="history-row"><span class="history-label">All-Time Wins</span><span class="history-val">3,800+</span></div>
+    </div>
+  </div>`;
+}
+
+/* ══ FORMER JAYS ══ */
+async function loadFormerJays() {
+  const el = document.getElementById('pg-formerjays-body');
+
+  // Fetch all active MLB players, filter those with Jays history
+  // Strategy: get all teams, then cross-reference via transaction log
+  // For now: use the known alumni list approach via career stats
+  const d = await mlb(`/sports/1/players?season=2025&gameType=R`);
+  const allPlayers = d?.people || [];
+
+  // Filter: active, not currently on Jays, born before 2003 (had time to play)
+  const candidates = allPlayers.filter(p =>
+    p.active && p.currentTeam?.id !== TID && p.mlbDebutDate
+  );
+
+  // Fetch career team history for a subset — check who played for TID
+  // Use the team's historical roster API — get past rosters to find alumni
+  const years = ['2024','2023','2022','2021','2020','2019','2018','2017','2016'];
+  const pastRosters = await Promise.all(
+    years.map(yr => mlb(`/roster/${TID}?rosterType=fullRoster&season=${yr}&hydrate=person`))
+  );
+
+  // Build set of player IDs who appeared on Jays rosters
+  const formerIdMap = {}; // id -> {firstYr, lastYr, gamesEst}
+  pastRosters.forEach((r, i) => {
+    const yr = parseInt(years[i]);
+    (r?.roster || []).forEach(p => {
+      const id = p.person.id;
+      if (!formerIdMap[id]) formerIdMap[id] = {firstYr:yr, lastYr:yr, p};
+      else {
+        formerIdMap[id].firstYr = Math.min(formerIdMap[id].firstYr, yr);
+        formerIdMap[id].lastYr  = Math.max(formerIdMap[id].lastYr, yr);
+      }
+    });
+  });
+
+  // Cross-reference with currently active players
+  const active = allPlayers.filter(p => p.active && p.currentTeam?.id !== TID);
+  const activeIds = new Set(active.map(p=>p.id));
+
+  const formers = Object.values(formerIdMap)
+    .filter(x => activeIds.has(x.p.person.id))
+    .sort((a,b) => (b.lastYr-b.firstYr+1)-(a.lastYr-a.firstYr+1) || b.lastYr-a.lastYr);
+
+  if (!formers.length) {
+    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No former Jays data available. Try again — the API may be loading.</div>';
+    return;
+  }
+
+  // Get current team info for each
+  const activePeople = new Map(active.map(p=>[p.id,p]));
+
+  // Load current-season stats for the first batch
+  const fIds = formers.slice(0,40).map(x=>x.p.person.id);
+  const [fHit, fPit] = await Promise.all([
+    loadStats(fIds, 'hitting'),
+    loadStats(fIds, 'pitching')
+  ]);
+
+  el.innerHTML = `<table class="fj-table">
+    <thead><tr>
+      <th>Player</th>
+      <th>Current Team</th>
+      <th>Jays Years</th>
+      <th class="r">AVG</th>
+      <th class="r">HR</th>
+      <th class="r">RBI</th>
+      <th class="r">OPS</th>
+      <th class="r">ERA</th>
+    </tr></thead>
+    <tbody>
+      ${formers.slice(0,40).map(({p, firstYr, lastYr}) => {
+        const pid = p.person.id;
+        const curr = activePeople.get(pid);
+        const hs = fHit[pid]||{}, ps = fPit[pid]||{};
+        const isPit = p.position?.abbreviation==='P';
+        const yrs = firstYr===lastYr ? `${firstYr}` : `${firstYr}–${lastYr}`;
+        const currTeamId = curr?.currentTeam?.id;
+        const currAbv = curr?.currentTeam?.abbreviation||'—';
+        return `<tr onclick="openPlayerCard(${pid})">
+          <td><div class="fj-player">
+            <div class="fj-shot"><img src="${shot(pid)}" onerror="this.style.display='none'"></div>
+            <span class="fj-name">${p.person.fullName}</span>
+          </div></td>
+          <td><div class="fj-curr-team">
+            <img class="fj-curr-logo" src="${logo(currTeamId)}" onerror="this.style.display='none'">
+            <span class="fj-curr-abv">${currAbv}</span>
+          </div></td>
+          <td><span class="fj-years">${yrs}</span></td>
+          <td class="r">${hs.avg?.replace(/^0/,'')||'—'}</td>
+          <td class="r">${hs.homeRuns??'—'}</td>
+          <td class="r">${hs.rbi??'—'}</td>
+          <td class="r">${hs.ops?.replace(/^0/,'')||'—'}</td>
+          <td class="r">${ps.era||'—'}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ══ ORGANIZATION / STAFF ══ */
+async function loadOrganization() {
+  const el = document.getElementById('pg-org-body');
+  const [coaches, front] = await Promise.all([
+    mlb(`/teams/${TID}/coaches?season=2025`),
+    mlb(`/teams/${TID}?hydrate=person(role)&season=2025`)
+  ]);
+
+  const coachList = coaches?.roster || [];
+  const dugout = coachList.filter(c => !c.title?.toLowerCase().includes('bullpen'));
+  const bullpen = coachList.filter(c => c.title?.toLowerCase().includes('bullpen'));
+
+  function orgCard(role, name) {
+    return `<div class="org-card"><div class="org-role">${role}</div><div class="org-name">${name||'TBD'}</div></div>`;
+  }
+
+  const dugoutHtml = dugout.length
+    ? dugout.map(c => orgCard(c.title||c.position?.name||'Coach', c.person?.fullName||'—')).join('')
+    : orgCard('Manager','John Schneider')+orgCard('Bench Coach','Don Mattingly')+orgCard('Pitching Coach','Pete Walker')+orgCard('Hitting Coach','Guillermo Martinez');
+
+  const bullpenHtml = bullpen.length
+    ? bullpen.map(c => orgCard(c.title||'Bullpen Coach', c.person?.fullName||'—')).join('')
+    : orgCard('Bullpen Coach','Matt Buschmann');
+
+  el.innerHTML = `
+    <div class="org-section">
+      <div class="org-section-head">Dugout Staff</div>
+      <div class="org-grid">${dugoutHtml}</div>
+    </div>
+    <div class="org-section">
+      <div class="org-section-head">Bullpen Staff</div>
+      <div class="org-grid">${bullpenHtml}</div>
+    </div>
+    <div class="org-section">
+      <div class="org-section-head">Front Office</div>
+      <div class="org-grid">
+        ${orgCard('President & CEO','Mark Shapiro')}
+        ${orgCard('General Manager','Ross Atkins')}
+        ${orgCard('AGM, Pro Scouting','Nate Murrie')}
+        ${orgCard('AGM, Player Development','Gil Kim')}
+        ${orgCard('Director, Baseball Ops','Andrew Tinnish')}
+        ${orgCard('Amateur Scouting Director','Shane Farrell')}
+      </div>
+    </div>
+    <div class="org-section">
+      <div class="org-section-head">Rogers Centre</div>
+      <div class="org-grid">
+        ${orgCard('Capacity','49,286')}
+        ${orgCard('Opened','June 3, 1989')}
+        ${orgCard('Surface','AstroTurf')}
+        ${orgCard('Roof Type','Retractable')}
+        ${orgCard('Location','Toronto, ON, Canada')}
+        ${orgCard('LF/CF/RF','328 ft / 400 ft / 328 ft')}
+      </div>
+    </div>`;
+}
+
+/* ══ NEWS FULL PAGE ══ */
+let _newsItems = [];
+let _newsFilter = 'all';
+
+async function loadNewsPage() {
+  const el = document.getElementById('pg-news-body');
+  const fb = [
+    {cat:'news',hl:'Blue Jays open 2025 with a reshuffled but hungry roster',src:'MLB.com',time:'2h ago',link:'#'},
+    {cat:'rumour',hl:'Toronto monitoring veteran bullpen arms as depth insurance',src:'The Athletic',time:'5h ago',link:'#'},
+    {cat:'news',hl:'Guerrero Jr. leads AL first basemen in early All-Star voting',src:'Sportsnet',time:'7h ago',link:'#'},
+    {cat:'news',hl:'Berríos set to anchor rotation in 2025 opener',src:'MLB.com',time:'1d ago',link:'#'},
+    {cat:'rumour',hl:'Extension talks quietly underway with key Jays homegrown talent',src:'TSN',time:'1d ago',link:'#'},
+    {cat:'news',hl:'Jays prospect system ranked top 10 heading into 2025',src:'Baseball America',time:'2d ago',link:'#'},
+    {cat:'rumour',hl:'Blue Jays scouting several international free agents for 2026',src:'MLB Pipeline',time:'2d ago',link:'#'},
+    {cat:'news',hl:'Rogers Centre renovation plans moving forward — 2025 update',src:'TSN',time:'3d ago',link:'#'},
+  ];
+
+  try {
+    const r = await fetch('https://corsproxy.io/?'+encodeURIComponent('https://www.mlb.com/feeds/news/rss.xml?teamId=141'));
+    const txt = await r.text();
+    const xml = new DOMParser().parseFromString(txt,'text/xml');
+    const items = [...xml.querySelectorAll('item')].slice(0,20);
+    if (items.length) {
+      _newsItems = items.map(i => ({
+        cat:'news',
+        hl:i.querySelector('title')?.textContent||'',
+        src:'MLB.com',
+        time:i.querySelector('pubDate')?.textContent?.slice(0,16)||'',
+        link:i.querySelector('link')?.textContent||'#'
+      }));
+      renderNewsPage();
+      return;
+    }
+  } catch{}
+  _newsItems = fb;
+  renderNewsPage();
+}
+
+function filterNews(f, btn) {
+  _newsFilter = f;
+  document.querySelectorAll('#page-news .pg-btn').forEach(b => b.classList.remove('active','pg-btn-active'));
+  btn?.classList.add('active');
+  renderNewsPage();
+}
+
+function renderNewsPage() {
+  const el = document.getElementById('pg-news-body');
+  const items = _newsFilter==='all' ? _newsItems : _newsItems.filter(n=>n.cat===_newsFilter);
+  if (!items.length) { el.innerHTML='<div class="srow" style="padding:40px;color:var(--fog)">No items</div>'; return; }
+  el.innerHTML = items.map(n => `
+    <div class="news-full-row" onclick="window.open('${n.link}','_blank')">
+      <span class="news-full-tag ${n.cat==='rumour'?'nft-rumour':'nft-news'}">${n.cat==='rumour'?'RUMOUR':'NEWS'}</span>
+      <div class="news-full-body">
+        <div class="news-full-hl">${n.hl}</div>
+        <div class="news-full-meta">${n.src} · ${n.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ══ STATCAST ══ */
+async function loadStatcast() {
+  const el = document.getElementById('pg-statcast-body');
+  // Pull advanced stats for all batters and pitchers
+  const rD = await mlb(`/roster/${TID}?rosterType=active&season=2025&hydrate=person`);
+  const all = rD?.roster||[];
+  const pp = new Set(['P','SP','RP']);
+  const bats = all.filter(p=>!pp.has(p.position?.abbreviation));
+  const pits = all.filter(p=>pp.has(p.position?.abbreviation));
+
+  const [bStats, pStats] = await Promise.all([
+    loadStats(bats.map(p=>p.person.id),'hitting'),
+    loadStats(pits.map(p=>p.person.id),'pitching')
+  ]);
+  bats.forEach(p=>p._s=bStats[p.person.id]||{});
+  pits.forEach(p=>p._s=pStats[p.person.id]||{});
+
+  function scRow(p, val, max) {
+    const pct = max>0 ? Math.min(100, (val/max)*100) : 0;
+    return `<div class="sc-row" onclick="openPlayerCard(${p.person.id})">
+      <div class="sc-shot"><img src="${shot(p.person.id)}" onerror="this.style.display='none'"></div>
+      <span class="sc-name">${p.person.fullName}</span>
+      <span class="sc-val">${val||'—'}</span>
+      <div class="sc-bar-wrap"><div class="sc-bar" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+
+  // Sort by OPS for hitters, ERA for pitchers
+  const batSorted = [...bats].filter(p=>p._s.ops).sort((a,b)=>parseFloat(b._s.ops||0)-parseFloat(a._s.ops||0));
+  const pitSorted = [...pits].filter(p=>p._s.era).sort((a,b)=>parseFloat(a._s.era||99)-parseFloat(b._s.era||99));
+  const hrSorted  = [...bats].filter(p=>p._s.homeRuns>0).sort((a,b)=>(b._s.homeRuns||0)-(a._s.homeRuns||0));
+  const kSorted   = [...pits].filter(p=>p._s.strikeOuts>0).sort((a,b)=>(b._s.strikeOuts||0)-(a._s.strikeOuts||0));
+
+  const maxOPS = parseFloat(batSorted[0]?._s.ops||1);
+  const maxHR  = hrSorted[0]?._s.homeRuns||1;
+  const maxK   = kSorted[0]?._s.strikeOuts||1;
+
+  el.innerHTML = `<div class="statcast-grid">
+    <div class="sc-card">
+      <div class="sc-card-head">OPS Leaders</div>
+      ${batSorted.slice(0,8).map(p=>scRow(p,p._s.ops?.replace(/^0/,'')||'—',maxOPS)).join('')}
+    </div>
+    <div class="sc-card">
+      <div class="sc-card-head">ERA Leaders (Pitchers)</div>
+      ${pitSorted.slice(0,8).map(p=>scRow(p,p._s.era||'—',5)).join('')}
+    </div>
+    <div class="sc-card">
+      <div class="sc-card-head">Home Run Leaders</div>
+      ${hrSorted.slice(0,8).map(p=>scRow(p,p._s.homeRuns||0,maxHR)).join('')}
+    </div>
+    <div class="sc-card">
+      <div class="sc-card-head">Strikeout Leaders</div>
+      ${kSorted.slice(0,8).map(p=>scRow(p,p._s.strikeOuts||0,maxK)).join('')}
+    </div>
+  </div>`;
 }
 
 /* ── BOOT ── */
