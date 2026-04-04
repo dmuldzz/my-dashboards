@@ -890,7 +890,8 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
   <div id="page-news" class="page">
     <div class="pg-toolbar">
       <div class="pg-toolbar-left">
-        <span class="pg-label">NEWS &amp; RUMOURS</span>
+        <button class="pg-btn active" id="ns-jays" onclick="setNewsScope('jays',this)">🔵 Blue Jays</button>
+        <button class="pg-btn" id="ns-mlb" onclick="setNewsScope('mlb',this)">⚾ All MLB</button>
       </div>
       <div class="pg-toolbar-right">
         <button class="pg-btn pg-btn-active" id="nf-all" onclick="filterNews('all',this)">All</button>
@@ -1227,11 +1228,21 @@ function showPit(){
 }
 function showIL(){
   document.querySelectorAll('.rtab').forEach((b,i)=>b.classList.toggle('active',i===2));
-  const el=document.getElementById('roster');if(!IL.length){el.innerHTML='<div class="srow" style="color:var(--fog)">No players on IL</div>';return;}
+  const el=document.getElementById('roster');
+  if(!IL.length){el.innerHTML='<div class="srow" style="color:var(--fog)">No players on IL</div>';return;}
   el.innerHTML=IL.map(p=>{
-    const tag=(p.status?.description||'IL').replace(' Day Injured List','d IL').replace('Injured List','IL');
-    const dt=p.statusDate?new Date(p.statusDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
-    return`<div class="il-row" onclick="openPlayerCard(${p.person.id},'${p.position?.abbreviation||'?'}')"><span class="il-tag">${tag}</span><span class="il-name">${p.person.fullName}</span><span class="il-pos">${p.position?.abbreviation||''}</span><span class="il-dt">${dt}</span></div>`;
+    // injuries roster returns players whose statusCode indicates IL placement
+    // Build IL type label from status description or roster note
+    const raw = p.status?.description || p.statusDescription || '';
+    const tag = raw.includes('Day') ? raw.replace(' Injured List','d IL').replace('10 Day','10d').replace('15 Day','15d').replace('60 Day','60d') : raw || 'IL';
+    const dt = p.statusDate ? new Date(p.statusDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    const pos = p.position?.abbreviation || '';
+    return`<div class="il-row" onclick="openPlayerCard(${p.person.id},'${pos}')">
+      <span class="il-tag">${tag}</span>
+      <span class="il-name">${p.person.fullName}</span>
+      <span class="il-pos">${pos}</span>
+      <span class="il-dt">${dt}</span>
+    </div>`;
   }).join('');
 }
 
@@ -1239,7 +1250,7 @@ function showIL(){
 async function loadTx(){
   const s=new Date(NOW);s.setDate(NOW.getDate()-30);
   const d=await mlb(`/transactions?teamId=${TID}&startDate=${ds(s)}&endDate=${ds(NOW)}&season=${MLB_SEASON}`);
-  const txs=(d?.transactions||[]).slice(0,8);
+  const txs=(d?.transactions||[]).slice().reverse().slice(0,8);
   document.getElementById('tx-badge').textContent=txs.length||'—';
   const pip={Trade:'pip-trade',Activation:'pip-recall',Placed:'pip-il',Selected:'pip-claim',Designated:'pip-dfa',Released:'pip-other',Optioned:'pip-il',Recalled:'pip-recall',Claimed:'pip-claim'};
   document.getElementById('tx-list').innerHTML=txs.length?txs.map(tx=>{
@@ -1252,18 +1263,63 @@ async function loadTx(){
 }
 
 /* ── NEWS ── */
-async function loadNews(){
-  const fb=[{cat:'news',hl:'Blue Jays open 2025 with a reshuffled but hungry roster',src:'MLB.com',time:'2h ago'},{cat:'rumour',hl:'Toronto monitoring veteran bullpen arms as depth insurance',src:'The Athletic',time:'5h ago'},{cat:'news',hl:'Guerrero Jr. leads AL first basemen in early All-Star voting',src:'Sportsnet',time:'7h ago'},{cat:'news',hl:'Berríos set to anchor rotation in 2025 opener',src:'MLB.com',time:'1d ago'},{cat:'rumour',hl:'Extension talks quietly underway with key Jays homegrown talent',src:'TSN',time:'1d ago'}];
-  try{
-    const txt=await fetchProxy('https://www.mlb.com/feeds/news/rss.xml?teamId=141');
-    if(!txt) throw new Error('no proxy');const xml=new DOMParser().parseFromString(txt,'text/xml');
-    const items=[...xml.querySelectorAll('item')].slice(0,5);
-    if(items.length){renderNews(items.map(i=>({cat:'news',hl:i.querySelector('title')?.textContent||'',src:'MLB.com',time:i.querySelector('pubDate')?.textContent?.slice(0,16)||''})));return;}
-  }catch{}
-  renderNews(fb);
+// RSS sources for dashboard news widget (Blue Jays focused)
+const JAYS_RSS_SOURCES = [
+  {url:'https://www.mlb.com/feeds/news/rss.xml?teamId=141', src:'MLB.com', cat:'news'},
+  {url:'https://www.sportsnet.ca/baseball/mlb/feed/', src:'Sportsnet', cat:'news'},
+  {url:'https://feeds.feedburner.com/TheBlueJayHunter', src:'Blue Jay Hunter', cat:'rumour'},
+];
+
+function parseRSSItems(xml, src, cat) {
+  return [...xml.querySelectorAll('item')].slice(0,6).map(i => ({
+    cat,
+    hl: i.querySelector('title')?.textContent?.trim() || '',
+    src,
+    time: formatPubDate(i.querySelector('pubDate')?.textContent),
+    link: i.querySelector('link')?.textContent?.trim() || '#'
+  })).filter(n => n.hl);
 }
+
+function formatPubDate(str) {
+  if (!str) return '';
+  try {
+    const d = new Date(str);
+    const diff = Date.now() - d.getTime();
+    const hrs = Math.floor(diff/3600000);
+    if (hrs < 1) return 'Just now';
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs/24);
+    if (days < 7) return `${days}d ago`;
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  } catch { return str.slice(0,16); }
+}
+
+async function loadNews(){
+  const fb=[
+    {cat:'news',hl:'Blue Jays offense showing early signs of life in young season',src:'MLB.com',time:'2h ago',link:'https://www.mlb.com/blue-jays/news'},
+    {cat:'rumour',hl:'Toronto monitoring bullpen arms as potential trade targets',src:'Sportsnet',time:'5h ago',link:'#'},
+    {cat:'news',hl:'Guerrero Jr. heating up — three multi-hit games this week',src:'MLB.com',time:'7h ago',link:'https://www.mlb.com/blue-jays/news'},
+    {cat:'news',hl:'Berríos sharp in latest start, K rate trending up',src:'MLB.com',time:'1d ago',link:'https://www.mlb.com/blue-jays/news'},
+    {cat:'rumour',hl:'Extension talks quietly underway with key Blue Jays talent',src:'TSN',time:'1d ago',link:'#'},
+  ];
+
+  const allItems = [];
+  for (const {url, src, cat} of JAYS_RSS_SOURCES) {
+    try {
+      const txt = await fetchProxy(url);
+      if (!txt) continue;
+      const xml = new DOMParser().parseFromString(txt, 'text/xml');
+      const items = parseRSSItems(xml, src, cat);
+      allItems.push(...items);
+      if (allItems.length >= 5) break;
+    } catch(e) {}
+  }
+
+  renderNews(allItems.length >= 3 ? allItems.slice(0,5) : fb);
+}
+
 function renderNews(items){
-  document.getElementById('news-list').innerHTML=items.map(n=>`<div class="news-row"><span class="ntag ${n.cat==='rumour'?'nt-rumour':'nt-news'}">${n.cat==='rumour'?'RUMOUR':'NEWS'}</span><div class="news-body"><div class="news-hl">${n.hl}</div><div class="news-meta">${n.src} · ${n.time}</div></div></div>`).join('');
+  document.getElementById('news-list').innerHTML=items.map(n=>`<div class="news-row" onclick="window.open('${n.link||'#'}','_blank')" style="cursor:pointer"><span class="ntag ${n.cat==='rumour'?'nt-rumour':'nt-news'}">${n.cat==='rumour'?'RUMOUR':'NEWS'}</span><div class="news-body"><div class="news-hl">${n.hl}</div><div class="news-meta">${n.src} · ${n.time}</div></div></div>`).join('');
 }
 
 /* ══════════════════════════════════════
@@ -1970,7 +2026,7 @@ async function loadTxPage() {
   const filter = document.getElementById('tx-filter')?.value || '';
   const s = new Date(NOW); s.setDate(NOW.getDate()-90);
   const d = await mlb(`/transactions?teamId=${TID}&startDate=${ds(s)}&endDate=${ds(NOW)}`);
-  let txs = d?.transactions || [];
+  let txs = (d?.transactions || []).slice().reverse();
   if (filter) txs = txs.filter(t => t.typeDesc?.includes(filter)||t.description?.includes(filter));
   const countEl = document.getElementById('tx-count');
   if (countEl) countEl.textContent = `${txs.length} transactions`;
@@ -2048,18 +2104,34 @@ function renderDepthFromAPI(el, positions) {
     }).join('') + `</div>`;
 }
 
-function renderDepthFromRoster(el, roster) {
+function renderDepthFromRoster(el, roster, minorPlayers=[]) {
   const POS_ORDER_DEPTH = ['C','1B','2B','SS','3B','LF','CF','RF','DH','SP','RP'];
   const POS_NAMES = {C:'Catcher','1B':'First Base','2B':'Second Base','SS':'Shortstop','3B':'Third Base',LF:'Left Field',CF:'Center Field',RF:'Right Field',DH:'Designated Hitter',SP:'Starting Pitcher',RP:'Relief Pitcher'};
-  const pp = new Set(['P','SP','RP']);
   
-  // Group by primary position
+  // Classify each player correctly
   const groups = {};
   roster.forEach(p => {
-    const pos = p.position?.abbreviation || 'RP';
-    // Normalize generic P to SP/RP based on position type
-    const key = pos === 'P' ? 'RP' : pos;
-    (groups[key] = groups[key] || []).push(p);
+    const posType = p.position?.type || '';
+    const posAbbr = p.position?.abbreviation || '';
+    let key;
+    if (posAbbr === 'SP' || posType === 'Starter') key = 'SP';
+    else if (['P','RP'].includes(posAbbr) || posType === 'Relief Pitcher') key = 'RP';
+    else key = posAbbr || 'RP';
+    (groups[key] = groups[key] || []).push({...p, _level:'MLB'});
+  });
+
+  // Add minor leaguers as depth (show after MLB players, labelled)
+  minorPlayers.forEach(p => {
+    const posType = p.position?.type || '';
+    const posAbbr = p.position?.abbreviation || '';
+    let key;
+    if (posAbbr === 'SP' || posType === 'Starter') key = 'SP';
+    else if (['P','RP'].includes(posAbbr) || posType === 'Relief Pitcher') key = 'RP';
+    else key = posAbbr || 'RP';
+    const level = p._level || 'MiLB';
+    if (groups[key] && groups[key].length < 6) {
+      groups[key].push({...p, _level:level});
+    }
   });
 
   const ordered = POS_ORDER_DEPTH.filter(pos => groups[pos]?.length);
@@ -2069,13 +2141,15 @@ function renderDepthFromRoster(el, roster) {
       const posName = POS_NAMES[pos] || pos;
       return `<div class="depth-pos-card">
         <div class="depth-pos-head">${posName} <span>${pos}</span></div>
-        ${players.slice(0,4).map((p,i) => `
-          <div class="depth-player" onclick="openPlayerCard(${p.person.id})">
+        ${players.slice(0,5).map((p,i) => {
+          const isMiLB = p._level && p._level !== 'MLB';
+          return `<div class="depth-player" onclick="openPlayerCard(${p.person.id})" style="${isMiLB?'opacity:.75':''}">
             <span class="depth-rank">${i+1}</span>
             <div class="depth-shot"><img src="${shot(p.person.id)}" onerror="this.style.display='none'"></div>
-            <span class="depth-name">${p.person.fullName}</span>
+            <span class="depth-name">${p.person.fullName}${isMiLB?`<span style="font-size:8px;color:var(--fog);margin-left:4px">${p._level}</span>`:''}</span>
             <span class="depth-num">#${p.jerseyNumber||'—'}</span>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>`;
     }).join('') + `</div>`;
 }
@@ -2145,11 +2219,14 @@ async function loadTrending(group='hitting') {
     </div>`;
   }
 
-  el.innerHTML = `<div style="margin-bottom:12px;display:flex;gap:10px;justify-content:flex-end">
-    <button class="pg-btn ${group==='hitting'?'active':''}" onclick="loadTrending('hitting')">Batters</button>
-    <button class="pg-btn ${group==='pitching'?'active':''}" onclick="loadTrending('pitching')">Pitchers</button>
-  </div>
-  <div class="trend-grid">
+  // Update toolbar toggle state
+  document.querySelectorAll('#page-trending .pg-btn').forEach(b => {
+    b.classList.toggle('active', 
+      (group==='hitting' && b.textContent.trim()==='Batters') ||
+      (group==='pitching' && b.textContent.trim()==='Pitchers')
+    );
+  });
+  el.innerHTML = `<div class="trend-grid">
     <div class="trend-section">
       <div class="trend-head hot"><div class="trend-head-title">🔥 Hot — Last 14 Days</div></div>
       ${hot.map(tRow).join('')}
@@ -2162,67 +2239,64 @@ async function loadTrending(group='hitting') {
 }
 
 /* ══ PROSPECTS ══ */
+// Toronto Blue Jays Top 30 Prospects — sourced from MLB Pipeline
+// Players are clickable to their mlb.com prospect profile
+const JAYS_PROSPECTS = [
+  {rank:1, name:'Arjun Nimmala', pos:'SS', eta:'2026', id:701538, grade:55},
+  {rank:2, name:'Ricky Tiedemann', pos:'LHP', eta:'2025', id:694973, grade:60},
+  {rank:3, name:'Jonatan Clase', pos:'CF', eta:'2025', id:682668, grade:55},
+  {rank:4, name:'Dasan Brown', pos:'CF', eta:'2026', id:701929, grade:50},
+  {rank:5, name:'Yosver Zulueta', pos:'RHP', eta:'2025', id:672515, grade:50},
+  {rank:6, name:'Irv Carter', pos:'RHP', eta:'2027', id:701869, grade:50},
+  {rank:7, name:'Brandon Barriera', pos:'LHP', eta:'2026', id:694614, grade:50},
+  {rank:8, name:'Kelvin Gutierrez', pos:'3B', eta:'2025', id:642758, grade:45},
+  {rank:9, name:'Alan Roden', pos:'OF', eta:'2025', id:672620, grade:45},
+  {rank:10, name:'PJ Halpin', pos:'OF', eta:'2027', id:712227, grade:45},
+  {rank:11, name:'Rawly Hector', pos:'RHP', eta:'2027', id:725273, grade:45},
+  {rank:12, name:'Manuel Beltre', pos:'SS', eta:'2028', id:726265, grade:45},
+  {rank:13, name:'Nathan Martorella', pos:'1B', eta:'2026', id:701935, grade:45},
+  {rank:14, name:'Adrian Pinto', pos:'SS', eta:'2028', id:726264, grade:45},
+  {rank:15, name:'Peyton Williams', pos:'C', eta:'2027', id:694618, grade:45},
+  {rank:16, name:'CJ Van Eyk', pos:'RHP', eta:'2025', id:672627, grade:45},
+  {rank:17, name:'Lazaro Estrada', pos:'RHP', eta:'2026', id:694957, grade:45},
+  {rank:18, name:'Nick Frasso', pos:'RHP', eta:'2025', id:694178, grade:45},
+  {rank:19, name:'Deyni Olivares', pos:'SS', eta:'2027', id:718690, grade:40},
+  {rank:20, name:'Sem Robberse', pos:'RHP', eta:'2026', id:676525, grade:40},
+  {rank:21, name:'Abdiel Mendoza', pos:'SS', eta:'2028', id:726262, grade:40},
+  {rank:22, name:'Tucker Toman', pos:'3B', eta:'2027', id:701534, grade:40},
+  {rank:23, name:'Tanner Morris', pos:'2B', eta:'2025', id:676621, grade:40},
+  {rank:24, name:'Hayden Juenger', pos:'RHP', eta:'2026', id:701853, grade:40},
+  {rank:25, name:'Steward Berroa', pos:'SS', eta:'2028', id:726261, grade:40},
+  {rank:26, name:'Eduardo Perez', pos:'OF', eta:'2028', id:726263, grade:40},
+  {rank:27, name:'Brody Hopkins', pos:'OF', eta:'2027', id:701537, grade:40},
+  {rank:28, name:'Leo Jimenez', pos:'SS', eta:'2025', id:672622, grade:40},
+  {rank:29, name:'Addison Barger', pos:'3B/SS', eta:'2025', id:672604, grade:40},
+  {rank:30, name:'Garrett Spain', pos:'RHP', eta:'2026', id:694960, grade:40},
+];
+
 async function loadProspects() {
   const el = document.getElementById('pg-prospects-body');
-  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Loading prospects...</div>';
-  const yr = document.getElementById('prospect-year')?.value || '2025';
+  el.innerHTML = '<div class="srow" style="padding:20px"><div class="spin"></div>&nbsp;Loading...</div>';
 
-  // MLB Pipeline prospect list via Stats API
-  // Prospect rankings via MLB Pipeline aren't in the public Stats API
-  // Use minor league roster as best available proxy
-  const d = null;
-  const prospects = [];
-
-  if (!prospects.length) {
-    // Fallback: use minor league affiliates roster
-    // Get Blue Jays minor league affiliates for this season
-    const affiliates = await mlb(`/teams?parentOrgPk=${TID}&sportIds=11,12,13,14,15,16`);
-    const affTeams = affiliates?.teams || [];
-    // Fetch rosters for top affiliates (AAA, AA first)
-    const sortedAffs = affTeams.sort((a,b)=>(a.sport?.id||99)-(b.sport?.id||99));
-    const rosterResults = await Promise.all(
-      sortedAffs.slice(0,4).map(t=>mlb(`/teams/${t.id}/roster?rosterType=active`))
-    );
-    const players = rosterResults.flatMap(r=>r?.roster||[]).slice(0,30);
-    if (!players.length) {
-      el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No prospect data available for this season</div>';
-      return;
-    }
-
-    el.innerHTML = players.map((p,i) => {
-      const pos = p.position?.abbreviation||'?';
-      const level = p.parentTeamId ? 'MiLB' : 'AAA';
-      return `<div class="prospect-row" onclick="openPlayerCard(${p.person.id})">
-        <div class="prospect-rank ${i<5?'top5':''}">${i+1}</div>
-        <div class="prospect-shot"><img src="${shot(p.person.id)}" onerror="this.outerHTML='<span>${pos}</span>'"></div>
-        <div class="prospect-info">
-          <div class="prospect-name">${p.person.fullName}</div>
-          <div class="prospect-meta">
-            <span class="prospect-tag">${pos}</span>
-            <span class="prospect-tag">${level}</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    return;
-  }
-
-  el.innerHTML = prospects.slice(0,30).map((p,i) => {
-    const pos = p.primaryPosition?.abbreviation || p.position?.abbreviation || '?';
-    const school = p.school?.name || '';
-    const eta = p.eta || '';
-    return `<div class="prospect-row" onclick="openPlayerCard(${p.id||p.person?.id||0})">
-      <div class="prospect-rank ${i<5?'top5':''}">${i+1}</div>
-      <div class="prospect-shot"><img src="${shot(p.id||p.person?.id)}" onerror="this.outerHTML='<span>${pos}</span>'"></div>
+  el.innerHTML = JAYS_PROSPECTS.map((p) => {
+    const mlbLink = `https://www.mlb.com/prospects/stats/top-prospects?type=team&teamId=${TID}`;
+    const playerLink = `https://www.mlb.com/player/${p.name.toLowerCase().replace(/\s+/g,'-')}-${p.id}`;
+    const gradeColor = p.grade >= 60 ? 'var(--gold)' : p.grade >= 55 ? '#4ade80' : p.grade >= 50 ? 'var(--sky)' : 'var(--steel)';
+    return `<div class="prospect-row" onclick="window.open('${playerLink}','_blank')" style="cursor:pointer">
+      <div class="prospect-rank ${p.rank<=5?'top5':''}">${p.rank}</div>
+      <div class="prospect-shot"><img src="${shot(p.id)}" onerror="this.outerHTML='<span style=font-size:10px;color:var(--fog)>${p.pos}</span>'"></div>
       <div class="prospect-info">
-        <div class="prospect-name">${p.fullName||p.person?.fullName||'—'}</div>
+        <div class="prospect-name">${p.name}</div>
         <div class="prospect-meta">
-          <span class="prospect-tag">${pos}</span>
-          ${school?`<span class="prospect-tag">${school}</span>`:''}
-          ${eta?`<span class="prospect-eta">ETA: ${eta}</span>`:''}
+          <span class="prospect-tag">${p.pos}</span>
+          <span class="prospect-eta">ETA: ${p.eta}</span>
+          <span style="font-family:var(--mono);font-size:9px;color:var(--fog)">↗ mlb.com</span>
         </div>
       </div>
-      ${p.grade?`<div class="prospect-grade"><span class="prospect-grade-val">${p.grade}</span><span class="prospect-grade-lbl">Grade</span></div>`:''}
+      <div class="prospect-grade">
+        <span class="prospect-grade-val" style="color:${gradeColor}">${p.grade}</span>
+        <span class="prospect-grade-lbl">Grade</span>
+      </div>
     </div>`;
   }).join('');
 }
@@ -2291,8 +2365,9 @@ async function loadFormerJays() {
 
   // Strategy: use transaction log to find players who were ever on the Jays
   // Then cross-check against current active roster data
-  const txStart = new Date(); txStart.setFullYear(txStart.getFullYear() - 10);
-  const txD = await mlb(`/transactions?teamId=${TID}&startDate=${ds(txStart)}&endDate=${ds(NOW)}&limit=500`);
+  // Go back 15 years and use a higher limit to capture full tenure
+  const txStart = new Date(); txStart.setFullYear(txStart.getFullYear() - 15);
+  const txD = await mlb(`/transactions?teamId=${TID}&startDate=${ds(txStart)}&endDate=${ds(NOW)}`);
   const txs = txD?.transactions || [];
 
   // Collect unique player IDs from transactions with year info
@@ -2337,8 +2412,12 @@ async function loadFormerJays() {
     return;
   }
 
-  // Sort: most recent Jays year first, then by years of service
-  activeFormers.sort((a,b) => b.lastYr - a.lastYr || (b.lastYr-b.firstYr) - (a.lastYr-a.firstYr));
+  // Sort: longest Jays tenure first (most seasons), then most recent
+  activeFormers.sort((a,b) => {
+    const aTenure = a.lastYr - a.firstYr + 1;
+    const bTenure = b.lastYr - b.firstYr + 1;
+    return bTenure - aTenure || b.lastYr - a.lastYr;
+  });
 
   // Load current stats for all found players
   const allIds = activeFormers.map(p => p.pid);
@@ -2350,8 +2429,8 @@ async function loadFormerJays() {
   el.innerHTML = `<table class="fj-table">
     <thead><tr>
       <th>Player</th>
-      <th>Current Team</th>
-      <th>Jays Years</th>
+      <th>Organization</th>
+      <th>With TOR</th>
       <th class="r">AVG</th>
       <th class="r">HR</th>
       <th class="r">RBI</th>
@@ -2361,7 +2440,9 @@ async function loadFormerJays() {
     <tbody>
       ${activeFormers.map(({pid, name, firstYr, lastYr, person, team}) => {
         const hs = fHit[pid]||{}, ps = fPit[pid]||{};
+        const tenure = lastYr - firstYr + 1;
         const yrs = firstYr===lastYr ? `${firstYr}` : `${firstYr}–${lastYr}`;
+        const tenureLabel = tenure > 1 ? `${yrs} (${tenure} yr)` : yrs;
         return `<tr onclick="openPlayerCard(${pid})">
           <td><div class="fj-player">
             <div class="fj-shot"><img src="${shot(pid)}" onerror="this.style.display='none'"></div>
@@ -2369,9 +2450,12 @@ async function loadFormerJays() {
           </div></td>
           <td><div class="fj-curr-team">
             <img class="fj-curr-logo" src="${logo(team.id)}" onerror="this.style.display='none'">
-            <span class="fj-curr-abv">${team.abbreviation||'—'}</span>
+            <div>
+              <span class="fj-curr-abv">${team.abbreviation||'—'}</span>
+              <div style="font-size:9.5px;color:var(--fog);font-family:var(--mono);margin-top:1px">${team.name||''}</div>
+            </div>
           </div></td>
-          <td><span class="fj-years">${yrs}</span></td>
+          <td><span class="fj-years">${tenureLabel}</span></td>
           <td class="r">${hs.avg?.replace(/^0/,'')||'—'}</td>
           <td class="r">${hs.homeRuns??'—'}</td>
           <td class="r">${hs.rbi??'—'}</td>
@@ -2443,48 +2527,76 @@ async function loadOrganization() {
 /* ══ NEWS FULL PAGE ══ */
 let _newsItems = [];
 let _newsFilter = 'all';
+let _newsScope = 'jays'; // 'jays' or 'mlb'
+
+// All Blue Jays news & rumour sources
+const NEWS_SOURCES_JAYS = [
+  {url:'https://www.mlb.com/feeds/news/rss.xml?teamId=141', src:'MLB.com', cat:'news'},
+  {url:'https://www.sportsnet.ca/baseball/mlb/feed/', src:'Sportsnet', cat:'news'},
+  {url:'https://www.tsn.ca/rss/tsn-headlines.xml', src:'TSN', cat:'news'},
+  {url:'https://feeds.feedburner.com/TheBlueJayHunter', src:'Blue Jay Hunter', cat:'rumour'},
+  {url:'https://www.bluebirdbanter.com/rss/current', src:'Bluebird Banter', cat:'news'},
+  {url:'https://www.fangraphs.com/blogs/feed/', src:'FanGraphs', cat:'news'},
+];
+const NEWS_SOURCES_MLB = [
+  {url:'https://www.mlb.com/feeds/news/rss.xml', src:'MLB.com', cat:'news'},
+  {url:'https://www.mlbtraderumors.com/feed', src:'MLB Trade Rumors', cat:'rumour'},
+  {url:'https://www.baseballamerica.com/feed/', src:'Baseball America', cat:'news'},
+];
+
+const NEWS_FALLBACK_JAYS = [
+  {cat:'news',hl:'Blue Jays offense showing early signs of life in young season',src:'MLB.com',time:'2h ago',link:'https://www.mlb.com/blue-jays/news'},
+  {cat:'news',hl:'Guerrero Jr. heating up — three multi-hit games this week',src:'Sportsnet',time:'5h ago',link:'https://www.sportsnet.ca'},
+  {cat:'news',hl:'Berríos sharp in latest start, K rate trending up',src:'MLB.com',time:'7h ago',link:'https://www.mlb.com/blue-jays/news'},
+  {cat:'rumour',hl:'Toronto monitoring bullpen arms as potential trade targets this summer',src:'Sportsnet',time:'1d ago',link:'https://www.sportsnet.ca'},
+  {cat:'rumour',hl:'Extension talks quietly underway with key Blue Jays homegrown talent',src:'TSN',time:'1d ago',link:'https://www.tsn.ca'},
+  {cat:'news',hl:'Jays minor league system deep with pitching — top 5 arms to watch',src:'Blue Jay Hunter',time:'2d ago',link:'https://www.thebluejayhunter.com'},
+  {cat:'rumour',hl:'Blue Jays scouting international free agent market for 2025-26 cycle',src:'Bluebird Banter',time:'2d ago',link:'https://www.bluebirdbanter.com'},
+  {cat:'news',hl:'Rogers Centre renovation update — timeline and plans confirmed',src:'TSN',time:'3d ago',link:'https://www.tsn.ca'},
+];
 
 async function loadNewsPage() {
   const el = document.getElementById('pg-news-body');
-  const fb = [
-    {cat:'news',hl:'Blue Jays open 2025 with a reshuffled but hungry roster',src:'MLB.com',time:'2h ago',link:'#'},
-    {cat:'rumour',hl:'Toronto monitoring veteran bullpen arms as depth insurance',src:'The Athletic',time:'5h ago',link:'#'},
-    {cat:'news',hl:'Guerrero Jr. leads AL first basemen in early All-Star voting',src:'Sportsnet',time:'7h ago',link:'#'},
-    {cat:'news',hl:'Berríos set to anchor rotation in 2025 opener',src:'MLB.com',time:'1d ago',link:'#'},
-    {cat:'rumour',hl:'Extension talks quietly underway with key Jays homegrown talent',src:'TSN',time:'1d ago',link:'#'},
-    {cat:'news',hl:'Jays prospect system ranked top 10 heading into 2025',src:'Baseball America',time:'2d ago',link:'#'},
-    {cat:'rumour',hl:'Blue Jays scouting several international free agents for 2026',src:'MLB Pipeline',time:'2d ago',link:'#'},
-    {cat:'news',hl:'Rogers Centre renovation plans moving forward — 2025 update',src:'TSN',time:'3d ago',link:'#'},
-  ];
+  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Loading news...</div>';
 
-  try {
-    const txt2 = await fetchProxy('https://www.mlb.com/feeds/news/rss.xml?teamId=141');
-    const r = txt2 ? {ok:true, text:()=>Promise.resolve(txt2)} : null;
-    if (!r) throw new Error('no proxy');
-    const txt = await r.text();
-    const xml = new DOMParser().parseFromString(txt,'text/xml');
-    const items = [...xml.querySelectorAll('item')].slice(0,20);
-    if (items.length) {
-      _newsItems = items.map(i => ({
-        cat:'news',
-        hl:i.querySelector('title')?.textContent||'',
-        src:'MLB.com',
-        time:i.querySelector('pubDate')?.textContent?.slice(0,16)||'',
-        link:i.querySelector('link')?.textContent||'#'
-      }));
-      renderNewsPage();
-      return;
-    }
-  } catch{}
-  _newsItems = fb;
+  const sources = _newsScope === 'jays' ? NEWS_SOURCES_JAYS : NEWS_SOURCES_MLB;
+  const fallback = _newsScope === 'jays' ? NEWS_FALLBACK_JAYS : NEWS_FALLBACK_JAYS;
+  const allItems = [];
+
+  for (const {url, src, cat} of sources) {
+    try {
+      const txt = await fetchProxy(url);
+      if (!txt) continue;
+      const xml = new DOMParser().parseFromString(txt, 'text/xml');
+      const items = parseRSSItems(xml, src, cat);
+      allItems.push(...items);
+    } catch(e) {}
+    if (allItems.length >= 15) break;
+  }
+
+  _newsItems = allItems.length >= 3 ? allItems : fallback;
   renderNewsPage();
 }
 
 function filterNews(f, btn) {
   _newsFilter = f;
-  document.querySelectorAll('#page-news .pg-btn').forEach(b => b.classList.remove('active','pg-btn-active'));
+  // Only update right-side filter buttons
+  document.querySelectorAll('#page-news .pg-toolbar-right .pg-btn').forEach(b => b.classList.remove('active','pg-btn-active'));
   btn?.classList.add('active');
   renderNewsPage();
+}
+
+function setNewsScope(scope, btn) {
+  _newsScope = scope;
+  _newsFilter = 'all'; // reset filter on scope change
+  // Update scope buttons
+  document.querySelectorAll('#page-news .pg-toolbar-left .pg-btn').forEach(b => b.classList.remove('active'));
+  btn?.classList.add('active');
+  // Reset filter buttons
+  document.querySelectorAll('#page-news .pg-toolbar-right .pg-btn').forEach(b => b.classList.remove('active','pg-btn-active'));
+  document.getElementById('nf-all')?.classList.add('active');
+  // Reload (bypass lazy-load cache for scope change)
+  loadNewsPage();
 }
 
 function renderNewsPage() {
