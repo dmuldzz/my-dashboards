@@ -872,8 +872,11 @@ body{font-family:var(--sans);background:var(--midnight);color:var(--ice);min-hei
   <!-- ── FORMER JAYS PAGE ── -->
   <div id="page-formerjays" class="page">
     <div class="pg-toolbar">
-      <div class="pg-toolbar-left"><span class="pg-label">FORMER BLUE JAYS — ACTIVE IN MLB</span></div>
-      <div class="pg-toolbar-right" style="font-family:var(--mono);font-size:10px;color:var(--fog)">Sorted by games played with TOR</div>
+      <div class="pg-toolbar-left">
+        <button class="pg-btn active" id="fj-mlb" onclick="setFJScope('mlb',this)">MLB Rosters</button>
+        <button class="pg-btn" id="fj-milb" onclick="setFJScope('milb',this)">MiLB / Minors</button>
+      </div>
+      <div class="pg-toolbar-right" style="font-family:var(--mono);font-size:10px;color:var(--fog)">Click column headers to sort</div>
     </div>
     <div id="pg-formerjays-body" class="pg-body"><div class="srow" style="padding:60px"><div class="spin"></div>&nbsp;Loading...</div></div>
   </div>
@@ -1122,15 +1125,28 @@ const PG={C:'Catchers','1B':'Infielders','2B':'Infielders','3B':'Infielders',SS:
 const PO={C:0,'1B':1,'2B':2,'3B':3,SS:4,LF:5,CF:6,RF:7,OF:8,DH:9};
 
 async function loadRoster(){
-  const[active,inj]=await Promise.all([
+  // Fetch active roster + 40Man roster (which includes IL players with statusCode)
+  const[active,fortyMan]=await Promise.all([
     mlb(`/teams/${TID}/roster?rosterType=active`),
-    mlb(`/teams/${TID}/roster?rosterType=injuries`)
+    mlb(`/teams/${TID}/roster?rosterType=40Man`)
   ]);
   const all=active?.roster||[];
   const pp=new Set(['P','SP','RP']);
   BAT=all.filter(p=>!pp.has(p.position?.abbreviation));
   PIT=all.filter(p=>pp.has(p.position?.abbreviation));
-  IL=inj?.roster||[];
+  // IL players: on 40Man roster with statusCode starting with "IL"
+  const forty = fortyMan?.roster||[];
+  IL=forty.filter(p=>{
+    const sc = p.status?.code || p.statusCode || '';
+    return sc.toString().toUpperCase().startsWith('IL') || sc.toString().toUpperCase().includes('IL');
+  });
+  // If statusCode filter yields nothing, try status description
+  if(!IL.length){
+    IL=forty.filter(p=>{
+      const desc = (p.status?.description||'').toLowerCase();
+      return desc.includes('injured list') || desc.includes('il') || desc.includes('disabled');
+    });
+  }
   // Fetch stats individually (parallel) to avoid broken hydrate encoding through proxies
   const[bs,ps]=await Promise.all([
     loadStatsBatch(BAT.map(p=>p.person.id),'hitting'),
@@ -1231,10 +1247,19 @@ function showIL(){
   const el=document.getElementById('roster');
   if(!IL.length){el.innerHTML='<div class="srow" style="color:var(--fog)">No players on IL</div>';return;}
   el.innerHTML=IL.map(p=>{
-    // injuries roster returns players whose statusCode indicates IL placement
-    // Build IL type label from status description or roster note
-    const raw = p.status?.description || p.statusDescription || '';
-    const tag = raw.includes('Day') ? raw.replace(' Injured List','d IL').replace('10 Day','10d').replace('15 Day','15d').replace('60 Day','60d') : raw || 'IL';
+    // Build IL label from statusCode first (most reliable), then description
+    const sc = (p.status?.code||p.statusCode||'').toString().toUpperCase();
+    let tag = 'IL';
+    if(sc==='IL10'||sc.includes('10')) tag='10d IL';
+    else if(sc==='IL15'||sc.includes('15')) tag='15d IL';
+    else if(sc==='IL60'||sc.includes('60')) tag='60d IL';
+    else {
+      const desc = p.status?.description||'';
+      if(desc.includes('10')) tag='10d IL';
+      else if(desc.includes('15')) tag='15d IL';
+      else if(desc.includes('60')) tag='60d IL';
+      else if(desc) tag=desc.replace(' Day Injured List','d IL').replace('Injured List','IL').trim()||'IL';
+    }
     const dt = p.statusDate ? new Date(p.statusDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
     const pos = p.position?.abbreviation || '';
     return`<div class="il-row" onclick="openPlayerCard(${p.person.id},'${pos}')">
@@ -1265,9 +1290,14 @@ async function loadTx(){
 /* ── NEWS ── */
 // RSS sources for dashboard news widget (Blue Jays focused)
 const JAYS_RSS_SOURCES = [
-  {url:'https://www.mlb.com/feeds/news/rss.xml?teamId=141', src:'MLB.com', cat:'news'},
-  {url:'https://www.sportsnet.ca/baseball/mlb/feed/', src:'Sportsnet', cat:'news'},
-  {url:'https://feeds.feedburner.com/TheBlueJayHunter', src:'Blue Jay Hunter', cat:'rumour'},
+  {url:'https://www.mlb.com/feeds/news/rss.xml?teamId=141',              src:'MLB.com',          cat:'news'},
+  {url:'https://bluejaysnation.com/feed',                                 src:'Blue Jays Nation',  cat:'news'},
+  {url:'https://www.mlbtraderumors.com/toronto-blue-jays/feed',           src:'MLB Trade Rumors',  cat:'rumour'},
+  {url:'https://jaysjournal.com/feed',                                    src:'Jays Journal',      cat:'rumour'},
+  {url:'https://www.bluebirdbanter.com/rss/current',                      src:'Bluebird Banter',   cat:'news'},
+  {url:'https://www.sportsnet.ca/baseball/mlb/feed/',                     src:'Sportsnet',         cat:'news'},
+  {url:'https://bluejayhunter.com/feed',                                  src:'Blue Jay Hunter',   cat:'rumour'},
+  {url:'https://torontosun.com/category/sports/baseball/feed/',           src:'Toronto Sun',       cat:'news'},
 ];
 
 function parseRSSItems(xml, src, cat) {
@@ -1927,11 +1957,20 @@ async function loadRosterPage() {
     html += '</div>';
   }
 
-  // IL
-  if (il.length) {
+  // IL — filter to only actual IL players using statusCode
+  const ilOnly = il.filter(p=>{
+    const sc=(p.status?.code||p.statusCode||'').toString().toUpperCase();
+    return sc.startsWith('IL')||sc.includes('IL')||(p.status?.description||'').toLowerCase().includes('injured list');
+  });
+  if (ilOnly.length) {
     html += `<div class="rp-section"><div class="rp-section-head">Injured List</div>`;
-    il.forEach(p => {
-      const tag = (p.status?.description||'IL').replace(' Day Injured List','d IL');
+    ilOnly.forEach(p => {
+      const sc=(p.status?.code||p.statusCode||'').toString().toUpperCase();
+      let ilTag='IL';
+      if(sc.includes('10')||(p.status?.description||'').includes('10')) ilTag='10d IL';
+      else if(sc.includes('15')||(p.status?.description||'').includes('15')) ilTag='15d IL';
+      else if(sc.includes('60')||(p.status?.description||'').includes('60')) ilTag='60d IL';
+      const tag = ilTag;
       const dt = p.statusDate ? new Date(p.statusDate).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
       html += `<div class="rp-row" onclick="openPlayerCard(${p.person.id})">
         <span class="rp-num">${p.jerseyNumber||''}</span>
@@ -1945,6 +1984,7 @@ async function loadRosterPage() {
   }
 
   html += '</div>';
+  if(!all.length && !ilOnly?.length) { el.innerHTML='<div class="srow" style="padding:40px;color:var(--fog)">Roster unavailable</div>'; return; }
   el.innerHTML = html;
 }
 
@@ -2359,18 +2399,28 @@ async function loadHistory() {
 }
 
 /* ══ FORMER JAYS ══ */
+// Both scopes show players OUTSIDE the Jays org entirely:
+//   MLB scope  → on another MLB team's active/40-man roster
+//   MiLB scope → in another org's minor league system
+let _fjScope = 'mlb';
+let _fjData = null;      // cached {mlb:[], milb:[]}
+let _fjSortCol = 'tenure';
+let _fjSortDir = -1;     // -1 = desc, 1 = asc
+let _fjHit = {}, _fjPit = {};
+
+// ALL Jays affiliate team IDs — used to exclude anyone still in the org
+const JAYS_ORG_IDS = new Set([141, 572, 559, 579, 3527]);
+// 141 = Blue Jays MLB, 572 = Buffalo AAA, 559 = NH AA, 579 = Vancouver Hi-A, 3527 = Dunedin A
+
 async function loadFormerJays() {
   const el = document.getElementById('pg-formerjays-body');
-  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Building alumni list from transactions...</div>';
+  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Loading transactions...</div>';
 
-  // Strategy: use transaction log to find players who were ever on the Jays
-  // Then cross-check against current active roster data
-  // Go back 15 years and use a higher limit to capture full tenure
+  // ── STEP 1: Transaction history → who has ever been a Jay ──
   const txStart = new Date(); txStart.setFullYear(txStart.getFullYear() - 15);
   const txD = await mlb(`/transactions?teamId=${TID}&startDate=${ds(txStart)}&endDate=${ds(NOW)}`);
   const txs = txD?.transactions || [];
 
-  // Collect unique player IDs from transactions with year info
   const formerIdMap = {};
   txs.forEach(tx => {
     const pid = tx.person?.id;
@@ -2391,70 +2441,159 @@ async function loadFormerJays() {
     return;
   }
 
-  // Check which candidates are currently active in MLB (not on Jays)
-  // Use the people endpoint in batches of 20
+  // ── STEP 2: Look up current status for all candidates ──
+  // /people endpoint returns active flag + currentTeam for each person
+  el.innerHTML = '<div class="srow" style="padding:40px"><div class="spin"></div>&nbsp;Checking current rosters...</div>';
+
   const chunks = [];
   for (let i = 0; i < candidateIds.length; i += 20) chunks.push(candidateIds.slice(i, i+20));
 
-  const activeFormers = [];
+  const allPeople = [];
   for (const chunk of chunks) {
     const pD = await mlb(`/people?personIds=${chunk.join(',')}&hydrate=currentTeam`);
-    (pD?.people || []).forEach(p => {
-      if (p.active && p.currentTeam?.id && p.currentTeam.id !== TID) {
-        const info = formerIdMap[p.id];
-        if (info) activeFormers.push({...info, person: p, team: p.currentTeam});
-      }
-    });
+    (pD?.people || []).forEach(p => allPeople.push(p));
   }
 
-  if (!activeFormers.length) {
-    el.innerHTML = '<div class="srow" style="padding:40px;color:var(--fog)">No former Jays currently active in MLB found</div>';
+  // ── STEP 3: Split into MLB vs MiLB buckets, excluding anyone in the Jays org ──
+  // MLB:  active, on a known MLB team (sportId=1), NOT a Jays org team
+  // MiLB: active, currentTeam exists but is a minor league team, NOT a Jays affiliate
+  const mlbFormers = [];
+  const milbFormers = [];
+
+  allPeople.forEach(p => {
+    if (!p.active) return;
+    const teamId = p.currentTeam?.id;
+    const sportId = p.currentTeam?.sport?.id ?? p.currentTeam?.sportId;
+    const info = formerIdMap[p.id];
+    if (!info) return;
+
+    // Hard exclude: anyone whose current team is in the Jays org
+    if (JAYS_ORG_IDS.has(teamId)) return;
+
+    const entry = {
+      ...info,
+      pid: p.id,
+      name: p.fullName || info.name,
+      team: p.currentTeam,
+    };
+
+    // Determine if MLB (sport=1) or MiLB (sport=11/12/13/14/15/16)
+    const isMLB = sportId === 1 || p.currentTeam?.sport?.name === 'Major League Baseball';
+    const isMiLB = !isMLB && teamId && (sportId >= 11 || p.currentTeam?.sport?.name?.includes('League'));
+
+    if (isMLB) mlbFormers.push(entry);
+    else if (isMiLB) milbFormers.push(entry);
+    // If sportId is unknown but team exists and not Jays org, put in MLB as best guess
+    else if (teamId && !isMLB) mlbFormers.push(entry);
+  });
+
+  _fjData = {mlb: mlbFormers, milb: milbFormers};
+
+  // ── STEP 4: Load stats for visible players ──
+  const statIds = [...new Set([
+    ...mlbFormers.slice(0,30).map(p=>p.pid),
+    ...milbFormers.slice(0,20).map(p=>p.pid),
+  ])];
+  const [fHit, fPit] = await Promise.all([
+    loadStatsBatch(statIds, 'hitting'),
+    loadStatsBatch(statIds, 'pitching')
+  ]);
+  _fjHit = fHit;
+  _fjPit = fPit;
+
+  renderFJTable();
+}
+
+function setFJScope(scope, btn) {
+  _fjScope = scope;
+  document.querySelectorAll('#page-formerjays .pg-toolbar-left .pg-btn').forEach(b=>b.classList.remove('active'));
+  btn?.classList.add('active');
+  renderFJTable();
+}
+
+function fjSort(col) {
+  if (_fjSortCol === col) _fjSortDir *= -1;
+  else { _fjSortCol = col; _fjSortDir = -1; }
+  renderFJTable();
+}
+
+function renderFJTable() {
+  const el = document.getElementById('pg-formerjays-body');
+  if (!_fjData) { el.innerHTML='<div class="srow" style="color:var(--fog);padding:40px">Loading...</div>'; return; }
+
+  const rows = _fjScope === 'mlb' ? _fjData.mlb : _fjData.milb;
+  if (!rows.length) {
+    el.innerHTML = `<div class="srow" style="padding:40px;color:var(--fog)">No former Jays found on ${_fjScope==='mlb'?'MLB':'MiLB'} rosters</div>`;
     return;
   }
 
-  // Sort: longest Jays tenure first (most seasons), then most recent
-  activeFormers.sort((a,b) => {
-    const aTenure = a.lastYr - a.firstYr + 1;
-    const bTenure = b.lastYr - b.firstYr + 1;
-    return bTenure - aTenure || b.lastYr - a.lastYr;
+  // Sort
+  const sorted = [...rows].sort((a,b) => {
+    let va, vb;
+    const hs_a = _fjHit[a.pid]||{}, hs_b = _fjHit[b.pid]||{};
+    const ps_a = _fjPit[a.pid]||{}, ps_b = _fjPit[b.pid]||{};
+    switch(_fjSortCol) {
+      case 'name':    va=a.name; vb=b.name; return _fjSortDir*(va<vb?-1:va>vb?1:0);
+      case 'tenure':  va=a.lastYr-a.firstYr; vb=b.lastYr-b.firstYr; break;
+      case 'lastYr':  va=a.lastYr; vb=b.lastYr; break;
+      case 'avg':     va=parseFloat(hs_a.avg||0); vb=parseFloat(hs_b.avg||0); break;
+      case 'hr':      va=hs_a.homeRuns||0; vb=hs_b.homeRuns||0; break;
+      case 'rbi':     va=hs_a.rbi||0; vb=hs_b.rbi||0; break;
+      case 'ops':     va=parseFloat(hs_a.ops||0); vb=parseFloat(hs_b.ops||0); break;
+      case 'era':     va=parseFloat(ps_a.era||99); vb=parseFloat(ps_b.era||99);
+                      return _fjSortDir*(va-vb)*-1; // lower ERA is better
+      default:        va=a.lastYr-a.firstYr; vb=b.lastYr-b.firstYr;
+    }
+    return _fjSortDir*(vb-va);
   });
 
-  // Load current stats for all found players
-  const allIds = activeFormers.map(p => p.pid);
-  const [fHit, fPit] = await Promise.all([
-    loadStatsBatch(allIds.slice(0,20), 'hitting'),
-    loadStatsBatch(allIds.slice(0,20), 'pitching')
-  ]);
+  // Column header helper
+  const th = (col, label, right=false) => {
+    const active = _fjSortCol===col;
+    const arrow = active ? (_fjSortDir===-1?' ↓':' ↑') : '';
+    return `<th class="${right?'r':''}" onclick="fjSort('${col}')" style="cursor:pointer;user-select:none;white-space:nowrap${active?';color:var(--ice)':''}">${label}${arrow}</th>`;
+  };
+
+  const isMiLB = _fjScope === 'milb';
 
   el.innerHTML = `<table class="fj-table">
     <thead><tr>
-      <th>Player</th>
-      <th>Organization</th>
-      <th>With TOR</th>
-      <th class="r">AVG</th>
-      <th class="r">HR</th>
-      <th class="r">RBI</th>
-      <th class="r">OPS</th>
-      <th class="r">ERA</th>
+      ${th('name','Player')}
+      ${isMiLB ? '<th>Level</th>' : th('lastYr','Organization')}
+      ${th('tenure','With TOR')}
+      ${th('avg','AVG',true)}
+      ${th('hr','HR',true)}
+      ${th('rbi','RBI',true)}
+      ${th('ops','OPS',true)}
+      ${th('era','ERA',true)}
     </tr></thead>
     <tbody>
-      ${activeFormers.map(({pid, name, firstYr, lastYr, person, team}) => {
-        const hs = fHit[pid]||{}, ps = fPit[pid]||{};
+      ${sorted.map(row => {
+        const {pid, name, firstYr, lastYr} = row;
+        const hs = _fjHit[pid]||{}, ps = _fjPit[pid]||{};
         const tenure = lastYr - firstYr + 1;
         const yrs = firstYr===lastYr ? `${firstYr}` : `${firstYr}–${lastYr}`;
-        const tenureLabel = tenure > 1 ? `${yrs} (${tenure} yr)` : yrs;
+        const tenureLabel = tenure > 1 ? `${yrs} (${tenure}yr)` : yrs;
+
+        const teamCell = isMiLB
+          ? `<td><div style="display:flex;flex-direction:column;gap:2px">
+               <span style="font-family:var(--mono);font-size:11px;color:var(--sky)">${row.level||'MiLB'}</span>
+               <span style="font-size:10px;color:var(--fog)">${row.affName||''}</span>
+             </div></td>`
+          : `<td><div class="fj-curr-team">
+               <img class="fj-curr-logo" src="${logo(row.team?.id)}" onerror="this.style.display='none'">
+               <div>
+                 <span class="fj-curr-abv">${row.team?.abbreviation||'—'}</span>
+                 <div style="font-size:9.5px;color:var(--fog);font-family:var(--mono);margin-top:1px">${row.team?.name||''}</div>
+               </div>
+             </div></td>`;
+
         return `<tr onclick="openPlayerCard(${pid})">
           <td><div class="fj-player">
             <div class="fj-shot"><img src="${shot(pid)}" onerror="this.style.display='none'"></div>
             <span class="fj-name">${name}</span>
           </div></td>
-          <td><div class="fj-curr-team">
-            <img class="fj-curr-logo" src="${logo(team.id)}" onerror="this.style.display='none'">
-            <div>
-              <span class="fj-curr-abv">${team.abbreviation||'—'}</span>
-              <div style="font-size:9.5px;color:var(--fog);font-family:var(--mono);margin-top:1px">${team.name||''}</div>
-            </div>
-          </div></td>
+          ${teamCell}
           <td><span class="fj-years">${tenureLabel}</span></td>
           <td class="r">${hs.avg?.replace(/^0/,'')||'—'}</td>
           <td class="r">${hs.homeRuns??'—'}</td>
@@ -2531,12 +2670,16 @@ let _newsScope = 'jays'; // 'jays' or 'mlb'
 
 // All Blue Jays news & rumour sources
 const NEWS_SOURCES_JAYS = [
-  {url:'https://www.mlb.com/feeds/news/rss.xml?teamId=141', src:'MLB.com', cat:'news'},
-  {url:'https://www.sportsnet.ca/baseball/mlb/feed/', src:'Sportsnet', cat:'news'},
-  {url:'https://www.tsn.ca/rss/tsn-headlines.xml', src:'TSN', cat:'news'},
-  {url:'https://feeds.feedburner.com/TheBlueJayHunter', src:'Blue Jay Hunter', cat:'rumour'},
-  {url:'https://www.bluebirdbanter.com/rss/current', src:'Bluebird Banter', cat:'news'},
-  {url:'https://www.fangraphs.com/blogs/feed/', src:'FanGraphs', cat:'news'},
+  {url:'https://www.mlb.com/feeds/news/rss.xml?teamId=141',              src:'MLB.com',          cat:'news'},
+  {url:'https://bluejaysnation.com/feed',                                 src:'Blue Jays Nation',  cat:'news'},
+  {url:'https://www.mlbtraderumors.com/toronto-blue-jays/feed',           src:'MLB Trade Rumors',  cat:'rumour'},
+  {url:'https://jaysjournal.com/feed',                                    src:'Jays Journal',      cat:'rumour'},
+  {url:'https://www.bluebirdbanter.com/rss/current',                      src:'Bluebird Banter',   cat:'news'},
+  {url:'https://www.sportsnet.ca/baseball/mlb/feed/',                     src:'Sportsnet',         cat:'news'},
+  {url:'https://bluejayhunter.com/feed',                                  src:'Blue Jay Hunter',   cat:'rumour'},
+  {url:'https://torontosun.com/category/sports/baseball/feed/',           src:'Toronto Sun',       cat:'news'},
+  {url:'https://jaysinthehouse.com/feeds/posts/default',                  src:'Jays in the House', cat:'news'},
+  {url:'https://www.fangraphs.com/blogs/feed/',                           src:'FanGraphs',         cat:'news'},
 ];
 const NEWS_SOURCES_MLB = [
   {url:'https://www.mlb.com/feeds/news/rss.xml', src:'MLB.com', cat:'news'},
