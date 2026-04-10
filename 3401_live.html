@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3401</title>
+<title>3401 · V4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -719,6 +719,141 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .ghost-word.lit{color:rgba(255,255,255,0.55);}
 .ghost-sub{font-family:var(--mono);font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:rgba(255,255,255,0.08);margin-top:16px;}
 
+/* ===== AI MORNING COMMANDER ===== */
+#sec-morning{background:var(--bg);}
+#sec-morning .sec-close{color:var(--brown3);}
+.morning-layout{max-width:620px;margin:0 auto;padding:60px 44px;overflow-y:auto;height:100%;}
+.morning-phase{font-family:var(--mono);font-size:8px;letter-spacing:0.4em;text-transform:uppercase;color:var(--amber-dim);margin-bottom:22px;}
+.morning-q{font-family:var(--serif);font-size:28px;font-weight:300;color:var(--esp);line-height:1.35;margin-bottom:22px;}
+.morning-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px;color:var(--esp);font-family:var(--serif);font-size:15px;font-weight:300;outline:none;resize:none;min-height:90px;transition:border-color 0.2s;line-height:1.6;}
+.morning-input:focus{border-color:var(--amber);}
+.morning-checklist{display:flex;flex-direction:column;gap:10px;margin-bottom:22px;}
+.morning-check{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:all 0.2s;}
+.morning-check:hover{border-color:var(--amber-dim);}
+.morning-check.done{border-color:var(--success);background:rgba(46,110,56,0.05);}
+.morning-check-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:11px;}
+.morning-check.done .morning-check-box{background:var(--success);border-color:var(--success);color:#fff;}
+.morning-check-lbl{font-family:var(--sans);font-size:14px;font-weight:300;color:var(--esp);}
+.morning-check-streak{font-family:var(--mono);font-size:9px;color:var(--amber);margin-left:auto;}
+.morning-ai-response{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:20px;position:relative;}
+.morning-ai-label{font-family:var(--mono);font-size:7px;letter-spacing:0.35em;text-transform:uppercase;color:var(--amber);margin-bottom:12px;}
+.morning-ai-text{font-family:var(--serif);font-size:15px;font-weight:300;color:var(--brown2);line-height:1.75;font-style:italic;}
+.morning-ai-thinking{display:flex;gap:5px;align-items:center;padding:8px 0;}
+.morning-ai-dot{width:5px;height:5px;border-radius:50%;background:var(--amber-dim);animation:aiDot 1.2s ease infinite;}
+.morning-ai-dot:nth-child(2){animation-delay:0.2s;}
+.morning-ai-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes aiDot{0%,100%{opacity:0.3;transform:scale(0.8);}50%{opacity:1;transform:scale(1.2);}}
+.morning-nav{display:flex;gap:10px;margin-top:20px;}
+.morning-streak-row{display:flex;gap:18px;margin-bottom:28px;flex-wrap:wrap;}
+.morning-streak-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 16px;display:flex;align-items:center;gap:8px;}
+.morning-streak-val{font-family:var(--mono);font-size:12px;color:var(--amber);}
+.morning-streak-lbl{font-family:var(--mono);font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:var(--brown3);}
+
+/* ===== TRADE JOURNAL ===== */
+#sec-trade{background:var(--bg);}
+#sec-trade .sec-close{color:var(--brown3);}
+.trade-layout{display:grid;grid-template-columns:1fr 340px;gap:0;height:100%;}
+.trade-main{padding:52px 36px;overflow-y:auto;border-right:1px solid var(--border);}
+.trade-sidebar{padding:52px 28px;overflow-y:auto;}
+.trade-form-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:18px;}
+.trade-form-title{font-family:var(--mono);font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:var(--brown3);margin-bottom:14px;}
+.trade-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.trade-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.trade-ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:16px;display:none;}
+.trade-ai-panel.show{display:block;}
+.trade-ai-verdict{font-family:var(--mono);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;}
+.trade-ai-verdict.pass{color:var(--success);}
+.trade-ai-verdict.warn{color:var(--warn);}
+.trade-ai-verdict.fail{color:var(--danger);}
+.trade-ai-feedback{font-family:var(--serif);font-size:14px;font-weight:300;color:var(--brown2);line-height:1.7;font-style:italic;}
+.trade-history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color 0.2s;}
+.trade-history-item:hover{border-color:var(--border2);}
+.trade-history-item.win{border-left:3px solid var(--success);}
+.trade-history-item.loss{border-left:3px solid var(--danger);}
+.trade-history-item.open{border-left:3px solid var(--amber);}
+.trade-hi-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.trade-hi-ticker{font-family:var(--mono);font-size:13px;color:var(--esp);font-weight:400;}
+.trade-hi-outcome{font-family:var(--mono);font-size:10px;}
+.trade-hi-outcome.win{color:var(--success);}
+.trade-hi-outcome.loss{color:var(--danger);}
+.trade-hi-outcome.open{color:var(--amber);}
+.trade-hi-thesis{font-family:var(--serif);font-size:12px;font-weight:300;color:var(--brown3);font-style:italic;line-height:1.5;}
+.trade-hi-meta{font-family:var(--mono);font-size:8px;color:var(--brown3);margin-top:6px;display:flex;gap:12px;}
+.trade-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.trade-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;}
+.trade-stat-val{font-family:var(--serif);font-size:24px;font-weight:300;color:var(--amber);line-height:1;}
+.trade-stat-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.16em;text-transform:uppercase;color:var(--brown3);margin-top:4px;}
+.trade-pattern-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;}
+.trade-pattern-lbl{font-family:var(--mono);font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--brown3);margin-bottom:4px;}
+.trade-pattern-val{font-family:var(--serif);font-size:13px;font-weight:300;color:var(--brown2);font-style:italic;line-height:1.5;}
+textarea.input{resize:vertical;min-height:70px;font-family:var(--serif);font-size:13px;line-height:1.6;}
+
+/* ===== SMART REVIEW (AI-enhanced) ===== */
+.rv-ai-section{background:var(--surface);border:1px solid var(--amber-dim);border-radius:var(--r);padding:18px;margin-top:16px;}
+.rv-ai-label{font-family:var(--mono);font-size:7px;letter-spacing:0.35em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;}
+.rv-ai-content{font-family:var(--serif);font-size:14px;font-weight:300;color:var(--brown2);line-height:1.75;font-style:italic;}
+.rv-streak-alert{background:rgba(139,48,32,0.07);border:1px solid rgba(139,48,32,0.15);border-radius:var(--r);padding:14px;margin-bottom:16px;display:none;}
+.rv-streak-alert.show{display:block;}
+.rv-streak-alert-title{font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--danger);margin-bottom:6px;}
+.rv-streak-alert-body{font-family:var(--sans);font-size:13px;font-weight:300;color:var(--danger);}
+
+/* ===== GOALS V2 ===== */
+.goal-item-v2{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.goal-item-v2.active{border-left:3px solid var(--amber);}
+.goal-item-v2.done{border-left:3px solid var(--success);opacity:0.6;}
+.goal-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.goal-title-v2{font-family:var(--sans);font-size:15px;font-weight:400;color:var(--esp);flex:1;line-height:1.3;}
+.goal-deadline{font-family:var(--mono);font-size:8px;color:var(--brown3);}
+.goal-progress-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:8px;}
+.goal-progress-fill{height:100%;background:var(--amber);border-radius:2px;transition:width 0.4s ease;}
+.goal-milestones{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.goal-milestone{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-size:13px;font-weight:300;color:var(--brown2);cursor:pointer;}
+.goal-milestone input[type=checkbox]{accent-color:var(--amber);}
+.goal-milestone.done-m{text-decoration:line-through;opacity:0.5;}
+.goal-why{font-family:var(--serif);font-size:13px;font-weight:300;font-style:italic;color:var(--brown3);line-height:1.5;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+.goal-actions{display:flex;gap:8px;margin-top:10px;}
+
+/* ===== AI COACH ===== */
+#sec-coach{background:var(--bg);}
+#sec-coach .sec-close{color:var(--brown3);}
+.coach-layout{display:flex;flex-direction:column;height:100%;padding-top:52px;}
+.coach-messages{flex:1;overflow-y:auto;padding:20px 36px;display:flex;flex-direction:column;gap:14px;}
+.coach-msg{max-width:72%;padding:14px 18px;border-radius:var(--r);line-height:1.7;}
+.coach-msg.user{align-self:flex-end;background:var(--amber);color:var(--bg);font-family:var(--sans);font-size:14px;font-weight:300;border-radius:var(--r) var(--r) 4px var(--r);}
+.coach-msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--border);font-family:var(--serif);font-size:14px;font-weight:300;font-style:italic;color:var(--brown2);border-radius:var(--r) var(--r) var(--r) 4px;}
+.coach-msg.ai .coach-sender{font-family:var(--mono);font-size:7px;letter-spacing:0.28em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;font-style:normal;}
+.coach-input-row{display:flex;gap:10px;padding:16px 36px;border-top:1px solid var(--border);flex-shrink:0;}
+.coach-input{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:11px 14px;color:var(--esp);font-family:var(--sans);font-size:14px;outline:none;transition:border-color 0.2s;}
+.coach-input:focus{border-color:var(--amber);}
+.coach-personas{display:flex;gap:6px;padding:12px 36px 0;flex-wrap:wrap;}
+.coach-persona{font-family:var(--mono);font-size:7px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--brown3);cursor:pointer;transition:all 0.2s;}
+.coach-persona:hover,.coach-persona.on{border-color:var(--amber);color:var(--amber);background:var(--amber-faint);}
+.coach-starters{display:flex;flex-wrap:wrap;gap:6px;padding:10px 36px;border-bottom:1px solid var(--border);}
+.coach-starter{font-family:var(--mono);font-size:8px;letter-spacing:0.08em;padding:5px 12px;border-radius:20px;border:1px solid var(--border);color:var(--brown3);cursor:pointer;transition:all 0.2s;text-align:left;}
+.coach-starter:hover{border-color:var(--amber-dim);color:var(--brown2);}
+
+/* ===== AI HOME PULSE ===== */
+.home-ai-pulse{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-top:16px;max-width:480px;width:100%;}
+.home-ai-pulse-label{font-family:var(--mono);font-size:7px;letter-spacing:0.3em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.home-ai-pulse-dot{width:5px;height:5px;border-radius:50%;background:var(--amber);animation:aiDot 2s ease infinite;}
+.home-ai-pulse-text{font-family:var(--serif);font-size:14px;font-weight:300;font-style:italic;color:var(--brown2);line-height:1.6;}
+
+/* ===== STREAK RECOVERY ===== */
+.streak-recovery{background:rgba(139,48,32,0.06);border:1px solid rgba(139,48,32,0.14);border-radius:var(--r);padding:14px;margin-bottom:14px;display:none;}
+.streak-recovery.show{display:block;}
+.streak-recovery-title{font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--danger);margin-bottom:6px;}
+.streak-recovery-msg{font-family:var(--sans);font-size:13px;font-weight:300;color:var(--brown2);line-height:1.5;}
+
+/* ===== WORKOUT V2 ===== */
+.workout-log-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;}
+.workout-log-date{font-family:var(--mono);font-size:8px;color:var(--brown3);margin-bottom:6px;}
+.workout-log-type{font-family:var(--serif);font-size:16px;font-weight:300;color:var(--amber);margin-bottom:4px;}
+.workout-log-notes{font-family:var(--sans);font-size:13px;font-weight:300;color:var(--brown2);}
+.workout-log-sets{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
+.workout-set-row{display:flex;gap:10px;align-items:center;font-family:var(--mono);font-size:10px;color:var(--brown2);}
+.workout-set-ex{flex:1;color:var(--esp);}
+
+
 /* BACKUP OVERLAY */
 #backup-ov{position:fixed;inset:0;background:rgba(26,14,6,0.5);display:none;align-items:center;justify-content:center;z-index:3000;}
 #backup-ov.show{display:flex;}
@@ -1007,21 +1142,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <button class="sec-close" onclick="closeSec('version')">✕ Close</button>
   <div class="version-layout">
     <div class="ver-card">
-      <div class="ver-num">V3</div>
-      <div class="ver-name">Project 3401 · Command Surface</div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--brown3);margin-bottom:16px;">Built March 2026 · Warm Latte Theme</div>
+      <div class="ver-num">V4</div>
+      <div class="ver-name">Project 3401 · Intelligence Layer</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--brown3);margin-bottom:16px;">Built April 2026 · Warm Latte Theme</div>
       <div style="height:1px;background:var(--border);margin-bottom:16px;"></div>
       <div class="ver-feats">
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Command bar with live search across all sections</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Tasks, Reminders &amp; Goals unified in one tab</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Priority nudge system (Low 14d / Med 10d / High 7d / Extreme 3d)</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Export / Import backup — survives cache clears forever</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Terminals tab with favourites &amp; editable tiles</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Permanent data key: 3401_data — carries forward every version</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">25 secret pages accessible via command bar</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">RedFlagDeals Canada live shop feed</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Full calendar with recurring events &amp; categories</div></div>
-        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">10 custom colour themes + 4 style modes</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">🌅 Morning Commander — AI daily intention with check-ins</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">📈 Trade Journal — Log, validate with AI, track patterns</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">🧠 AI Coach — 4 personas: Honest, Trading, Discipline, Life</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">⚡ Home Pulse — AI daily insight on your dashboard</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">⚠ Streak Recovery — Detects broken streaks, alerts you</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">🔍 Smart Review — AI insight after every weekly review</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">Command bar: type "morning", "trade", "coach" to access AI</div></div>
+        <div class="ver-feat"><div class="ver-feat-dot"></div><div class="ver-feat-text">All V3 features preserved — same data key 3401_data</div></div>
       </div>
     </div>
   </div>
@@ -1078,8 +1211,95 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- APP -->
-<div id="app">
+<!-- MORNING COMMANDER -->
+<div class="secret-ov" id="sec-morning">
+  <button class="sec-close" onclick="closeSec('morning')">✕ Close</button>
+  <div class="morning-layout">
+    <div id="morning-content"></div>
+  </div>
+</div>
+
+<!-- TRADE JOURNAL -->
+<div class="secret-ov" id="sec-trade">
+  <button class="sec-close" onclick="closeSec('trade')">✕ Close</button>
+  <div class="trade-layout">
+    <div class="trade-main">
+      <div style="font-family:var(--serif);font-size:28px;font-weight:300;color:var(--esp);margin-bottom:6px;">Trade Journal</div>
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--brown3);margin-bottom:24px;">Log · Validate · Learn</div>
+
+      <!-- Thesis Entry -->
+      <div class="trade-form-section">
+        <div class="trade-form-title">New Trade Thesis</div>
+        <div class="trade-grid-2" style="margin-bottom:10px;">
+          <div class="fg"><label class="fl">Ticker / Pair</label><input class="input" id="trade-ticker" placeholder="e.g. TSLA, EUR/USD"/></div>
+          <div class="fg"><label class="fl">Direction</label><select class="sel" id="trade-dir"><option value="long">Long (Buy)</option><option value="short">Short (Sell)</option></select></div>
+        </div>
+        <div class="trade-grid-3" style="margin-bottom:10px;">
+          <div class="fg"><label class="fl">Entry Price</label><input class="input" id="trade-entry" placeholder="0.00" type="number"/></div>
+          <div class="fg"><label class="fl">Stop Loss</label><input class="input" id="trade-stop" placeholder="0.00" type="number"/></div>
+          <div class="fg"><label class="fl">Target</label><input class="input" id="trade-target" placeholder="0.00" type="number"/></div>
+        </div>
+        <div class="fg"><label class="fl">My Thesis — Why am I entering this trade?</label><textarea class="input" id="trade-thesis" placeholder="Describe your reasoning. What do you see? What's the setup? What would have to be true for this to work?"></textarea></div>
+        <div class="fg"><label class="fl">What would make me wrong?</label><textarea class="input" id="trade-wrong" placeholder="What would invalidate this thesis? Be honest."></textarea></div>
+        <div class="fg"><label class="fl">Emotion Check</label><select class="sel" id="trade-emotion"><option value="calm">Calm & Focused</option><option value="fomo">Feeling FOMO</option><option value="revenge">Revenge Trading</option><option value="uncertain">Uncertain but hopeful</option><option value="confident">Highly Confident</option></select></div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn" style="flex:1;" onclick="validateTrade()">🧠 Validate with AI</button>
+          <button class="btn btn-f" style="flex:1;" onclick="logTrade()">Log Trade</button>
+        </div>
+        <div class="trade-ai-panel" id="trade-ai-panel">
+          <div class="trade-ai-verdict" id="trade-ai-verdict"></div>
+          <div class="trade-ai-feedback" id="trade-ai-feedback"></div>
+        </div>
+      </div>
+
+      <!-- Close a trade -->
+      <div class="trade-form-section" id="trade-close-section" style="display:none;">
+        <div class="trade-form-title">Close Open Trade</div>
+        <div id="trade-open-list"></div>
+      </div>
+    </div>
+
+    <div class="trade-sidebar">
+      <div class="trade-stats-row">
+        <div class="trade-stat"><div class="trade-stat-val" id="trade-stat-total">0</div><div class="trade-stat-lbl">Total</div></div>
+        <div class="trade-stat"><div class="trade-stat-val" id="trade-stat-wr" style="color:var(--success);">—</div><div class="trade-stat-lbl">Win Rate</div></div>
+        <div class="trade-stat"><div class="trade-stat-val" id="trade-stat-rr">—</div><div class="trade-stat-lbl">Avg R:R</div></div>
+      </div>
+      <div id="trade-patterns" style="margin-bottom:16px;"></div>
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:0.3em;text-transform:uppercase;color:var(--brown3);margin-bottom:10px;">History</div>
+      <div id="trade-history"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI COACH -->
+<div class="secret-ov" id="sec-coach">
+  <button class="sec-close" onclick="closeSec('coach')">✕ Close</button>
+  <div class="coach-layout">
+    <div class="coach-personas">
+      <div class="coach-persona on" data-persona="honest" onclick="setCoachPersona(this,'honest')">Honest Advisor</div>
+      <div class="coach-persona" data-persona="trading" onclick="setCoachPersona(this,'trading')">Trading Coach</div>
+      <div class="coach-persona" data-persona="discipline" onclick="setCoachPersona(this,'discipline')">Discipline Drill</div>
+      <div class="coach-persona" data-persona="life" onclick="setCoachPersona(this,'life')">Life Strategist</div>
+    </div>
+    <div class="coach-starters">
+      <button class="coach-starter" onclick="sendCoachStarter(this)">Am I on track with my goals?</button>
+      <button class="coach-starter" onclick="sendCoachStarter(this)">I keep losing momentum. Why?</button>
+      <button class="coach-starter" onclick="sendCoachStarter(this)">Help me think through a trade idea</button>
+      <button class="coach-starter" onclick="sendCoachStarter(this)">What should I focus on today?</button>
+      <button class="coach-starter" onclick="sendCoachStarter(this)">I made a bad trade. Help me learn from it</button>
+    </div>
+    <div class="coach-messages" id="coach-messages">
+      <div class="coach-msg ai"><div class="coach-sender">3401 Coach · Honest Advisor</div>Ready when you are. Ask me anything — about trading, your goals, your habits, or whatever's on your mind. I'll be straight with you.</div>
+    </div>
+    <div class="coach-input-row">
+      <input class="coach-input" id="coach-input" placeholder="Ask your coach anything..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCoachMsg();}"/>
+      <button class="btn btn-f" onclick="sendCoachMsg()">Send</button>
+    </div>
+  </div>
+</div>
+
+
   <div id="nudge-bar">
     <div class="nudge-pip"></div>
     <div class="nudge-msg" id="nudge-msg">—</div>
@@ -1124,11 +1344,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
             <div class="csug" data-cmd="workout">workout</div>
             <div class="csug" data-cmd="nhl">nhl</div>
             <div class="csug" data-cmd="today">today</div>
+            <div class="csug" data-cmd="morning">morning</div>
+            <div class="csug" data-cmd="trade">trade journal</div>
+            <div class="csug" data-cmd="coach">ai coach</div>
           </div>
         </div>
 
         <!-- Terminal pills — below search -->
         <div id="home-terminals"></div>
+
+        <!-- AI Pulse -->
+        <div class="home-ai-pulse" id="home-ai-pulse" style="display:none;">
+          <div class="home-ai-pulse-label"><div class="home-ai-pulse-dot"></div>3401 Intelligence</div>
+          <div class="home-ai-pulse-text" id="home-ai-pulse-text">—</div>
+        </div>
 
         <!-- What Needs You -->
         <div id="home-needs" style="display:none;">
@@ -1208,6 +1437,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <!-- HABITS -->
     <div class="tab" id="tab-habits">
       <div class="pscroll" style="max-width:880px;">
+        <div class="streak-recovery" id="streak-recovery-banner">
+          <div class="streak-recovery-title">⚠ Streak Alert</div>
+          <div class="streak-recovery-msg" id="streak-recovery-msg">—</div>
+        </div>
         <div class="sew">Habits · <span id="habits-date-lbl" style="font-family:var(--sans);font-size:11px;font-weight:300;color:var(--brown3);letter-spacing:0;text-transform:none;"></span></div>
         <div id="habits-list"></div>
         <div style="margin-top:18px;display:flex;gap:10px;">
@@ -1326,7 +1559,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="tab" id="tab-review">
       <div class="pscroll">
         <div>
-          <div class="sew">Weekly Review</div>
+          <div class="sew">Smart Review</div>
+          <div class="rv-streak-alert" id="rv-streak-alert">
+            <div class="rv-streak-alert-title">🔴 Habit Streaks at Risk</div>
+            <div class="rv-streak-alert-body" id="rv-streak-alert-body">—</div>
+          </div>
           <div class="card">
             <div class="rvq">What were your wins this week?</div>
             <textarea class="rvta" id="rv-wins" placeholder="What went well..."></textarea>
@@ -1336,7 +1573,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
             <textarea class="rvta" id="rv-improve" placeholder="One thing to change..."></textarea>
             <div class="rvq">What is your goal for next week?</div>
             <textarea class="rvta" id="rv-goal" placeholder="Your north star..."></textarea>
-            <button class="btn btn-f" style="width:100%;" onclick="saveReview()">Save Review</button>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-f" style="flex:1;" onclick="saveReviewAI()">🧠 Save + AI Insight</button>
+              <button class="btn" style="flex:1;" onclick="saveReview()">Save Only</button>
+            </div>
+            <div id="rv-ai-output" style="margin-top:0;"></div>
           </div>
         </div>
         <div>
@@ -1469,7 +1710,7 @@ let S={
   todos:[],reminders:[],goals:[],
   habits:[],habitLogs:{},habitStreaks:{},habitTotals:{},
   notes:[],activeNote:null,
-  workout:{0:'—',1:'—',2:'—',3:'—',4:'—',5:'—',6:'—'},
+  workout:{0:'—',1:'—',2:'—',3:'—',4:'—',5:'—',6:'—'},workoutLog:[],
   events:[],reviews:[],
   terminals:[
     {id:'t1',name:'Hockey Terminal',icon:'🏒',url:'https://my-dashboards-theta.vercel.app/hockey_terminal_live.html',fav:true},
@@ -1480,7 +1721,11 @@ let S={
   shopFilter:'all',nudgeDismissed:null,theme:'latte',style:'minimal',
   updTabs:[{id:'u1',name:'3401 Ideas',items:[]}],updActiveTab:'u1',updView:'todo',
   books:[],buildLog:[],flipH:0,flipT:0,
-  stats:{todosCompleted:[],habitsLogged:[],searches:[],termClicks:{}}
+  stats:{todosCompleted:[],habitsLogged:[],searches:[],termClicks:{}},
+  trades:[],
+  morningLog:{},
+  coachPersona:'honest',
+  goalsV2:[]
 };
 let shopDeals=[];
 
@@ -1495,6 +1740,8 @@ function loadS(){
   if(!S.books)S.books=[];if(!S.buildLog)S.buildLog=[];
   if(!S.stats)S.stats={todosCompleted:[],habitsLogged:[],searches:[],termClicks:{}};
   if(!S.goals)S.goals=[];if(!S.flipH)S.flipH=0;if(!S.flipT)S.flipT=0;
+  if(!S.trades)S.trades=[];if(!S.morningLog)S.morningLog={};if(!S.goalsV2)S.goalsV2=[];
+  if(!S.coachPersona)S.coachPersona='honest';
   computeStreaks();applyTheme(S.theme||'latte');
 }
 function saveS(){try{localStorage.setItem(SK,JSON.stringify(S));}catch(e){}}
@@ -1579,6 +1826,9 @@ document.querySelectorAll('.nt').forEach(n=>n.addEventListener('click',()=>switc
 
 /* SECRETS */
 const SECRET_MAP={
+  'morning':()=>{openMorningCommander();openSec('morning');},
+  'trade':()=>{renderTradeJournal();openSec('trade');},
+  'coach':()=>{openSec('coach');},
   'theme':()=>{initThemeGrid();openSec('theme');},
   'update':()=>{renderUpdTabs();openSec('update');},
   'books':()=>{renderBooks();openSec('books');},
@@ -1615,7 +1865,8 @@ const CMD_SECTIONS={
   tasks:['task','remind','need','urgent','todo','goal'],
   habits:['habit','morning','gym','workout','read','forex','streak'],
   workout:['workout','push','pull','legs','train'],
-  market:['market','session','london','tokyo','open']
+  market:['market','session','london','tokyo','open'],
+  ai:['morning','trade','journal','coach','ai','advisor','validate','review']
 };
 el('cmd-in').addEventListener('focus',()=>{if(!el('cmd-in').value)el('cmd-sugs').classList.add('show');});
 el('cmd-in').addEventListener('blur',()=>{setTimeout(()=>{el('cmd-sugs').classList.remove('show');if(!el('cmd-in').value)el('cmd-res').classList.remove('open');},200);});
@@ -1647,6 +1898,8 @@ function renderCmdRes(qL,showAll=false){
   const hb=showAll||CMD_SECTIONS.habits.some(w=>qL.includes(w)||w.includes(qL));
   const wo=showAll||CMD_SECTIONS.workout.some(w=>qL.includes(w)||w.includes(qL));
   const mk=showAll||CMD_SECTIONS.market.some(w=>qL.includes(w)||w.includes(qL));
+  const ai=showAll||CMD_SECTIONS.ai.some(w=>qL.includes(w)||w.includes(qL));
+  if(ai){html+=`<div class="crs"><div class="crs-lbl">3401 Intelligence</div><div class="cri" onclick="SECRET_MAP['morning']();el('cmd-in').value='';el('cmd-res').classList.remove('open');"><span class="crit">🌅 Morning Commander</span><span class="cris">Check in</span></div><div class="cri" onclick="SECRET_MAP['trade']();el('cmd-in').value='';el('cmd-res').classList.remove('open');"><span class="crit">📈 Trade Journal</span><span class="cris">Log & validate</span></div><div class="cri" onclick="SECRET_MAP['coach']();el('cmd-in').value='';el('cmd-res').classList.remove('open');"><span class="crit">🧠 AI Coach</span><span class="cris">Talk to your coach</span></div></div>`;}
   if(tm){const favs=S.terminals.filter(t=>t.fav).slice(0,3);if(favs.length)html+=`<div class="crs"><div class="crs-lbl">Terminals</div>`+favs.map(t=>`<div class="cri" onclick="logTermClick('${t.id}');window.open('${escAttr(t.url)}','_blank')"><span class="crit">${t.icon} ${t.name}</span><span class="cris">Open ↗</span></div>`).join('')+'</div>';}
   if(tk){const items=S.todos.filter(t=>!t.done).slice(0,3);if(items.length)html+=`<div class="crs"><div class="crs-lbl">Tasks</div>`+items.map(t=>`<div class="cri" onclick="switchTab('tasks')"><span class="crit">${t.text}</span><span class="criw">${t.priority}</span></div>`).join('')+'</div>';}
   if(hb){const log=getTodayLog();html+=`<div class="crs"><div class="crs-lbl">Habits Today</div>`+S.habits.slice(0,4).map(h=>`<div class="cri" onclick="switchTab('habits')"><span class="crit">${h.name}</span><span class="cris" style="color:${log[h.id]?'rgba(46,110,56,0.7)':'var(--brown3)'}">${log[h.id]?'✓ Done':'Pending'}</span></div>`).join('')+'</div>';}
@@ -2235,11 +2488,477 @@ function startGhost(){
 }
 function stopGhost(){if(ghostAnim){cancelAnimationFrame(ghostAnim);ghostAnim=null;}const c=el('ghost-canvas');if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}}
 
+/* ============================================================
+   AI CORE — Anthropic API via claude-sonnet-4-20250514
+   ============================================================ */
+const AI_MODEL='claude-sonnet-4-20250514';
+async function callAI(systemPrompt,userMsg,maxTokens=600){
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:AI_MODEL,max_tokens:maxTokens,system:systemPrompt,messages:[{role:'user',content:userMsg}]})
+    });
+    const data=await res.json();
+    return data.content?.[0]?.text||'—';
+  }catch(e){return'Could not reach AI. Check your connection.';}
+}
+
+function getUserContext(){
+  const streakInfo=S.habits.map(h=>`${h.name}: ${S.habitStreaks[h.id]||0} day streak`).join(', ');
+  const openTrades=S.trades.filter(t=>t.status==='open').length;
+  const recentTrades=S.trades.slice(-5).map(t=>`${t.ticker} ${t.direction} — ${t.status}`).join(', ');
+  const goals=S.goalsV2.filter(g=>!g.done).map(g=>g.title).join(', ');
+  return `User context: 25 years old, based in Brampton Ontario Canada. Working 9-5. Learning day trading (beginner-intermediate). Wants to build a morning routine (run, read, log). Tends to lose momentum and start too many things. Habit streaks: ${streakInfo||'none yet'}. Open trades: ${openTrades}. Recent trades: ${recentTrades||'none'}. Active goals: ${goals||'none set'}.`;
+}
+
+/* ============================================================
+   MORNING COMMANDER
+   ============================================================ */
+let morningStep=0;
+const MORNING_CHECKS=[
+  {id:'run',label:'Morning Run / Walk',icon:'🏃'},
+  {id:'read',label:'Read (10+ min)',icon:'📖'},
+  {id:'log',label:'Log yesterday — review or trade journal',icon:'📝'}
+];
+
+function openMorningCommander(){
+  morningStep=0;
+  const today=todayStr();
+  const log=S.morningLog[today]||{};
+  renderMorningStep(log);
+}
+
+function renderMorningStep(log){
+  const c=el('morning-content');if(!c)return;
+  const today=todayStr();
+
+  // Check streaks for recovery banner
+  checkStreakRecovery();
+
+  // Streak pills
+  const streakPills=S.habits.slice(0,4).map(h=>{
+    const str=S.habitStreaks[h.id]||0;
+    return`<div class="morning-streak-pill"><div class="morning-streak-val">${str}</div><div class="morning-streak-lbl">${h.name.length>10?h.name.slice(0,10)+'…':h.name}</div></div>`;
+  }).join('');
+
+  const checks=MORNING_CHECKS.map(ch=>{
+    const done=log[ch.id];
+    return`<div class="morning-check ${done?'done':''}" onclick="toggleMorningCheck('${ch.id}')">
+      <div class="morning-check-box">${done?'✓':''}</div>
+      <div style="font-size:16px;">${ch.icon}</div>
+      <div class="morning-check-lbl">${ch.label}</div>
+    </div>`;
+  }).join('');
+
+  const doneCount=MORNING_CHECKS.filter(ch=>log[ch.id]).length;
+  const allDone=doneCount===MORNING_CHECKS.length;
+
+  c.innerHTML=`
+    <div class="morning-phase">Morning Commander · ${today}</div>
+    <div class="morning-streak-row">${streakPills}</div>
+    <div style="font-family:var(--serif);font-size:22px;font-weight:300;color:var(--esp);margin-bottom:16px;">Good morning. Check in.</div>
+    <div class="morning-checklist">${checks}</div>
+    ${doneCount>0?`<div style="font-family:var(--mono);font-size:9px;color:var(--brown3);margin-bottom:16px;letter-spacing:0.1em;">${doneCount}/${MORNING_CHECKS.length} complete</div>`:''}
+    <div class="fg" style="margin-bottom:4px;">
+      <label class="fl">One intention for today</label>
+      <textarea class="morning-input" id="morning-intention" placeholder="What matters most today? One thing.">${log.intention||''}</textarea>
+    </div>
+    <div class="morning-nav">
+      <button class="btn btn-f" onclick="saveMorningAndGetAI()">🧠 Get My Daily Intention</button>
+      <button class="btn" onclick="saveMorning()">Save Only</button>
+    </div>
+    <div id="morning-ai-out" style="margin-top:16px;">${log.aiResponse?`<div class="morning-ai-response"><div class="morning-ai-label">3401 Intelligence</div><div class="morning-ai-text">${log.aiResponse}</div></div>`:''}</div>
+  `;
+}
+
+function toggleMorningCheck(id){
+  const today=todayStr();
+  if(!S.morningLog[today])S.morningLog[today]={};
+  S.morningLog[today][id]=!S.morningLog[today][id];
+  saveS();
+  // Also log to habits if matching
+  const habitMap={run:'morning',read:'read',log:'forex'};
+  const hId=habitMap[id];
+  if(hId&&S.morningLog[today][id]){
+    if(!S.habitLogs[today])S.habitLogs[today]={};
+    S.habitLogs[today][hId]=true;
+    computeStreaks();saveS();
+  }
+  renderMorningStep(S.morningLog[today]);
+}
+
+function saveMorning(){
+  const today=todayStr();
+  if(!S.morningLog[today])S.morningLog[today]={};
+  const intentEl=el('morning-intention');
+  if(intentEl)S.morningLog[today].intention=intentEl.value.trim();
+  saveS();
+  renderMorningStep(S.morningLog[today]);
+}
+
+async function saveMorningAndGetAI(){
+  const today=todayStr();
+  if(!S.morningLog[today])S.morningLog[today]={};
+  const intentEl=el('morning-intention');
+  if(intentEl)S.morningLog[today].intention=intentEl.value.trim();
+  saveS();
+
+  const out=el('morning-ai-out');
+  if(out)out.innerHTML=`<div class="morning-ai-response"><div class="morning-ai-label">3401 Intelligence</div><div class="morning-ai-thinking"><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div></div></div>`;
+
+  const log=S.morningLog[today];
+  const checked=MORNING_CHECKS.filter(ch=>log[ch.id]).map(ch=>ch.label).join(', ')||'none yet';
+  const intention=log.intention||'not set';
+  const ctx=getUserContext();
+
+  const sys=`You are 3401, a sharp, honest personal coach embedded in a life dashboard. You know this person well. Be direct, motivating but not cheesy. Max 3 sentences. No bullet points. Pure prose. Speak like a trusted advisor who cuts through noise.`;
+  const msg=`${ctx}\n\nMorning check-in: Completed — ${checked}. Today's intention: "${intention}".\n\nGive them one focused, honest insight or motivating thought for today based on where they're at. Reference their actual situation (trading, morning routine, goals). Make it feel personal, not generic.`;
+
+  const response=await callAI(sys,msg,200);
+  S.morningLog[today].aiResponse=response;
+  saveS();
+  if(out)out.innerHTML=`<div class="morning-ai-response"><div class="morning-ai-label">3401 Intelligence</div><div class="morning-ai-text">${response}</div></div>`;
+  renderHomePulse();
+}
+
+async function renderHomePulse(){
+  const pulseEl=el('home-ai-pulse');
+  const pulseText=el('home-ai-pulse-text');
+  if(!pulseEl||!pulseText)return;
+  pulseEl.style.display='block';
+
+  const today=todayStr();
+  const morningAI=S.morningLog[today]?.aiResponse;
+  if(morningAI){pulseText.textContent=morningAI;return;}
+
+  // Generate a quick pulse if no morning session
+  pulseText.textContent='Generating today\'s pulse...';
+  const ctx=getUserContext();
+  const sys=`You are 3401, a direct personal dashboard AI. One sentence only. No fluff. Make it sharp and relevant to this person's actual situation.`;
+  const msg=`${ctx}\n\nGive one sharp sentence to start their day — something honest about where they are in their journey.`;
+  const r=await callAI(sys,msg,80);
+  pulseText.textContent=r;
+}
+
+/* ============================================================
+   STREAK RECOVERY SYSTEM
+   ============================================================ */
+function checkStreakRecovery(){
+  const today=todayStr();
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const ystr=yesterday.getFullYear()+'-'+pad(yesterday.getMonth()+1)+'-'+pad(yesterday.getDate());
+
+  const broken=S.habits.filter(h=>{
+    const streak=S.habitStreaks[h.id]||0;
+    const loggedToday=S.habitLogs[today]?.[h.id];
+    const loggedYest=S.habitLogs[ystr]?.[h.id];
+    return streak>2&&!loggedToday&&!loggedYest;
+  });
+
+  const banner=el('streak-recovery-banner');
+  const msg=el('streak-recovery-msg');
+  if(banner&&msg){
+    if(broken.length){
+      const names=broken.map(h=>`${h.name} (${S.habitStreaks[h.id]}d streak)`).join(', ');
+      msg.textContent=`You haven't logged ${names}. Your streak is at risk — log today to keep it alive.`;
+      banner.classList.add('show');
+    } else {
+      banner.classList.remove('show');
+    }
+  }
+
+  // Also update review tab
+  const rvAlert=el('rv-streak-alert');
+  const rvAlertBody=el('rv-streak-alert-body');
+  if(rvAlert&&rvAlertBody){
+    if(broken.length){
+      rvAlertBody.textContent=`Habits at risk: ${broken.map(h=>h.name).join(', ')}. They need attention this week.`;
+      rvAlert.classList.add('show');
+    } else {
+      rvAlert.classList.remove('show');
+    }
+  }
+}
+
+/* ============================================================
+   TRADE JOURNAL
+   ============================================================ */
+function renderTradeJournal(){
+  if(!S.trades)S.trades=[];
+  renderTradeHistory();
+  renderTradeStats();
+  renderTradePatterns();
+  const openTrades=S.trades.filter(t=>t.status==='open');
+  const closeSection=el('trade-close-section');
+  const openList=el('trade-open-list');
+  if(closeSection&&openList){
+    if(openTrades.length){
+      closeSection.style.display='block';
+      openList.innerHTML=openTrades.map(t=>`
+        <div class="trade-history-item open" style="margin-bottom:10px;">
+          <div class="trade-hi-header"><span class="trade-hi-ticker">${t.ticker}</span><span class="trade-hi-outcome open">${t.direction.toUpperCase()} — OPEN</span></div>
+          <div class="trade-hi-thesis">"${t.thesis}"</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input class="input" id="close-price-${t.id}" placeholder="Exit price" style="width:120px;" type="number"/>
+            <select class="sel" id="close-result-${t.id}" style="width:130px;"><option value="win">Win ✓</option><option value="loss">Loss ✗</option><option value="breakeven">Breakeven</option></select>
+            <input class="input" id="close-notes-${t.id}" placeholder="What happened? Lesson?" style="flex:1;"/>
+            <button class="btn btn-f" onclick="closeTrade('${t.id}')">Close</button>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      closeSection.style.display='none';
+    }
+  }
+}
+
+async function validateTrade(){
+  const ticker=el('trade-ticker')?.value.trim();
+  const dir=el('trade-dir')?.value;
+  const entry=el('trade-entry')?.value;
+  const stop=el('trade-stop')?.value;
+  const target=el('trade-target')?.value;
+  const thesis=el('trade-thesis')?.value.trim();
+  const wrong=el('trade-wrong')?.value.trim();
+  const emotion=el('trade-emotion')?.value;
+
+  if(!thesis){alert('Write your thesis first before validating.');return;}
+
+  const panel=el('trade-ai-panel');
+  const verdict=el('trade-ai-verdict');
+  const feedback=el('trade-ai-feedback');
+  if(!panel||!verdict||!feedback)return;
+
+  panel.classList.add('show');
+  verdict.textContent='Analysing...';verdict.className='trade-ai-verdict';
+  feedback.innerHTML=`<div class="morning-ai-thinking"><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div></div>`;
+
+  let rr='?';
+  if(entry&&stop&&target){
+    const risk=Math.abs(parseFloat(entry)-parseFloat(stop));
+    const reward=Math.abs(parseFloat(target)-parseFloat(entry));
+    rr=risk>0?(reward/risk).toFixed(2):'?';
+  }
+
+  const ctx=getUserContext();
+  const sys=`You are a strict trading mentor reviewing a beginner-intermediate trader's trade thesis. Be honest, direct, and educational. Point out emotional reasoning, poor R:R, or vague theses immediately. Be tough but constructive. Keep response to 3-4 sentences max.`;
+  const msg=`${ctx}\n\nTrade: ${dir} ${ticker||'unspecified'}\nEntry: ${entry||'?'} | Stop: ${stop||'?'} | Target: ${target||'?'} | Calculated R:R: 1:${rr}\nThesis: "${thesis}"\nWhat would make me wrong: "${wrong||'not answered'}"\nEmotion state: ${emotion}\n\nValidate this trade. Is the thesis solid? Is the R:R acceptable? Are there red flags? Give a verdict: PASS, CAUTION, or REJECT. Start with the verdict word then explain.`;
+
+  const response=await callAI(sys,msg,250);
+  const isPass=response.toLowerCase().startsWith('pass');
+  const isReject=response.toLowerCase().startsWith('reject');
+  verdict.textContent=isPass?'✓ PASS':isReject?'✗ REJECT':'⚠ CAUTION';
+  verdict.className=`trade-ai-verdict ${isPass?'pass':isReject?'fail':'warn'}`;
+  feedback.textContent=response.replace(/^(pass|reject|caution)[:\.\s]*/i,'');
+}
+
+function logTrade(){
+  const ticker=el('trade-ticker')?.value.trim();
+  const dir=el('trade-dir')?.value;
+  const entry=el('trade-entry')?.value;
+  const stop=el('trade-stop')?.value;
+  const target=el('trade-target')?.value;
+  const thesis=el('trade-thesis')?.value.trim();
+  const emotion=el('trade-emotion')?.value;
+
+  if(!ticker||!thesis){alert('Ticker and thesis are required.');return;}
+  if(!S.trades)S.trades=[];
+
+  let rr=null;
+  if(entry&&stop&&target){
+    const risk=Math.abs(parseFloat(entry)-parseFloat(stop));
+    const reward=Math.abs(parseFloat(target)-parseFloat(entry));
+    rr=risk>0?parseFloat((reward/risk).toFixed(2)):null;
+  }
+
+  S.trades.unshift({
+    id:uid(),date:todayStr(),ticker,direction:dir,entry:parseFloat(entry)||null,
+    stop:parseFloat(stop)||null,target:parseFloat(target)||null,
+    thesis,wrong:el('trade-wrong')?.value.trim()||'',
+    emotion,rr,status:'open',exitPrice:null,exitNotes:'',outcome:null
+  });
+  saveS();
+
+  // Clear form
+  ['trade-ticker','trade-entry','trade-stop','trade-target','trade-thesis','trade-wrong'].forEach(id=>{const e=el(id);if(e)e.value='';});
+  el('trade-ai-panel')?.classList.remove('show');
+  renderTradeJournal();
+}
+
+function closeTrade(id){
+  const trade=S.trades.find(t=>t.id===id);if(!trade)return;
+  const exitPrice=parseFloat(el(`close-price-${id}`)?.value)||null;
+  const outcome=el(`close-result-${id}`)?.value||'loss';
+  const notes=el(`close-notes-${id}`)?.value.trim()||'';
+  trade.exitPrice=exitPrice;trade.outcome=outcome;trade.exitNotes=notes;trade.status='closed';trade.closedDate=todayStr();
+  saveS();renderTradeJournal();
+}
+
+function renderTradeHistory(){
+  const list=el('trade-history');if(!list)return;
+  if(!S.trades||!S.trades.length){list.innerHTML='<div class="noitems">No trades logged yet.</div>';return;}
+  list.innerHTML=S.trades.slice(0,15).map(t=>`
+    <div class="trade-history-item ${t.status==='open'?'open':t.outcome==='win'?'win':'loss'}">
+      <div class="trade-hi-header">
+        <span class="trade-hi-ticker">${t.ticker}</span>
+        <span class="trade-hi-outcome ${t.status==='open'?'open':t.outcome==='win'?'win':'loss'}">${t.status==='open'?'OPEN':t.outcome?.toUpperCase()||'—'}</span>
+      </div>
+      <div class="trade-hi-thesis">"${t.thesis.slice(0,80)}${t.thesis.length>80?'…':''}"</div>
+      <div class="trade-hi-meta">
+        <span>${t.direction.toUpperCase()}</span>
+        ${t.rr?`<span>R:R 1:${t.rr}</span>`:''}
+        ${t.emotion?`<span>${t.emotion}</span>`:''}
+        <span>${t.date}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTradeStats(){
+  if(!S.trades||!S.trades.length)return;
+  const closed=S.trades.filter(t=>t.status==='closed');
+  const wins=closed.filter(t=>t.outcome==='win');
+  const wr=closed.length?Math.round((wins.length/closed.length)*100)+'%':'—';
+  const avgRR=closed.filter(t=>t.rr).length?
+    (closed.filter(t=>t.rr).reduce((a,b)=>a+(b.rr||0),0)/closed.filter(t=>t.rr).length).toFixed(1):'—';
+  if(el('trade-stat-total'))el('trade-stat-total').textContent=S.trades.length;
+  if(el('trade-stat-wr'))el('trade-stat-wr').textContent=wr;
+  if(el('trade-stat-rr'))el('trade-stat-rr').textContent=avgRR;
+}
+
+async function renderTradePatterns(){
+  const panel=el('trade-patterns');if(!panel)return;
+  if(!S.trades||S.trades.length<3){panel.innerHTML='';return;}
+
+  const emotionMap={};
+  S.trades.filter(t=>t.status==='closed').forEach(t=>{
+    if(!t.emotion)return;
+    if(!emotionMap[t.emotion])emotionMap[t.emotion]={total:0,wins:0};
+    emotionMap[t.emotion].total++;
+    if(t.outcome==='win')emotionMap[t.emotion].wins++;
+  });
+
+  let patternHTML='<div style="font-family:var(--mono);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;color:var(--brown3);margin-bottom:10px;">Pattern Recognition</div>';
+  Object.entries(emotionMap).forEach(([emotion,data])=>{
+    const wr=data.total?Math.round((data.wins/data.total)*100)+'%':'—';
+    patternHTML+=`<div class="trade-pattern-item"><div class="trade-pattern-lbl">${emotion}</div><div class="trade-pattern-val">${data.total} trades · ${wr} win rate</div></div>`;
+  });
+  panel.innerHTML=patternHTML;
+}
+
+/* ============================================================
+   AI COACH
+   ============================================================ */
+let coachHistory=[];
+let activePersona='honest';
+
+const COACH_PERSONAS={
+  honest:{name:'Honest Advisor',sys:`You are 3401's Honest Advisor — a no-BS personal coach. You know this person well. You are direct, sometimes blunt, always constructive. You don't validate laziness or excuse-making. You call things out clearly but with genuine care. Keep responses concise — 3-5 sentences max unless the topic demands more. No bullet points unless listing specific steps.`},
+  trading:{name:'Trading Coach',sys:`You are 3401's Trading Coach — a seasoned day trading mentor who specializes in teaching beginners to develop discipline and systematic thinking. You focus on risk management, trading psychology, and identifying patterns in thinking. You're tough on emotional trading but patient with learning. Keep responses concise and practical.`},
+  discipline:{name:'Discipline Drill',sys:`You are 3401's Discipline Drill — a strict accountability partner. You don't accept "I'll try" or vague plans. You push for specific commitments, question weak excuses, and celebrate real follow-through. Short, punchy responses. You ask one sharp follow-up question at the end.`},
+  life:{name:'Life Strategist',sys:`You are 3401's Life Strategist — a big-picture thinker who helps this person see patterns across their life, identify what's actually blocking them, and make better decisions. You connect the dots between habits, goals, and daily actions. Thoughtful, reflective, 3-5 sentences.`}
+};
+
+function setCoachPersona(btn,persona){
+  document.querySelectorAll('.coach-persona').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  activePersona=persona;
+  S.coachPersona=persona;
+  saveS();
+  coachHistory=[];
+  const msgs=el('coach-messages');
+  if(msgs)msgs.innerHTML=`<div class="coach-msg ai"><div class="coach-sender">3401 Coach · ${COACH_PERSONAS[persona].name}</div>Switched. ${persona==='discipline'?'No more excuses. What do you need to get done?':persona==='trading'?'Ready to talk trades, setups, or psychology. What\'s on your mind?':persona==='life'?'Let\'s zoom out. What\'s the bigger picture you\'re trying to figure out?':'Ready. Ask me anything.'}</div>`;
+}
+
+function sendCoachStarter(btn){
+  const text=btn.textContent;
+  const input=el('coach-input');
+  if(input)input.value=text;
+  sendCoachMsg();
+}
+
+async function sendCoachMsg(){
+  const input=el('coach-input');if(!input)return;
+  const text=input.value.trim();if(!text)return;
+  input.value='';
+
+  const msgs=el('coach-messages');if(!msgs)return;
+
+  // Add user message
+  msgs.innerHTML+=`<div class="coach-msg user">${text}</div>`;
+  coachHistory.push({role:'user',content:text});
+
+  // Thinking indicator
+  const thinkId='coach-think-'+Date.now();
+  msgs.innerHTML+=`<div class="coach-msg ai" id="${thinkId}"><div class="coach-sender">3401 Coach · ${COACH_PERSONAS[activePersona].name}</div><div class="morning-ai-thinking"><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+
+  const ctx=getUserContext();
+  const sys=COACH_PERSONAS[activePersona].sys+'\n\n'+ctx;
+
+  // Build messages array for multi-turn
+  const apiMessages=coachHistory.slice(-10);
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:AI_MODEL,max_tokens:400,system:sys,messages:apiMessages})
+    });
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'—';
+    coachHistory.push({role:'assistant',content:reply});
+
+    const thinkEl=el(thinkId);
+    if(thinkEl)thinkEl.innerHTML=`<div class="coach-sender">3401 Coach · ${COACH_PERSONAS[activePersona].name}</div>${reply}`;
+  }catch(e){
+    const thinkEl=el(thinkId);
+    if(thinkEl)thinkEl.innerHTML=`<div class="coach-sender">3401 Coach</div>Connection error. Try again.`;
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+/* ============================================================
+   SMART REVIEW with AI
+   ============================================================ */
+async function saveReviewAI(){
+  const w=el('rv-wins')?.value.trim();
+  const l=el('rv-losses')?.value.trim();
+  const imp=el('rv-improve')?.value.trim();
+  const g=el('rv-goal')?.value.trim();
+  if(!w&&!l&&!imp&&!g){alert('Write something first.');return;}
+
+  // Save
+  if(!S.reviews)S.reviews=[];
+  S.reviews.unshift({id:uid(),date:todayStr(),wins:w,losses:l,improve:imp,goal:g,saved:Date.now()});
+  saveS();
+
+  const out=el('rv-ai-output');
+  if(out)out.innerHTML=`<div class="rv-ai-section"><div class="rv-ai-label">Generating AI Insight...</div><div class="morning-ai-thinking"><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div><div class="morning-ai-dot"></div></div></div>`;
+
+  const ctx=getUserContext();
+  const sys=`You are 3401, a direct personal coach. The user just completed a weekly review. Give them 3-5 sentences of honest, personalized insight. Look for patterns. Point out what's real. Don't pad or over-praise. Reference their actual context. Be the advisor they need, not the one who just agrees.`;
+  const msg=`${ctx}\n\nWeekly review:\nWins: ${w||'none'}\nLosses: ${l||'none'}\nWhat to improve: ${imp||'none'}\nNext week goal: ${g||'none'}\n\nGive them a direct, honest coaching response.`;
+
+  const response=await callAI(sys,msg,300);
+  if(out)out.innerHTML=`<div class="rv-ai-section"><div class="rv-ai-label">3401 Intelligence · Weekly Insight</div><div class="rv-ai-content">${response}</div></div>`;
+
+  ['rv-wins','rv-losses','rv-improve','rv-goal'].forEach(id=>{const e=el(id);if(e)e.value='';});
+  renderReviews();
+}
+
+/* ============================================================
+   VERSION UPDATE
+   ============================================================ */
+
 /* INIT */
 loadS();
 tick();setInterval(tick,1000);
 renderHome();
 checkBackupNudge();
+checkStreakRecovery();
+setTimeout(renderHomePulse, 2500);
 
 // Init keyboard on upd-item-in after DOM ready
 const updIn=el('upd-item-in');if(updIn)updIn.addEventListener('keydown',e=>{if(e.key==='Enter')addUpdItem();});
