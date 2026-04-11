@@ -3,228 +3,187 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FX Terminal — Trader Career</title>
+<title>FX Terminal v2 — Trader Career</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0c0f;
-    --bg2: #111318;
-    --bg3: #181c23;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #e8eaf0;
-    --text2: #8a8f9e;
-    --text3: #4a4f5e;
-    --accent: #00d4aa;
-    --accent2: #0097ff;
-    --red: #ff4d6d;
-    --amber: #ffaa00;
-    --green: #00d4aa;
-    --purple: #9b7fff;
-    --mono: 'Space Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --bg:#0a0c0f;--bg2:#111318;--bg3:#181c23;--bg4:#1e2330;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --text:#e8eaf0;--text2:#8a8f9e;--text3:#4a4f5e;
+    --accent:#00d4aa;--accent2:#0097ff;
+    --red:#ff4d6d;--amber:#ffaa00;--green:#00d4aa;--purple:#9b7fff;
+    --mono:'Space Mono',monospace;--sans:'Syne',sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; }
-
-  /* LAYOUT */
-  .app { display: grid; grid-template-rows: 48px 1fr; height: 100vh; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid var(--border); background: var(--bg2); z-index: 100; }
-  .topbar-left { display: flex; align-items: center; gap: 12px; }
-  .logo { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; }
-  .rank-badge { font-family: var(--mono); font-size: 10px; color: var(--text2); border: 1px solid var(--border2); padding: 2px 8px; border-radius: 3px; }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  .streak-pill { font-family: var(--mono); font-size: 11px; color: var(--amber); display: flex; align-items: center; gap: 4px; }
-  .xp-bar-wrap { width: 80px; height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-  .xp-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.5s ease; }
-  .xp-label { font-family: var(--mono); font-size: 10px; color: var(--text3); }
-  .main { display: grid; grid-template-columns: 220px 1fr 260px; height: 100%; overflow: hidden; }
-
-  /* SIDEBAR */
-  .sidebar { border-right: 1px solid var(--border); background: var(--bg2); display: flex; flex-direction: column; overflow-y: auto; }
-  .sidebar::-webkit-scrollbar { width: 3px; } .sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
-  .nav-section { padding: 12px 0 4px; }
-  .nav-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--text3); padding: 0 14px 6px; text-transform: uppercase; }
-  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); border-left: 2px solid transparent; transition: all 0.15s; }
-  .nav-item:hover { color: var(--text); background: var(--bg3); }
-  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,212,170,0.05); }
-  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
-  .nav-item.active .nav-dot { background: var(--accent); }
-  .nav-item .nav-badge { margin-left: auto; font-family: var(--mono); font-size: 9px; background: var(--bg3); color: var(--text3); padding: 1px 5px; border-radius: 2px; }
-  .nav-item.active .nav-badge { background: rgba(0,212,170,0.15); color: var(--accent); }
-
-  .season-card { margin: 12px; padding: 10px 12px; background: var(--bg3); border-radius: 6px; border: 1px solid var(--border); }
-  .season-label { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
-  .season-record { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--text); }
-  .season-record span { color: var(--accent); }
-  .season-sub { font-family: var(--mono); font-size: 10px; color: var(--text2); margin-top: 3px; }
-
-  /* CONTENT */
-  .content { overflow-y: auto; padding: 20px; }
-  .content::-webkit-scrollbar { width: 3px; } .content::-webkit-scrollbar-thumb { background: var(--border2); }
-  .screen { display: none; }
-  .screen.active { display: block; }
-
-  /* RIGHT PANEL */
-  .right-panel { border-left: 1px solid var(--border); background: var(--bg2); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-  .right-panel::-webkit-scrollbar { width: 3px; } .right-panel::-webkit-scrollbar-thumb { background: var(--border2); }
-
-  /* COMMON COMPONENTS */
-  .screen-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
-  .screen-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-  .card-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 8px; }
-  .card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-  .card-body { font-size: 13px; color: var(--text2); line-height: 1.7; }
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 5px; font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
-  .btn-primary { background: var(--accent); color: var(--bg); }
-  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--text3); }
-  .btn-danger { background: rgba(255,77,109,0.15); color: var(--red); border: 1px solid rgba(255,77,109,0.3); }
-  .btn-sm { padding: 5px 10px; font-size: 11px; }
-  textarea, input[type=text], select { background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px; color: var(--text); font-family: var(--sans); font-size: 13px; padding: 10px 12px; width: 100%; resize: vertical; outline: none; transition: border 0.15s; }
-  textarea:focus, input[type=text]:focus, select:focus { border-color: var(--accent); }
-  .tag { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; }
-  .tag-green { background: rgba(0,212,170,0.12); color: var(--green); }
-  .tag-red { background: rgba(255,77,109,0.12); color: var(--red); }
-  .tag-amber { background: rgba(255,170,0,0.12); color: var(--amber); }
-  .tag-purple { background: rgba(155,127,255,0.12); color: var(--purple); }
-  .tag-blue { background: rgba(0,151,255,0.12); color: var(--accent2); }
-  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .stat-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .stat-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
-  .stat-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
-  .stat-value { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--text); }
-  .stat-value.green { color: var(--green); }
-  .stat-value.red { color: var(--red); }
-  .stat-value.amber { color: var(--amber); }
-  .stat-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
-  .loading-msg { font-family: var(--mono); font-size: 12px; color: var(--text2); padding: 20px; text-align: center; }
-  .dot-pulse::after { content: '...'; animation: dots 1.5s infinite; }
-  @keyframes dots { 0%,100%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
-
-  /* BRIEFING */
-  .verdict-banner { border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid; }
-  .verdict-banner.correct { background: rgba(0,212,170,0.08); border-color: rgba(0,212,170,0.3); }
-  .verdict-banner.wrong { background: rgba(255,77,109,0.08); border-color: rgba(255,77,109,0.3); }
-  .verdict-banner.pending { background: rgba(255,170,0,0.08); border-color: rgba(255,170,0,0.3); }
-  .verdict-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-  .verdict-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
-  .session-clocks { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; margin-bottom: 16px; }
-  .session-clock { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; text-align: center; }
-  .session-clock.active { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.06); }
-  .session-clock .sc-name { font-family: var(--mono); font-size: 9px; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; }
-  .session-clock.active .sc-name { color: var(--accent); }
-  .session-clock .sc-status { font-family: var(--mono); font-size: 10px; color: var(--text2); }
-  .session-clock.active .sc-status { color: var(--text); }
-
-  /* SCENARIO */
-  .pair-display { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-  .bias-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
-  .bias-btn { padding: 16px; border-radius: 8px; border: 2px solid; cursor: pointer; text-align: center; font-weight: 700; font-size: 16px; transition: all 0.15s; background: transparent; }
-  .bias-btn.bull { border-color: rgba(0,212,170,0.3); color: var(--green); }
-  .bias-btn.bull:hover, .bias-btn.bull.selected { background: rgba(0,212,170,0.12); border-color: var(--green); }
-  .bias-btn.bear { border-color: rgba(255,77,109,0.3); color: var(--red); }
-  .bias-btn.bear:hover, .bias-btn.bear.selected { background: rgba(255,77,109,0.12); border-color: var(--red); }
-  .submitted-overlay { text-align: center; padding: 30px; }
-
-  /* CURRICULUM */
-  .school-block { margin-bottom: 16px; }
-  .school-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
-  .school-name { font-size: 14px; font-weight: 600; }
-  .school-progress { font-family: var(--mono); font-size: 11px; color: var(--text2); }
-  .school-lessons { padding: 4px 0 0 0; }
-  .lesson-row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
-  .lesson-row:last-child { border-bottom: none; }
-  .lesson-check { width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid var(--border2); flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .lesson-check.done { background: var(--accent); border-color: var(--accent); }
-  .lesson-check.done::after { content: '✓'; font-size: 10px; color: var(--bg); font-weight: 700; }
-  .lesson-name { font-size: 13px; color: var(--text2); flex: 1; }
-  .lesson-name.done { color: var(--text3); text-decoration: line-through; }
-  .lesson-quiz-btn { font-family: var(--mono); font-size: 10px; color: var(--accent); cursor: pointer; opacity: 0; transition: opacity 0.15s; }
-  .lesson-row:hover .lesson-quiz-btn { opacity: 1; }
-  .progress-bar-wrap { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-top: 6px; }
-  .progress-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
-
-  /* SKILL TREE */
-  .skill-tree { display: flex; flex-direction: column; gap: 10px; }
-  .skill-tier { display: flex; gap: 8px; align-items: center; }
-  .skill-node { flex: 1; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg3); position: relative; }
-  .skill-node.unlocked { border-color: rgba(0,212,170,0.3); background: rgba(0,212,170,0.05); }
-  .skill-node.mastered { border-color: var(--accent); background: rgba(0,212,170,0.1); }
-  .skill-node.locked { opacity: 0.4; }
-  .skill-node-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-  .skill-node-sub { font-size: 11px; color: var(--text2); }
-  .skill-arrow { color: var(--text3); font-size: 16px; flex-shrink: 0; }
-  .skill-status { font-family: var(--mono); font-size: 9px; margin-top: 4px; }
-
-  /* STATS */
-  .prediction-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .prediction-table th { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; }
-  .prediction-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); color: var(--text2); font-family: var(--mono); font-size: 11px; }
-  .prediction-table tr:last-child td { border-bottom: none; }
-
-  /* QUIZ MODAL */
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; }
-  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; width: 540px; max-width: 95vw; max-height: 85vh; overflow-y: auto; }
-  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .modal-title { font-size: 16px; font-weight: 700; }
-  .modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; line-height: 1; }
-  .modal-body { padding: 20px; }
-  .quiz-q { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 16px; line-height: 1.6; }
-  .quiz-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-  .quiz-option { padding: 12px 14px; border-radius: 6px; border: 1px solid var(--border2); cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.15s; background: var(--bg3); }
-  .quiz-option:hover { border-color: var(--accent); color: var(--text); }
-  .quiz-option.selected { border-color: var(--accent2); color: var(--text); background: rgba(0,151,255,0.08); }
-  .quiz-option.correct { border-color: var(--green); color: var(--green); background: rgba(0,212,170,0.08); }
-  .quiz-option.wrong { border-color: var(--red); color: var(--red); background: rgba(255,77,109,0.08); }
-  .quiz-result { padding: 14px; border-radius: 6px; margin-top: 12px; font-size: 13px; line-height: 1.6; }
-  .quiz-result.correct { background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.3); color: var(--green); }
-  .quiz-result.wrong { background: rgba(255,77,109,0.08); border: 1px solid rgba(255,77,109,0.3); color: var(--red); }
-
-  /* ACHIEVEMENTS */
-  .achievement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .achievement { padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg3); display: flex; align-items: flex-start; gap: 10px; }
-  .achievement.earned { border-color: rgba(155,127,255,0.3); background: rgba(155,127,255,0.05); }
-  .achievement-icon { font-size: 22px; flex-shrink: 0; }
-  .achievement-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-  .achievement-desc { font-size: 11px; color: var(--text2); }
-  .achievement.locked .achievement-icon { filter: grayscale(1); opacity: 0.3; }
-  .achievement.locked .achievement-name { color: var(--text3); }
-
-  /* RIGHT PANEL COMPONENTS */
-  .rp-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 8px; }
-  .coach-msg { font-size: 13px; color: var(--text2); line-height: 1.7; font-style: italic; border-left: 2px solid var(--accent); padding-left: 10px; }
-  .export-section { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
-
-  /* SLUMP */
-  .slump-screen { text-align: center; padding: 40px 20px; }
-  .slump-title { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
-  .slump-body { font-size: 14px; color: var(--text2); line-height: 1.8; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto; }
-
-  /* TOAST */
-  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 16px; font-size: 13px; z-index: 300; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.success { border-color: rgba(0,212,170,0.4); color: var(--green); }
-  .toast.error { border-color: rgba(255,77,109,0.4); color: var(--red); }
-
-  .ai-loading { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--text3); }
-  .ai-loading-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s infinite; }
-  .ai-loading-dot:nth-child(2) { animation-delay: 0.2s; }
-  .ai-loading-dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes pulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
-
-  .ai-response { font-size: 13px; color: var(--text2); line-height: 1.8; white-space: pre-wrap; }
-  .hidden { display: none !important; }
-  .flex-row { display: flex; gap: 8px; align-items: center; }
-  .ml-auto { margin-left: auto; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;}
+  .app{display:grid;grid-template-rows:48px 1fr;height:100vh;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border);background:var(--bg2);z-index:100;}
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .logo{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);letter-spacing:0.1em;}
+  .rank-badge{font-family:var(--mono);font-size:10px;color:var(--text2);border:1px solid var(--border2);padding:2px 8px;border-radius:3px;}
+  .topbar-right{display:flex;align-items:center;gap:12px;}
+  .streak-pill{font-family:var(--mono);font-size:11px;color:var(--amber);display:flex;align-items:center;gap:4px;}
+  .xp-bar-wrap{width:80px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+  .xp-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 0.5s ease;}
+  .xp-label{font-family:var(--mono);font-size:10px;color:var(--text3);}
+  .main{display:grid;grid-template-columns:220px 1fr 260px;height:100%;overflow:hidden;}
+  .sidebar{border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;}
+  .sidebar::-webkit-scrollbar{width:3px;}.sidebar::-webkit-scrollbar-thumb{background:var(--border2);}
+  .nav-section{padding:12px 0 4px;}
+  .nav-label{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;color:var(--text3);padding:0 14px 6px;text-transform:uppercase;}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border-left:2px solid transparent;transition:all 0.15s;}
+  .nav-item:hover{color:var(--text);background:var(--bg3);}
+  .nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,212,170,0.05);}
+  .nav-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+  .nav-item.active .nav-dot{background:var(--accent);}
+  .nav-item .nav-badge{margin-left:auto;font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--text3);padding:1px 5px;border-radius:2px;}
+  .nav-item.active .nav-badge{background:rgba(0,212,170,0.15);color:var(--accent);}
+  .season-card{margin:12px;padding:10px 12px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);}
+  .season-label{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+  .season-record{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text);}
+  .season-record span{color:var(--accent);}
+  .season-sub{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:3px;}
+  .content{overflow-y:auto;padding:20px;}
+  .content::-webkit-scrollbar{width:3px;}.content::-webkit-scrollbar-thumb{background:var(--border2);}
+  .screen{display:none;}.screen.active{display:block;}
+  .right-panel{border-left:1px solid var(--border);background:var(--bg2);overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .right-panel::-webkit-scrollbar{width:3px;}.right-panel::-webkit-scrollbar-thumb{background:var(--border2);}
+  .screen-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;}
+  .screen-sub{font-size:13px;color:var(--text2);margin-bottom:20px;}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;}
+  .card-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;}
+  .card-body{font-size:13px;color:var(--text2);line-height:1.7;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:5px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{opacity:0.9;transform:translateY(-1px);}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+  .btn-ghost:hover{color:var(--text);border-color:var(--text3);}
+  .btn-sm{padding:5px 10px;font-size:11px;}
+  textarea,input[type=text],select{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;color:var(--text);font-family:var(--sans);font-size:13px;padding:10px 12px;width:100%;resize:vertical;outline:none;transition:border 0.15s;}
+  textarea:focus,input[type=text]:focus,select:focus{border-color:var(--accent);}
+  .tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;}
+  .tag-green{background:rgba(0,212,170,0.12);color:var(--green);}
+  .tag-red{background:rgba(255,77,109,0.12);color:var(--red);}
+  .tag-amber{background:rgba(255,170,0,0.12);color:var(--amber);}
+  .tag-purple{background:rgba(155,127,255,0.12);color:var(--purple);}
+  .tag-blue{background:rgba(0,151,255,0.12);color:var(--accent2);}
+  .divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .stat-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+  .stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;}
+  .stat-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:4px;}
+  .stat-value{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--text);}
+  .stat-value.green{color:var(--green);}.stat-value.red{color:var(--red);}.stat-value.amber{color:var(--amber);}
+  .stat-sub{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;}
+  .verdict-banner{border-radius:8px;padding:16px;margin-bottom:16px;border:1px solid;}
+  .verdict-banner.correct{background:rgba(0,212,170,0.08);border-color:rgba(0,212,170,0.3);}
+  .verdict-banner.wrong{background:rgba(255,77,109,0.08);border-color:rgba(255,77,109,0.3);}
+  .verdict-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+  .verdict-body{font-size:13px;color:var(--text2);line-height:1.6;}
+  .session-clocks{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:16px;}
+  .session-clock{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;text-align:center;}
+  .session-clock.active{border-color:rgba(0,212,170,0.4);background:rgba(0,212,170,0.06);}
+  .session-clock .sc-name{font-family:var(--mono);font-size:9px;text-transform:uppercase;color:var(--text3);margin-bottom:2px;}
+  .session-clock.active .sc-name{color:var(--accent);}
+  .session-clock .sc-status{font-family:var(--mono);font-size:10px;color:var(--text2);}
+  .session-clock.active .sc-status{color:var(--text);}
+  .pair-display{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .bias-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0;}
+  .bias-btn{padding:16px;border-radius:8px;border:2px solid;cursor:pointer;text-align:center;font-weight:700;font-size:16px;transition:all 0.15s;background:transparent;}
+  .bias-btn.bull{border-color:rgba(0,212,170,0.3);color:var(--green);}
+  .bias-btn.bull:hover,.bias-btn.bull.selected{background:rgba(0,212,170,0.12);border-color:var(--green);}
+  .bias-btn.bear{border-color:rgba(255,77,109,0.3);color:var(--red);}
+  .bias-btn.bear:hover,.bias-btn.bear.selected{background:rgba(255,77,109,0.12);border-color:var(--red);}
+  .submitted-overlay{text-align:center;padding:30px;}
+  .school-block{margin-bottom:16px;}
+  .school-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;}
+  .school-name{font-size:14px;font-weight:600;}
+  .school-progress{font-family:var(--mono);font-size:11px;color:var(--text2);}
+  .school-lessons{padding:4px 0 0 0;}
+  .lesson-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);}
+  .lesson-row:last-child{border-bottom:none;}
+  .lesson-check{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+  .lesson-check.done{background:var(--accent);border-color:var(--accent);}
+  .lesson-check.done::after{content:'✓';font-size:10px;color:var(--bg);font-weight:700;}
+  .lesson-name{font-size:13px;color:var(--text2);flex:1;}
+  .lesson-name.done{color:var(--text3);text-decoration:line-through;}
+  .lesson-actions{display:flex;gap:6px;opacity:0;transition:opacity 0.15s;}
+  .lesson-row:hover .lesson-actions{opacity:1;}
+  .lesson-btn{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;white-space:nowrap;}
+  .lesson-btn.vis{color:var(--purple);}
+  .progress-bar-wrap{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:6px;}
+  .progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s ease;}
+  .skill-tree{display:flex;flex-direction:column;gap:10px;}
+  .skill-tier{display:flex;gap:8px;align-items:center;}
+  .skill-node{flex:1;padding:10px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;transition:all 0.15s;}
+  .skill-node:hover{border-color:var(--border2);}
+  .skill-node.unlocked{border-color:rgba(0,212,170,0.3);background:rgba(0,212,170,0.05);}
+  .skill-node.mastered{border-color:var(--accent);background:rgba(0,212,170,0.1);}
+  .skill-node.locked{opacity:0.4;cursor:default;}
+  .skill-node-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .skill-node-sub{font-size:11px;color:var(--text2);}
+  .skill-arrow{color:var(--text3);font-size:16px;flex-shrink:0;}
+  .skill-status{font-family:var(--mono);font-size:9px;margin-top:4px;}
+  .skill-vis-hint{font-family:var(--mono);font-size:9px;color:var(--purple);margin-top:3px;}
+  .prediction-table{width:100%;border-collapse:collapse;font-size:12px;}
+  .prediction-table th{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
+  .prediction-table td{padding:8px 8px;border-bottom:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:11px;}
+  .prediction-table tr:last-child td{border-bottom:none;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:center;justify-content:center;}
+  .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;width:600px;max-width:96vw;max-height:88vh;overflow-y:auto;}
+  .modal-wide{width:720px;}
+  .modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .modal-title{font-size:16px;font-weight:700;}
+  .modal-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;}
+  .modal-body{padding:20px;}
+  .quiz-q{font-size:15px;font-weight:600;color:var(--text);margin-bottom:16px;line-height:1.6;}
+  .quiz-options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+  .quiz-option{padding:12px 14px;border-radius:6px;border:1px solid var(--border2);cursor:pointer;font-size:13px;color:var(--text2);transition:all 0.15s;background:var(--bg3);}
+  .quiz-option:hover{border-color:var(--accent);color:var(--text);}
+  .quiz-option.selected{border-color:var(--accent2);color:var(--text);background:rgba(0,151,255,0.08);}
+  .quiz-option.correct{border-color:var(--green);color:var(--green);background:rgba(0,212,170,0.08);}
+  .quiz-option.wrong{border-color:var(--red);color:var(--red);background:rgba(255,77,109,0.08);}
+  .quiz-result{padding:14px;border-radius:6px;margin-top:12px;font-size:13px;line-height:1.6;}
+  .quiz-result.correct{background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.3);color:var(--green);}
+  .quiz-result.wrong{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);color:var(--red);}
+  .achievement-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .achievement{padding:12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);display:flex;align-items:flex-start;gap:10px;}
+  .achievement.earned{border-color:rgba(155,127,255,0.3);background:rgba(155,127,255,0.05);}
+  .achievement-icon{font-size:22px;flex-shrink:0;}
+  .achievement-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .achievement-desc{font-size:11px;color:var(--text2);}
+  .achievement.locked .achievement-icon{filter:grayscale(1);opacity:0.3;}
+  .achievement.locked .achievement-name{color:var(--text3);}
+  .rp-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:8px;}
+  .coach-msg{font-size:13px;color:var(--text2);line-height:1.7;font-style:italic;border-left:2px solid var(--accent);padding-left:10px;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:10px 16px;font-size:13px;z-index:300;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast.success{border-color:rgba(0,212,170,0.4);color:var(--green);}
+  .toast.error{border-color:rgba(255,77,109,0.4);color:var(--red);}
+  .ai-loading{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--text3);}
+  .ai-loading-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite;}
+  .ai-loading-dot:nth-child(2){animation-delay:0.2s;}
+  .ai-loading-dot:nth-child(3){animation-delay:0.4s;}
+  @keyframes pulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+  .ai-response{font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap;}
+  .hidden{display:none!important;}
+  /* CHART STYLES */
+  .chart-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:12px;overflow:hidden;}
+  .chart-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .chart-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);}
+  .chart-pair{font-family:var(--mono);font-size:11px;color:var(--accent);}
+  /* DIAGRAM STYLES */
+  .diagram-wrap{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:12px;margin:10px 0;}
+  .diagram-title{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--purple);margin-bottom:8px;}
+  /* CONCEPT VISUAL MODAL */
+  .vis-tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0;}
+  .vis-tab{padding:8px 14px;font-size:13px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .vis-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
       <div class="logo">FX//TERMINAL</div>
@@ -232,126 +191,108 @@
     </div>
     <div class="topbar-right">
       <div class="streak-pill">⚡ <span id="streak-count">0</span> day streak</div>
-      <div class="xp-label" id="xp-label">0 / 500 XP</div>
+      <div class="xp-label" id="xp-label">0 XP</div>
       <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar" style="width:0%"></div></div>
     </div>
   </div>
-
   <div class="main">
     <!-- SIDEBAR -->
     <div class="sidebar">
       <div class="nav-section">
         <div class="nav-label">Command</div>
-        <div class="nav-item active" onclick="navigate('briefing')"><div class="nav-dot"></div> Daily Briefing</div>
-        <div class="nav-item" onclick="navigate('scenario')"><div class="nav-dot"></div> Scenario Engine <span class="nav-badge" id="scenario-badge">1</span></div>
+        <div class="nav-item active" onclick="navigate('briefing')"><div class="nav-dot"></div>Daily Briefing</div>
+        <div class="nav-item" onclick="navigate('scenario')"><div class="nav-dot"></div>Scenario Engine<span class="nav-badge" id="scenario-badge">1</span></div>
       </div>
       <div class="nav-section">
         <div class="nav-label">Training</div>
-        <div class="nav-item" onclick="navigate('curriculum')"><div class="nav-dot"></div> BabyPips Curriculum</div>
-        <div class="nav-item" onclick="navigate('skilltree')"><div class="nav-dot"></div> Skill Tree</div>
-        <div class="nav-item" onclick="navigate('coach')"><div class="nav-dot"></div> AI Coach</div>
+        <div class="nav-item" onclick="navigate('curriculum')"><div class="nav-dot"></div>BabyPips Curriculum</div>
+        <div class="nav-item" onclick="navigate('skilltree')"><div class="nav-dot"></div>Skill Tree</div>
+        <div class="nav-item" onclick="navigate('coach')"><div class="nav-dot"></div>AI Coach</div>
       </div>
       <div class="nav-section">
         <div class="nav-label">Career</div>
-        <div class="nav-item" onclick="navigate('stats')"><div class="nav-dot"></div> Stats Hub</div>
-        <div class="nav-item" onclick="navigate('achievements')"><div class="nav-dot"></div> Achievements</div>
+        <div class="nav-item" onclick="navigate('stats')"><div class="nav-dot"></div>Stats Hub</div>
+        <div class="nav-item" onclick="navigate('achievements')"><div class="nav-dot"></div>Achievements</div>
       </div>
-
       <div style="flex:1;"></div>
-
       <div class="season-card">
         <div class="season-label">Season Record</div>
         <div class="season-record"><span id="season-w">0</span>W – <span id="season-l">0</span>L</div>
-        <div class="season-sub" id="season-month">Loading...</div>
+        <div class="season-sub" id="season-month"></div>
       </div>
-
-      <div style="padding: 10px 12px; border-top: 1px solid var(--border);">
-        <button class="btn btn-ghost btn-sm" onclick="exportSave()" style="width:100%; justify-content:center; margin-bottom:6px;">⬇ Export Save</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-input').click()" style="width:100%; justify-content:center;">⬆ Import Save</button>
+      <div style="padding:10px 12px;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost btn-sm" onclick="exportSave()" style="width:100%;justify-content:center;margin-bottom:6px;">⬇ Export Save</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import-input').click()" style="width:100%;justify-content:center;">⬆ Import Save</button>
         <input type="file" id="import-input" accept=".json" style="display:none" onchange="importSave(event)">
       </div>
     </div>
 
-    <!-- MAIN CONTENT -->
+    <!-- CONTENT -->
     <div class="content">
-
-      <!-- BRIEFING SCREEN -->
+      <!-- BRIEFING -->
       <div class="screen active" id="screen-briefing">
         <div class="screen-title">Daily Briefing</div>
-        <div class="screen-sub" id="briefing-date">Loading...</div>
-
-        <!-- Verdict Banner -->
+        <div class="screen-sub" id="briefing-date"></div>
         <div id="verdict-section"></div>
-
-        <!-- Session Clocks -->
         <div class="card-label">Active Sessions</div>
         <div class="session-clocks" id="session-clocks"></div>
-
-        <!-- Coach Message -->
         <div class="card">
           <div class="card-label">Coach Message</div>
-          <div id="coach-briefing-msg">
-            <div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div></div>
-          </div>
+          <div id="coach-briefing-msg"><div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div></div></div>
         </div>
-
-        <!-- Today's Focus -->
         <div class="card">
           <div class="card-label">Today's Focus Concept</div>
-          <div class="card-title" id="focus-concept">Loading...</div>
-          <div class="card-body" id="focus-desc">Based on your curriculum progress.</div>
-          <div style="margin-top:12px;">
-            <button class="btn btn-primary btn-sm" onclick="navigate('scenario')">Go to Scenario Engine →</button>
+          <div class="card-title" id="focus-concept"></div>
+          <div class="card-body" id="focus-desc"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="navigate('scenario')">Scenario Engine →</button>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('curriculum')">Curriculum →</button>
           </div>
         </div>
       </div>
 
-      <!-- SCENARIO SCREEN -->
+      <!-- SCENARIO -->
       <div class="screen" id="screen-scenario">
         <div class="screen-title">Scenario Engine</div>
-        <div class="screen-sub">Form your bias. Commit. Find out tomorrow.</div>
-
+        <div class="screen-sub">Study the chart. Form your bias. Commit. Verdict arrives tomorrow.</div>
         <div id="scenario-content"></div>
       </div>
 
-      <!-- CURRICULUM SCREEN -->
+      <!-- CURRICULUM -->
       <div class="screen" id="screen-curriculum">
         <div class="screen-title">BabyPips Curriculum</div>
-        <div class="screen-sub">Tick off lessons as you complete them. A quiz fires on every completion.</div>
+        <div class="screen-sub">Complete lessons to earn XP and trigger quizzes. Click the diagram icon to see a visual for any concept.</div>
         <div class="stat-grid-3" style="margin-bottom:16px;">
           <div class="stat-box"><div class="stat-label">Completed</div><div class="stat-value green" id="curr-done">0</div></div>
-          <div class="stat-box"><div class="stat-label">Total Lessons</div><div class="stat-value" id="curr-total">0</div></div>
+          <div class="stat-box"><div class="stat-label">Total</div><div class="stat-value" id="curr-total">0</div></div>
           <div class="stat-box"><div class="stat-label">Progress</div><div class="stat-value amber" id="curr-pct">0%</div></div>
         </div>
         <div id="curriculum-list"></div>
       </div>
 
-      <!-- SKILL TREE SCREEN -->
+      <!-- SKILL TREE -->
       <div class="screen" id="screen-skilltree">
         <div class="screen-title">Skill Tree</div>
-        <div class="screen-sub">Your mastery arc — from fundamentals to full ICT model.</div>
+        <div class="screen-sub">Click any unlocked node to see the concept diagram. Master concepts to progress your rank.</div>
         <div class="skill-tree" id="skill-tree-content"></div>
       </div>
 
-      <!-- AI COACH SCREEN -->
+      <!-- AI COACH -->
       <div class="screen" id="screen-coach">
         <div class="screen-title">AI Coach</div>
-        <div class="screen-sub">Describe a setup, ask about a concept, or request a challenge. The coach will push back before giving answers.</div>
+        <div class="screen-sub">Describe a setup or ask about any concept. The coach challenges your thinking before giving answers.</div>
         <div id="coach-history" style="margin-bottom:12px;"></div>
-        <div style="display:flex;gap:8px;">
-          <textarea id="coach-input" rows="3" placeholder="Describe your setup, ask about BOS, FVG, SMT... anything."></textarea>
-        </div>
-        <div style="margin-top:8px; display:flex; gap:8px;">
+        <textarea id="coach-input" rows="3" placeholder="Describe your setup, ask about BOS, FVG, SMT divergence..."></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;">
           <button class="btn btn-primary" onclick="sendToCoach()">Ask Coach →</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('coach-history').innerHTML=''; document.getElementById('coach-input').value='';">Clear</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('coach-history').innerHTML='';document.getElementById('coach-input').value='';">Clear</button>
         </div>
       </div>
 
-      <!-- STATS SCREEN -->
+      <!-- STATS -->
       <div class="screen" id="screen-stats">
         <div class="screen-title">Stats Hub</div>
         <div class="screen-sub">Your complete career record.</div>
-
         <div class="card-label">Prediction Record</div>
         <div class="stat-grid-3">
           <div class="stat-box"><div class="stat-label">Overall</div><div class="stat-value" id="stat-overall">0W 0L</div></div>
@@ -362,30 +303,26 @@
           <div class="stat-box"><div class="stat-label">Bullish Calls</div><div class="stat-value" id="stat-bull">0W 0L</div><div class="stat-sub" id="stat-bull-rate">—</div></div>
           <div class="stat-box"><div class="stat-label">Bearish Calls</div><div class="stat-value" id="stat-bear">0W 0L</div><div class="stat-sub" id="stat-bear-rate">—</div></div>
         </div>
-
         <hr class="divider">
         <div class="card-label">Prediction History</div>
         <div id="prediction-history-table"></div>
-
         <hr class="divider">
         <div class="card-label">Quiz Record</div>
         <div class="stat-grid">
           <div class="stat-box"><div class="stat-label">Quizzes Taken</div><div class="stat-value" id="stat-quizzes">0</div></div>
           <div class="stat-box"><div class="stat-label">Quiz Win Rate</div><div class="stat-value green" id="stat-quiz-rate">—</div></div>
         </div>
-
         <hr class="divider">
         <div class="card-label">Season History</div>
         <div id="season-history"></div>
       </div>
 
-      <!-- ACHIEVEMENTS SCREEN -->
+      <!-- ACHIEVEMENTS -->
       <div class="screen" id="screen-achievements">
         <div class="screen-title">Achievements</div>
         <div class="screen-sub">Earn these through real actions — not participation trophies.</div>
         <div class="achievement-grid" id="achievement-grid"></div>
       </div>
-
     </div>
 
     <!-- RIGHT PANEL -->
@@ -393,43 +330,29 @@
       <div>
         <div class="rp-label">Career Rank</div>
         <div style="font-size:18px;font-weight:800;color:var(--accent);margin-bottom:4px;" id="rp-rank">Rookie Analyst</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;" id="rp-rank-desc">Keep learning. Your first 100 XP unlocks Junior Trader.</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;" id="rp-rank-desc">Keep learning. First 100 XP unlocks Junior Trader.</div>
         <div class="progress-bar-wrap" style="margin-bottom:4px;"><div class="progress-bar" id="rp-xp-bar" style="width:0%"></div></div>
-        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);" id="rp-xp-label">0 / 500 XP to next rank</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);" id="rp-xp-label">0 / 500 XP</div>
       </div>
-
       <hr class="divider" style="margin:8px 0;">
-
       <div>
         <div class="rp-label">Quick Stats</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
-          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
-            <span style="color:var(--text3);">Lessons Done</span><span id="rp-lessons">0</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
-            <span style="color:var(--text3);">Predictions</span><span id="rp-predictions">0W 0L</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
-            <span style="color:var(--text3);">Quizzes</span><span id="rp-quizzes">0 taken</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;">
-            <span style="color:var(--text3);">Achievements</span><span id="rp-achievements">0 / 10</span>
-          </div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span style="color:var(--text3);">Lessons Done</span><span id="rp-lessons">0</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span style="color:var(--text3);">Predictions</span><span id="rp-predictions">0W 0L</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span style="color:var(--text3);">Quizzes</span><span id="rp-quizzes">0 taken</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;"><span style="color:var(--text3);">Achievements</span><span id="rp-achievements">0 / 10</span></div>
         </div>
       </div>
-
       <hr class="divider" style="margin:8px 0;">
-
       <div>
         <div class="rp-label">Slump Protocol</div>
         <div id="slump-status" style="font-size:12px;color:var(--text3);">Active — watching for inactivity.</div>
       </div>
-
       <hr class="divider" style="margin:8px 0;">
-
       <div>
         <div class="rp-label">Save Data</div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Export before updates to keep your progress.</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Export before any terminal update.</div>
         <button class="btn btn-ghost btn-sm" onclick="exportSave()" style="width:100%;justify-content:center;">⬇ Export Save File</button>
       </div>
     </div>
@@ -438,12 +361,30 @@
 
 <!-- QUIZ MODAL -->
 <div class="modal-backdrop hidden" id="quiz-modal">
-  <div class="modal">
+  <div class="modal modal-wide">
     <div class="modal-header">
       <div class="modal-title" id="quiz-modal-title">Concept Quiz</div>
       <button class="modal-close" onclick="closeQuiz()">✕</button>
     </div>
-    <div class="modal-body" id="quiz-modal-body"></div>
+    <div class="modal-body">
+      <div class="vis-tabs" id="quiz-tabs">
+        <div class="vis-tab active" onclick="switchQuizTab('quiz')">Quiz</div>
+        <div class="vis-tab" onclick="switchQuizTab('visual')">Concept Visual</div>
+      </div>
+      <div id="quiz-tab-quiz"></div>
+      <div id="quiz-tab-visual" class="hidden"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONCEPT VISUAL MODAL (Skill Tree) -->
+<div class="modal-backdrop hidden" id="visual-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div class="modal-title" id="visual-modal-title">Concept Visual</div>
+      <button class="modal-close" onclick="document.getElementById('visual-modal').classList.add('hidden')">✕</button>
+    </div>
+    <div class="modal-body" id="visual-modal-body"></div>
   </div>
 </div>
 
@@ -455,7 +396,7 @@
       <button class="modal-close" onclick="document.getElementById('export-modal').classList.add('hidden')">✕</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Copy this data and store it somewhere safe. Use "Import Save" in a new version of the terminal to restore everything.</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">Copy or download your save file. Import it into any future version of the terminal.</div>
       <textarea id="export-text" rows="8" readonly style="font-family:var(--mono);font-size:11px;"></textarea>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn btn-primary" onclick="copyExport()">Copy to Clipboard</button>
@@ -469,367 +410,634 @@
 
 <script>
 // ============================================================
-// DATA LAYER
+// DATA
 // ============================================================
-const SAVE_KEY = 'fxterminal_v1';
-const RANKS = [
-  { name: 'Rookie Analyst', xpNeeded: 0, desc: 'Keep learning. First 100 XP unlocks Junior Trader.' },
-  { name: 'Junior Trader', xpNeeded: 100, desc: 'You\'re building real foundations. 300 XP to Apprentice.' },
-  { name: 'Apprentice Trader', xpNeeded: 300, desc: 'Concepts are clicking. 600 XP to Market Analyst.' },
-  { name: 'Market Analyst', xpNeeded: 600, desc: 'You read price action. 1000 XP to Senior Trader.' },
-  { name: 'Senior Trader', xpNeeded: 1000, desc: 'Disciplined and consistent. 1500 XP to Fund Manager.' },
-  { name: 'Fund Manager', xpNeeded: 1500, desc: 'Peak rank. You\'ve built a trading career.' },
+const SAVE_KEY='fxterminal_v1';
+const RANKS=[
+  {name:'Rookie Analyst',xpNeeded:0,desc:'Keep learning. First 100 XP unlocks Junior Trader.'},
+  {name:'Junior Trader',xpNeeded:100,desc:'Building real foundations. 300 XP to Apprentice.'},
+  {name:'Apprentice Trader',xpNeeded:300,desc:'Concepts are clicking. 600 XP to Market Analyst.'},
+  {name:'Market Analyst',xpNeeded:600,desc:'You read price action. 1000 XP to Senior Trader.'},
+  {name:'Senior Trader',xpNeeded:1000,desc:'Disciplined and consistent. 1500 XP to Fund Manager.'},
+  {name:'Fund Manager',xpNeeded:1500,desc:'Peak rank. You\'ve built a trading career.'},
+];
+const defaultState=()=>({version:1,xp:0,streak:0,lastLogin:null,predictions:[],quizHistory:[],lessonsDone:{},achievements:{},seasonHistory:[],currentSeason:{month:'',wins:0,losses:0},pendingPrediction:null});
+let state=defaultState();
+
+async function loadState(){try{const r=await window.storage.get(SAVE_KEY);if(r&&r.value)state={...defaultState(),...JSON.parse(r.value)};}catch(e){state=defaultState();}}
+async function saveState(){try{await window.storage.set(SAVE_KEY,JSON.stringify(state));}catch(e){}}
+
+// ============================================================
+// CURRICULUM
+// ============================================================
+const CURRICULUM=[
+  {school:'Kindergarten',color:'#00d4aa',lessons:['What is Forex?','What is Traded in Forex?','Who Trades Forex?','When Can You Trade Forex?','What is a Pip?','What is a Lot?','What is Leverage?','What is Margin?','What is a Spread?','Types of Forex Orders']},
+  {school:'Elementary',color:'#0097ff',lessons:['Major, Minor and Exotic Pairs','How to Read a Forex Quote','Long or Short?','Bulls vs Bears','Demo Trading Account','What Moves the Forex Market?','Economic Indicators','Currency Correlations','Interest Rates and Forex']},
+  {school:'Middle School',color:'#9b7fff',lessons:['Japanese Candlestick Basics','Support and Resistance','Trend Lines','Chart Patterns','Fibonacci Retracements','Moving Averages','Bollinger Bands','MACD','RSI','Stochastic']},
+  {school:'High School',color:'#ffaa00',lessons:['Market Structure Overview','Uptrend and Downtrend','Break of Structure (BOS)','Change of Character (CHoCH)','Swing Highs and Lows','Internal vs External Range','Premium and Discount Zones','Supply and Demand','Order Blocks','Breaker Blocks']},
+  {school:'College',color:'#ff4d6d',lessons:['Smart Money Concepts (SMC) Intro','Fair Value Gaps (FVG)','Imbalances and Inefficiencies','Liquidity Pools','Buyside and Sellside Liquidity','Stop Hunts and Sweeps','SMT Divergence','ICT Killzones','London Open Strategy','New York Open Strategy']},
+  {school:'Graduate',color:'#00d4aa',lessons:['ICT Power of 3','Judas Swing','Silver Bullet Strategy','Weekly Profiles','Daily Profiles','Building a Trading Plan','Risk Management Rules','Trade Journal Discipline','Psychology of Losing','Developing Your Edge']},
 ];
 
-const defaultState = () => ({
-  version: 1,
-  xp: 0,
-  streak: 0,
-  lastLogin: null,
-  predictions: [],
-  quizHistory: [],
-  lessonsDone: {},
-  achievements: {},
-  seasonHistory: [],
-  currentSeason: { month: '', wins: 0, losses: 0 },
-  pendingPrediction: null,
-  coachHistory: [],
-});
+const SKILL_TREE=[
+  {name:'Forex Fundamentals',sub:'Pips, lots, leverage, spreads',req:'Kindergarten:5',concept:'fundamentals'},
+  {name:'Market Structure',sub:'Swing highs/lows, trends, ranges',req:'Elementary:5',concept:'market_structure'},
+  {name:'Break of Structure',sub:'BOS and CHoCH identification',req:'High School:3',concept:'bos'},
+  {name:'Fair Value Gaps',sub:'FVG, imbalances, inefficiencies',req:'College:2',concept:'fvg'},
+  {name:'Liquidity Concepts',sub:'Pools, sweeps, stop hunts',req:'College:5',concept:'liquidity'},
+  {name:'SMT Divergence',sub:'Correlated pair divergence',req:'College:7',concept:'smt'},
+  {name:'ICT Killzones',sub:'London, NY, overlap sessions',req:'College:8',concept:'killzones'},
+  {name:'Full ICT Model',sub:'Power of 3, profiles, full framework',req:'Graduate:3',concept:'ict_model'},
+];
 
-let state = defaultState();
+const ACHIEVEMENTS=[
+  {id:'first_login',icon:'🎯',name:'First Day',desc:'Opened the terminal for the first time.'},
+  {id:'first_lesson',icon:'📖',name:'First Lesson',desc:'Completed your first BabyPips lesson.'},
+  {id:'first_prediction',icon:'🔮',name:'First Call',desc:'Made your first directional prediction.'},
+  {id:'first_correct',icon:'✅',name:'Sharp Eye',desc:'Got your first prediction correct.'},
+  {id:'streak_3',icon:'🔥',name:'On Fire',desc:'Hit a 3-day streak.'},
+  {id:'streak_7',icon:'⚡',name:'Consistent',desc:'Hit a 7-day streak.'},
+  {id:'lessons_10',icon:'🎓',name:'Student',desc:'Completed 10 lessons.'},
+  {id:'lessons_25',icon:'🏫',name:'Dedicated',desc:'Completed 25 lessons.'},
+  {id:'predictions_10',icon:'📊',name:'Data Driven',desc:'Made 10 predictions.'},
+  {id:'winrate_60',icon:'🏆',name:'Edge Builder',desc:'Hit 60% prediction win rate (min 10 calls).'},
+];
 
-async function loadState() {
-  try {
-    const raw = await window.storage.get(SAVE_KEY);
-    if (raw && raw.value) {
-      state = { ...defaultState(), ...JSON.parse(raw.value) };
+const SCENARIOS=[
+  {pair:'EUR/USD',concept:'Liquidity Sweep + FVG',context:'During the London open, price aggressively swept below the Asian session low, taking out retail stop losses. It then reversed sharply, creating a bullish Fair Value Gap on the 15-minute chart. The previous weekly high sits 80 pips above current price.',question:'Price swept sellside liquidity at the Asian low and formed a bullish FVG. What is your directional bias for the London session?',chartType:'liquidity_sweep_bull'},
+  {pair:'GBP/USD',concept:'Order Block + Fibonacci',context:'Cable has been in a clear downtrend. After a strong bearish impulse leg, price has retraced into a 4-hour bearish order block that aligns with the 61.8% Fibonacci retracement level. The most recent Break of Structure was to the downside.',question:'GBP/USD retraced into a bearish OB at the 61.8% fib in a downtrend. What is your bias?',chartType:'ob_fib_bear'},
+  {pair:'USD/JPY',concept:'Judas Swing + CHoCH',context:'At the New York open, USDJPY made a false push higher — a classic Judas Swing — trapping late long buyers. It then reversed sharply, broke below the London session low, and printed a Change of Character (CHoCH) to the downside.',question:'USDJPY showed a Judas Swing at NY open then CHoCH to the downside. What is your directional bias?',chartType:'judas_swing'},
+  {pair:'EUR/USD',concept:'SMT Divergence + Premium',context:'On the daily chart, EUR/USD is trading in premium territory above the equilibrium of the recent range. SMT divergence is present — EUR/USD made a new swing high but GBP/USD failed to make a higher high, signalling potential USD strength.',question:'Price is in premium with SMT divergence showing weakness. What is your bias?',chartType:'smt_divergence'},
+  {pair:'GBP/JPY',concept:'Asian Range Liquidity',context:'Price consolidated tightly during the Asian session, building equal highs above (buyside liquidity) and equal lows below (sellside liquidity). The previous daily candle closed bearish. London is opening now.',question:'Asian range is set with equal highs above and equal lows below. PDC was bearish. Which side gets swept first?',chartType:'asian_range'},
+  {pair:'USD/CAD',concept:'BOS Retest + FVG',context:'A bullish Break of Structure printed on the 1-hour chart. Price pulled back into the BOS level, which now acts as support. A bullish Fair Value Gap sits right at this confluence zone. NFP is tomorrow — high-impact news risk.',question:'Fresh BOS retest with FVG confluence, but NFP tomorrow. Bullish bias or stay out?',chartType:'bos_retest'},
+];
+
+// ============================================================
+// CHART ENGINE — SVG Candlestick Charts
+// ============================================================
+function drawCandleChart(candles,annotations,width,height){
+  const pad={l:40,r:10,t:10,b:20};
+  const cw=width-pad.l-pad.r;
+  const ch=height-pad.t-pad.b;
+  const prices=candles.flatMap(c=>[c.h,c.l]);
+  const minP=Math.min(...prices);
+  const maxP=Math.max(...prices);
+  const range=maxP-minP||1;
+  const py=p=>pad.t+ch-(((p-minP)/range)*ch);
+  const candleW=Math.max(4,Math.floor(cw/candles.length*0.65));
+  const spacing=cw/candles.length;
+
+  let svgParts=`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+  <rect width="${width}" height="${height}" fill="#181c23" rx="4"/>`;
+
+  // Grid lines
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(ch/4)*i;
+    const price=(maxP-((maxP-minP)/4)*i).toFixed(4);
+    svgParts+=`<line x1="${pad.l}" y1="${y}" x2="${width-pad.r}" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+    svgParts+=`<text x="${pad.l-4}" y="${y+3}" font-family="'Space Mono',monospace" font-size="7" fill="#4a4f5e" text-anchor="end">${price}</text>`;
+  }
+
+  // Candles
+  candles.forEach((c,i)=>{
+    const x=pad.l+spacing*i+spacing/2;
+    const isUp=c.c>=c.o;
+    const col=isUp?'#00d4aa':'#ff4d6d';
+    const bodyTop=py(Math.max(c.o,c.c));
+    const bodyBot=py(Math.min(c.o,c.c));
+    const bodyH=Math.max(1,bodyBot-bodyTop);
+    svgParts+=`<line x1="${x}" y1="${py(c.h)}" x2="${x}" y2="${py(c.l)}" stroke="${col}" stroke-width="1"/>`;
+    svgParts+=`<rect x="${x-candleW/2}" y="${bodyTop}" width="${candleW}" height="${bodyH}" fill="${col}" rx="1"/>`;
+  });
+
+  // Annotations
+  if(annotations)annotations.forEach(a=>{
+    if(a.type==='hline'){
+      const y=py(a.price);
+      svgParts+=`<line x1="${pad.l}" y1="${y}" x2="${width-pad.r}" y2="${y}" stroke="${a.color}" stroke-width="${a.w||1}" stroke-dasharray="${a.dash||'none'}"/>`;
+      if(a.label)svgParts+=`<text x="${pad.l+4}" y="${y-3}" font-family="'Space Mono',monospace" font-size="8" fill="${a.color}">${a.label}</text>`;
     }
-  } catch(e) { state = defaultState(); }
+    if(a.type==='zone'){
+      const y1=py(a.high);const y2=py(a.low);
+      svgParts+=`<rect x="${pad.l}" y="${y1}" width="${cw}" height="${y2-y1}" fill="${a.color}" opacity="0.15" rx="2"/>`;
+      if(a.label)svgParts+=`<text x="${pad.l+4}" y="${y1+10}" font-family="'Space Mono',monospace" font-size="8" fill="${a.color}">${a.label}</text>`;
+    }
+    if(a.type==='arrow'){
+      const x=pad.l+spacing*a.candle+spacing/2;const y=py(a.price);
+      const dir=a.dir==='up'?-1:1;
+      svgParts+=`<polygon points="${x},${y+dir*4} ${x-5},${y+dir*14} ${x+5},${y+dir*14}" fill="${a.color}"/>`;
+      if(a.label)svgParts+=`<text x="${x+8}" y="${y+dir*10+3}" font-family="'Space Mono',monospace" font-size="8" fill="${a.color}">${a.label}</text>`;
+    }
+    if(a.type==='label'){
+      const x=pad.l+spacing*a.candle+spacing/2;const y=py(a.price);
+      svgParts+=`<rect x="${x-2}" y="${y-10}" width="${a.text.length*5+8}" height="13" fill="${a.color}" opacity="0.9" rx="2"/>`;
+      svgParts+=`<text x="${x+2}" y="${y}" font-family="'Space Mono',monospace" font-size="8" fill="#0a0c0f" font-weight="bold">${a.text}</text>`;
+    }
+  });
+
+  svgParts+=`</svg>`;
+  return svgParts;
 }
 
-async function saveState() {
-  try {
-    await window.storage.set(SAVE_KEY, JSON.stringify(state));
-  } catch(e) { console.warn('Storage save failed', e); }
+// ============================================================
+// SCENARIO CHARTS — hand-crafted per scenario
+// ============================================================
+function getScenarioChart(chartType){
+  const W=580,H=220;
+  if(chartType==='liquidity_sweep_bull'){
+    const base=1.0820;
+    const candles=[
+      {o:1.0850,h:1.0865,l:1.0840,c:1.0848},{o:1.0848,h:1.0860,l:1.0838,c:1.0842},
+      {o:1.0842,h:1.0855,l:1.0832,c:1.0836},{o:1.0836,h:1.0845,l:1.0820,c:1.0822},
+      {o:1.0822,h:1.0835,l:1.0810,c:1.0812},{o:1.0812,h:1.0828,l:1.0800,c:1.0802},// Asian lows building
+      {o:1.0802,h:1.0815,l:1.0798,c:1.0800},{o:1.0800,h:1.0812,l:1.0796,c:1.0798},
+      {o:1.0798,h:1.0805,l:1.0780,c:1.0782},// SWEEP candle — false break below
+      {o:1.0782,h:1.0840,l:1.0778,c:1.0835},// Reversal — strong bull engulf
+      {o:1.0835,h:1.0858,l:1.0830,c:1.0852},{o:1.0852,h:1.0870,l:1.0848,c:1.0865},
+      {o:1.0865,h:1.0878,l:1.0860,c:1.0872},{o:1.0872,h:1.0885,l:1.0868,c:1.0880},
+    ];
+    const annotations=[
+      {type:'hline',price:1.0798,color:'#ff4d6d',dash:'4,3',label:'Asian Low (Sellside Liquidity)',w:1.5},
+      {type:'zone',high:1.0840,low:1.0830,color:'#00d4aa',label:'Bullish FVG'},
+      {type:'arrow',candle:8,price:1.0775,dir:'up',color:'#ff4d6d',label:'SWEEP'},
+      {type:'arrow',candle:9,price:1.0870,dir:'up',color:'#00d4aa',label:'Reversal'},
+    ];
+    return drawCandleChart(candles,annotations,W,H);
+  }
+  if(chartType==='ob_fib_bear'){
+    const candles=[
+      {o:1.2780,h:1.2800,l:1.2765,c:1.2770},{o:1.2770,h:1.2782,l:1.2755,c:1.2758},
+      {o:1.2758,h:1.2770,l:1.2730,c:1.2735},{o:1.2735,h:1.2745,l:1.2710,c:1.2715},
+      {o:1.2715,h:1.2720,l:1.2690,c:1.2695},// Strong bear impulse
+      {o:1.2695,h:1.2700,l:1.2670,c:1.2675},{o:1.2675,h:1.2695,l:1.2668,c:1.2688},
+      {o:1.2688,h:1.2720,l:1.2682,c:1.2715},// Retrace begins
+      {o:1.2715,h:1.2748,l:1.2710,c:1.2742},{o:1.2742,h:1.2760,l:1.2738,c:1.2755},// Into OB
+      {o:1.2755,h:1.2762,l:1.2740,c:1.2745},{o:1.2745,h:1.2750,l:1.2720,c:1.2725},// Rejection
+      {o:1.2725,h:1.2730,l:1.2700,c:1.2705},{o:1.2705,h:1.2712,l:1.2680,c:1.2685},
+    ];
+    const annotations=[
+      {type:'zone',high:1.2765,low:1.2748,color:'#ff4d6d',label:'Bearish Order Block (61.8% Fib)'},
+      {type:'hline',price:1.2748,color:'#ffaa00',dash:'3,3',label:'61.8% Fibonacci',w:1.5},
+      {type:'hline',price:1.2670,color:'#ff4d6d',dash:'4,3',label:'Swing Low Target'},
+      {type:'arrow',candle:9,price:1.2768,dir:'down',color:'#ff4d6d',label:'REJECTION'},
+    ];
+    return drawCandleChart(candles,annotations,W,H);
+  }
+  if(chartType==='judas_swing'){
+    const candles=[
+      {o:149.80,h:150.00,l:149.70,c:149.90},{o:149.90,h:150.10,l:149.75,c:149.85},
+      {o:149.85,h:150.05,l:149.80,c:149.95},{o:149.95,h:150.20,l:149.88,c:150.00},
+      {o:150.00,h:150.35,l:149.95,c:150.28},// Judas Swing — false push up
+      {o:150.28,h:150.32,l:150.10,c:150.15},{o:150.15,h:150.18,l:149.90,c:149.95},
+      {o:149.95,h:150.00,l:149.72,c:149.78},// Breaking London low
+      {o:149.78,h:149.82,l:149.55,c:149.60},{o:149.60,h:149.65,l:149.40,c:149.45},
+      {o:149.45,h:149.50,l:149.25,c:149.30},{o:149.30,h:149.38,l:149.15,c:149.20},
+      {o:149.20,h:149.28,l:149.05,c:149.10},{o:149.10,h:149.18,l:148.95,c:149.00},
+    ];
+    const annotations=[
+      {type:'hline',price:149.75,color:'#ffaa00',dash:'3,3',label:'London Session Low',w:1.5},
+      {type:'arrow',candle:4,price:150.40,dir:'down',color:'#ff4d6d',label:'JUDAS SWING'},
+      {type:'arrow',candle:7,price:149.65,dir:'down',color:'#ff4d6d',label:'CHoCH'},
+      {type:'zone',high:150.05,low:149.90,color:'#ff4d6d',label:'NY Open Manipulation Zone'},
+    ];
+    return drawCandleChart(candles,annotations,W,H);
+  }
+  if(chartType==='smt_divergence'){
+    // Two mini charts side by side — EURUSD and GBPUSD
+    const W2=280,H2=160;
+    const eurCandles=[
+      {o:1.0820,h:1.0845,l:1.0810,c:1.0838},{o:1.0838,h:1.0862,l:1.0830,c:1.0855},
+      {o:1.0855,h:1.0878,l:1.0848,c:1.0870},{o:1.0870,h:1.0895,l:1.0862,c:1.0888},// New HH
+      {o:1.0888,h:1.0900,l:1.0875,c:1.0882},{o:1.0882,h:1.0892,l:1.0868,c:1.0875},
+    ];
+    const gbpCandles=[
+      {o:1.2750,h:1.2770,l:1.2738,c:1.2762},{o:1.2762,h:1.2785,l:1.2755,c:1.2778},
+      {o:1.2778,h:1.2800,l:1.2768,c:1.2792},{o:1.2792,h:1.2808,l:1.2780,c:1.2798},// Fails to confirm
+      {o:1.2798,h:1.2810,l:1.2782,c:1.2790},{o:1.2790,h:1.2800,l:1.2770,c:1.2778},
+    ];
+    const eurAnnotations=[
+      {type:'arrow',candle:3,price:1.0902,dir:'down',color:'#00d4aa',label:'NEW HIGH'},
+      {type:'hline',price:1.0878,color:'#ffaa00',dash:'3,3',label:'Prev High'},
+    ];
+    const gbpAnnotations=[
+      {type:'hline',price:1.2808,color:'#ff4d6d',dash:'3,3',label:'Prev High'},
+      {type:'label',candle:3,price:1.2808,color:'#ff4d6d',text:'FAILS'},
+    ];
+    const eurSvg=drawCandleChart(eurCandles,eurAnnotations,W2,H2);
+    const gbpSvg=drawCandleChart(gbpCandles,gbpAnnotations,W2,H2);
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div><div style="font-family:var(--mono);font-size:9px;color:var(--green);margin-bottom:4px;">EUR/USD — Makes New High</div>${eurSvg}</div>
+      <div><div style="font-family:var(--mono);font-size:9px;color:var(--red);margin-bottom:4px;">GBP/USD — Fails to Confirm</div>${gbpSvg}</div>
+    </div><div style="font-family:var(--mono);font-size:10px;color:var(--amber);margin-top:8px;text-align:center;">SMT Divergence = USD strengthening. Bearish signal.</div>`;
+  }
+  if(chartType==='asian_range'){
+    const candles=[
+      {o:181.50,h:181.70,l:181.35,c:181.42},{o:181.42,h:181.55,l:181.30,c:181.35},
+      {o:181.35,h:181.48,l:181.28,c:181.38},{o:181.38,h:181.52,l:181.32,c:181.48},
+      {o:181.48,h:181.58,l:181.35,c:181.40},{o:181.40,h:181.55,l:181.30,c:181.45},// Asian ranging
+      {o:181.45,h:181.50,l:181.28,c:181.30},{o:181.30,h:181.38,l:181.12,c:181.15},// Sweep lows
+      {o:181.15,h:181.55,l:181.10,c:181.50},{o:181.50,h:181.78,l:181.45,c:181.72},// Reversal
+      {o:181.72,h:181.90,l:181.68,c:181.85},{o:181.85,h:182.00,l:181.80,c:181.95},
+    ];
+    const annotations=[
+      {type:'zone',high:181.58,low:181.52,color:'#ff4d6d',label:'Equal Highs (Buyside Liquidity)'},
+      {type:'zone',high:181.32,low:181.28,color:'#ffaa00',label:'Equal Lows (Sellside Liquidity)'},
+      {type:'arrow',candle:7,price:181.08,dir:'up',color:'#ff4d6d',label:'SWEEP LOWS'},
+    ];
+    return drawCandleChart(candles,annotations,W,H);
+  }
+  if(chartType==='bos_retest'){
+    const candles=[
+      {o:1.3620,h:1.3640,l:1.3608,c:1.3625},{o:1.3625,h:1.3650,l:1.3618,c:1.3642},
+      {o:1.3642,h:1.3668,l:1.3635,c:1.3660},{o:1.3660,h:1.3685,l:1.3652,c:1.3678},// BOS
+      {o:1.3678,h:1.3682,l:1.3658,c:1.3665},{o:1.3665,h:1.3670,l:1.3640,c:1.3645},// Pullback
+      {o:1.3645,h:1.3658,l:1.3635,c:1.3648},{o:1.3648,h:1.3660,l:1.3638,c:1.3655},// BOS retest + FVG
+      {o:1.3655,h:1.3672,l:1.3650,c:1.3668},{o:1.3668,h:1.3690,l:1.3662,c:1.3685},
+      {o:1.3685,h:1.3705,l:1.3680,c:1.3700},{o:1.3700,h:1.3718,l:1.3695,c:1.3712},
+    ];
+    const annotations=[
+      {type:'hline',price:1.3660,color:'#00d4aa',dash:'4,3',label:'BOS Level (now Support)',w:1.5},
+      {type:'zone',high:1.3660,low:1.3645,color:'#00d4aa',label:'Bullish FVG + BOS Confluence'},
+      {type:'arrow',candle:3,price:1.3688,dir:'up',color:'#00d4aa',label:'BOS'},
+      {type:'arrow',candle:7,price:1.3632,dir:'up',color:'#9b7fff',label:'RETEST'},
+    ];
+    return drawCandleChart(candles,annotations,W,H);
+  }
+  return '<div style="color:var(--text3);font-size:13px;">Chart loading...</div>';
 }
 
 // ============================================================
-// CURRICULUM DATA
+// CONCEPT DIAGRAMS — SVG illustrations for learning
 // ============================================================
-const CURRICULUM = [
-  { school: 'Kindergarten', color: '#00d4aa', lessons: [
-    'What is Forex?', 'What is Traded in Forex?', 'Who Trades Forex?', 'When Can You Trade Forex?', 'What is a Pip?', 'What is a Lot?', 'What is Leverage?', 'What is Margin?', 'What is a Spread?', 'Types of Forex Orders',
-  ]},
-  { school: 'Elementary', color: '#0097ff', lessons: [
-    'Major, Minor and Exotic Pairs', 'How to Read a Forex Quote', 'Long or Short?', 'Bulls vs Bears', 'Demo Trading Account', 'What Moves the Forex Market?', 'Economic Indicators', 'Currency Correlations', 'Interest Rates and Forex',
-  ]},
-  { school: 'Middle School', color: '#9b7fff', lessons: [
-    'Japanese Candlestick Basics', 'Support and Resistance', 'Trend Lines', 'Chart Patterns', 'Fibonacci Retracements', 'Moving Averages', 'Bollinger Bands', 'MACD', 'RSI', 'Stochastic',
-  ]},
-  { school: 'High School', color: '#ffaa00', lessons: [
-    'Market Structure Overview', 'Uptrend and Downtrend', 'Break of Structure (BOS)', 'Change of Character (CHoCH)', 'Swing Highs and Lows', 'Internal vs External Range', 'Premium and Discount Zones', 'Supply and Demand', 'Order Blocks', 'Breaker Blocks',
-  ]},
-  { school: 'College', color: '#ff4d6d', lessons: [
-    'Smart Money Concepts (SMC) Intro', 'Fair Value Gaps (FVG)', 'Imbalances and Inefficiencies', 'Liquidity Pools', 'Buyside and Sellside Liquidity', 'Stop Hunts and Sweeps', 'SMT Divergence', 'ICT Killzones', 'London Open Strategy', 'New York Open Strategy',
-  ]},
-  { school: 'Graduate', color: '#00d4aa', lessons: [
-    'ICT Power of 3', 'Judas Swing', 'Silver Bullet Strategy', 'Weekly Profiles', 'Daily Profiles', 'Building a Trading Plan', 'Risk Management Rules', 'Trade Journal Discipline', 'Psychology of Losing', 'Developing Your Edge',
-  ]},
-];
+function getConceptDiagram(concept){
+  const diagrams={
+    fundamentals:`<svg width="560" height="200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="200" fill="#181c23" rx="6"/>
+      <text x="280" y="22" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e" text-anchor="middle" text-transform="uppercase">FOREX FUNDAMENTALS — HOW A TRADE WORKS</text>
+      ${[['Currency Pair',80,'EUR / USD','Buy EUR, Sell USD','#00d4aa'],['Pip',220,'0.0001','Smallest price move','#0097ff'],['Lot Size',360,'100,000','Units of base currency','#9b7fff'],['Spread',490,'2 pips','Broker\'s cost to trade','#ffaa00']].map(([label,x,val,sub,c])=>`
+        <rect x="${x-55}" y="40" width="110" height="70" fill="${c}22" rx="6" stroke="${c}" stroke-width="1"/>
+        <text x="${x}" y="62" font-family="'Space Mono',monospace" font-size="8" fill="${c}" text-anchor="middle">${label.toUpperCase()}</text>
+        <text x="${x}" y="82" font-family="'Space Mono',monospace" font-size="14" fill="#e8eaf0" text-anchor="middle" font-weight="bold">${val}</text>
+        <text x="${x}" y="100" font-family="'Space Mono',monospace" font-size="8" fill="#8a8f9e" text-anchor="middle">${sub}</text>
+      `).join('')}
+      <text x="280" y="145" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e" text-anchor="middle">Example: Buy 1 standard lot EUR/USD at 1.1000 → each pip move = $10 profit/loss</text>
+      <text x="280" y="165" font-family="'Space Mono',monospace" font-size="9" fill="#4a4f5e" text-anchor="middle">With 100:1 leverage, $1,000 controls $100,000 in the market</text>
+      <rect x="60" y="175" width="440" height="16" fill="#1e2330" rx="3"/>
+      <rect x="60" y="175" width="220" height="16" fill="#00d4aa33" rx="3"/>
+      <text x="280" y="186" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa" text-anchor="middle">Leverage amplifies both gains AND losses</text>
+    </svg>`,
 
-const SKILL_TREE = [
-  { name: 'Forex Fundamentals', sub: 'Pips, lots, leverage, spreads', req: 'Kindergarten:5', tier: 0 },
-  { name: 'Market Structure', sub: 'Swing highs/lows, trends, ranges', req: 'Elementary:5', tier: 1 },
-  { name: 'Break of Structure', sub: 'BOS and CHoCH identification', req: 'High School:3', tier: 2 },
-  { name: 'Fair Value Gaps', sub: 'FVG, imbalances, inefficiencies', req: 'College:2', tier: 3 },
-  { name: 'Liquidity Concepts', sub: 'Pools, sweeps, stop hunts', req: 'College:5', tier: 4 },
-  { name: 'SMT Divergence', sub: 'Correlated pair divergence', req: 'College:7', tier: 5 },
-  { name: 'ICT Killzones', sub: 'London, NY, overlap sessions', req: 'College:8', tier: 6 },
-  { name: 'Full ICT Model', sub: 'Power of 3, profiles, full framework', req: 'Graduate:3', tier: 7 },
-];
+    market_structure:`<svg width="560" height="220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="220" fill="#181c23" rx="6"/>
+      <text x="16" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">MARKET STRUCTURE — UPTREND</text>
+      <polyline points="30,180 80,140 130,155 180,105 230,120 280,70 330,85 380,45 420,60" fill="none" stroke="#00d4aa" stroke-width="2"/>
+      ${[[80,140,'HL'],[130,155,''],[180,105,'HH'],[230,120,'HL'],[280,70,'HH'],[330,85,'HL'],[380,45,'HH']].map(([x,y,lbl])=>lbl?`
+        <circle cx="${x}" cy="${y}" r="4" fill="${lbl==='HH'?'#00d4aa':'#0097ff'}"/>
+        <text x="${x}" y="${y+(lbl==='HH'?-8:14)}" font-family="'Space Mono',monospace" font-size="9" fill="${lbl==='HH'?'#00d4aa':'#0097ff'}" text-anchor="middle">${lbl}</text>
+      `:'')}
+      <text x="30" y="200" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa">HH = Higher High</text>
+      <text x="150" y="200" font-family="'Space Mono',monospace" font-size="9" fill="#0097ff">HL = Higher Low</text>
+      <text x="290" y="200" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e">Uptrend: Series of HH + HL = Bullish structure</text>
+      <line x1="310" y1="30" x2="310" y2="185" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="320" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">DOWNTREND</text>
+      <polyline points="320,45 360,80 400,65 440,100 480,88 520,120 540,108" fill="none" stroke="#ff4d6d" stroke-width="2"/>
+      ${[[360,80,'LH'],[400,65,''],[440,100,'LL'],[480,88,'LH'],[520,120,'LL']].map(([x,y,lbl])=>lbl?`
+        <circle cx="${x}" cy="${y}" r="4" fill="${lbl==='LL'?'#ff4d6d':'#ffaa00'}"/>
+        <text x="${x}" y="${y+(lbl==='LL'?14:-8)}" font-family="'Space Mono',monospace" font-size="9" fill="${lbl==='LL'?'#ff4d6d':'#ffaa00'}" text-anchor="middle">${lbl}</text>
+      `:'')}
+    </svg>`,
 
-const ACHIEVEMENTS = [
-  { id: 'first_login', icon: '🎯', name: 'First Day', desc: 'Opened the terminal for the first time.' },
-  { id: 'first_lesson', icon: '📖', name: 'First Lesson', desc: 'Completed your first BabyPips lesson.' },
-  { id: 'first_prediction', icon: '🔮', name: 'First Call', desc: 'Made your first directional prediction.' },
-  { id: 'first_correct', icon: '✅', name: 'Sharp Eye', desc: 'Got your first prediction correct.' },
-  { id: 'streak_3', icon: '🔥', name: 'On Fire', desc: 'Hit a 3-day streak.' },
-  { id: 'streak_7', icon: '⚡', name: 'Consistent', desc: 'Hit a 7-day streak.' },
-  { id: 'lessons_10', icon: '🎓', name: 'Student', desc: 'Completed 10 lessons.' },
-  { id: 'lessons_25', icon: '🏫', name: 'Dedicated', desc: 'Completed 25 lessons.' },
-  { id: 'predictions_10', icon: '📊', name: 'Data Driven', desc: 'Made 10 predictions.' },
-  { id: 'winrate_60', icon: '🏆', name: 'Edge Builder', desc: 'Hit 60% prediction win rate (min 10 calls).' },
-];
+    bos:`<svg width="560" height="230" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="230" fill="#181c23" rx="6"/>
+      <text x="16" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">BREAK OF STRUCTURE (BOS) vs CHANGE OF CHARACTER (CHoCH)</text>
+      <text x="16" y="36" font-family="'Space Mono',monospace" font-size="9" fill="#0097ff">BOS = Continuation  |  CHoCH = Potential Reversal</text>
+      <polyline points="30,180 70,150 100,162 140,120 170,135 210,95 240,108" fill="none" stroke="#00d4aa" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <polyline points="240,108 270,88 280,88" fill="none" stroke="#00d4aa" stroke-width="2.5"/>
+      <line x1="210" y1="95" x2="320" y2="95" stroke="#00d4aa" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="325" y="98" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa">Prev HH</text>
+      <polyline points="280,88 300,75 330,60" fill="none" stroke="#00d4aa" stroke-width="2.5"/>
+      <text x="290" y="55" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa">BOS ↑</text>
+      <rect x="255" y="83" width="30" height="10" fill="#00d4aa33" rx="2"/>
+      <text x="270" y="91" font-family="'Space Mono',monospace" font-size="7" fill="#00d4aa" text-anchor="middle">BOS</text>
+      <line x1="30" y1="165" x2="30" y2="205" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="30" y1="205" x2="560" y2="205" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <polyline points="30,195 70,168 100,178 140,148 170,160 200,135 220,148 240,160 265,172 280,180" fill="none" stroke="#ff4d6d" stroke-width="1.5" stroke-dasharray="3,2"/>
+      <line x1="200" y1="135" x2="370" y2="135" stroke="#ffaa00" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="372" y="138" font-family="'Space Mono',monospace" font-size="8" fill="#ffaa00">HL Level</text>
+      <polyline points="280,180 310,188 340,195" fill="none" stroke="#ff4d6d" stroke-width="2.5"/>
+      <text x="330" y="148" font-family="'Space Mono',monospace" font-size="9" fill="#ff4d6d">CHoCH ↓</text>
+      <rect x="255" y="175" width="40" height="10" fill="#ff4d6d33" rx="2"/>
+      <text x="275" y="183" font-family="'Space Mono',monospace" font-size="7" fill="#ff4d6d" text-anchor="middle">CHoCH</text>
+      <text x="16" y="218" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa">Top: BOS above prev HH = bullish continuation</text>
+      <text x="290" y="218" font-family="'Space Mono',monospace" font-size="8" fill="#ff4d6d">Bottom: CHoCH breaks below HL = trend reversal signal</text>
+    </svg>`,
 
-const SCENARIOS = [
-  { pair: 'EUR/USD', context: 'Price swept the Asian session low during London open, then aggressively reversed. A bullish Fair Value Gap formed on the 15-minute chart below current price. The previous weekly high is 80 pips above.', question: 'Price just swept sellside liquidity at the Asian low and formed a bullish FVG. What is your directional bias for the London session?', concept: 'Liquidity Sweep + FVG' },
-  { pair: 'GBP/USD', context: 'Price has been in a clear downtrend. After a strong bearish move, price retraced into a 4H order block and the 61.8% Fibonacci level. The most recent Break of Structure was to the downside.', question: 'Cable has retraced into a bearish order block coinciding with the 61.8% fib. The trend is down. What is your bias?', concept: 'Order Block + Fibonacci Confluence' },
-  { pair: 'USD/JPY', context: 'It\'s the New York open. Price created a Judas Swing — a false push higher in the first 30 minutes of the NY session. It then reversed sharply and broke below the London session low, creating a Change of Character.', question: 'USDJPY showed a classic Judas Swing at NY open then CHoCH to the downside. What is your directional bias for the NY session?', concept: 'Judas Swing + CHoCH' },
-  { pair: 'EUR/USD', context: 'On the daily chart, EUR/USD has been respecting a key supply zone. Price is currently trading in premium (above equilibrium of the recent range). SMT divergence is present — EUR/USD made a higher high but GBP/USD failed to confirm.', question: 'Price is in premium territory with SMT divergence showing weakness. Daily supply overhead. What is your bias?', concept: 'SMT Divergence + Premium/Discount' },
-  { pair: 'GBP/JPY', context: 'Price has consolidated in a tight range during the Asian session, building buyside and sellside liquidity above and below. London is about to open. The previous day closed bearish.', question: 'Asian range is set with equal highs (buyside liquidity) above and equal lows (sellside) below. PDC was bearish. Which side do you expect to get swept first at London open?', concept: 'Asian Range Liquidity + PDC Bias' },
-  { pair: 'USD/CAD', context: 'A bullish Break of Structure just printed on the 1H chart. Price pulled back into the BOS level which now acts as support. A small bullish Fair Value Gap is sitting right at this level. NFP is tomorrow.', question: 'Fresh BOS to the upside, pullback into BOS + FVG confluence. But NFP is tomorrow. Do you take a bullish bias or stay out?', concept: 'BOS Retest + FVG + News Awareness' },
-];
+    fvg:`<svg width="560" height="230" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="230" fill="#181c23" rx="6"/>
+      <text x="16" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">FAIR VALUE GAP (FVG) — HOW IT FORMS</text>
+      <text x="16" y="36" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e">3-candle formation: Candle 1 high and Candle 3 low don't overlap</text>
+      ${[[90,'Candle 1',130,90,105,115,'#8a8f9e'],[165,'Impulse',60,90,85,110,'#00d4aa'],[240,'Candle 3',110,100,105,120,'#8a8f9e']].map(([x,lbl,open,close,hi,lo,c],i)=>{
+        const py=p=>40+p*0.9;
+        const bTop=py(Math.min(open,close));const bBot=py(Math.max(open,close));
+        return `
+          <line x1="${x}" y1="${py(hi)}" x2="${x}" y2="${py(lo)}" stroke="${c}" stroke-width="1.5"/>
+          <rect x="${x-18}" y="${bTop}" width="36" height="${bBot-bTop}" fill="${c}" rx="2"/>
+          <text x="${x}" y="${py(lo)+14}" font-family="'Space Mono',monospace" font-size="8" fill="#4a4f5e" text-anchor="middle">${lbl}</text>
+        `;
+      })}
+      <rect x="181" y="${40+90*0.9}" width="42" height="${(100-85)*0.9}" fill="#00d4aa" opacity="0.25" rx="2"/>
+      <line x1="90+18" y1="${40+115*0.9}" x2="240-18" y2="${40+115*0.9}" stroke="#00d4aa" stroke-width="0.5" stroke-dasharray="3,2"/>
+      <line x1="90+18" y1="${40+90*0.9}" x2="240-18" y2="${40+90*0.9}" stroke="#00d4aa" stroke-width="0.5" stroke-dasharray="3,2"/>
+      <text x="210" y="${40+99*0.9}" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa" text-anchor="middle">FVG</text>
+      <text x="16" y="175" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e">After the FVG forms, price often returns to "fill" the gap:</text>
+      <polyline points="300,60 360,80 400,100 430,115 450,107 470,115" fill="none" stroke="#00d4aa" stroke-width="2"/>
+      <rect x="440" y="100" width="80" height="20" fill="#00d4aa33" rx="3" stroke="#00d4aa" stroke-width="1"/>
+      <text x="480" y="113" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa" text-anchor="middle">FVG Fill Zone</text>
+      <polyline points="470,115 490,108 520,90 545,70" fill="none" stroke="#00d4aa" stroke-width="2.5"/>
+      <text x="520" y="65" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa">Continuation</text>
+      <text x="16" y="200" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa">Bullish FVG = buy zone when price retraces into the gap</text>
+      <text x="16" y="218" font-family="'Space Mono',monospace" font-size="9" fill="#ff4d6d">Bearish FVG = sell zone when price rallies back into the gap</text>
+    </svg>`,
 
-const PAIRS_OUTCOME = ['Bullish', 'Bearish'];
+    liquidity:`<svg width="560" height="230" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="230" fill="#181c23" rx="6"/>
+      <text x="16" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">LIQUIDITY — WHERE SMART MONEY HUNTS</text>
+      <line x1="30" y1="55" x2="540" y2="55" stroke="#ff4d6d" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="545" y="58" font-family="'Space Mono',monospace" font-size="8" fill="#ff4d6d">BSL</text>
+      <text x="30" y="48" font-family="'Space Mono',monospace" font-size="8" fill="#ff4d6d">Buyside Liquidity (retail longs' stops)</text>
+      ${[60,110,160,210,260,310].map((x,i)=>{
+        const ys=[55,80,65,90,70,60];const ye=[80,65,90,70,60,55];
+        return `<polyline points="${x},${ys[i]} ${x+25},${(ys[i]+ye[i])/2} ${x+50},${ye[i]}" fill="none" stroke="#8a8f9e" stroke-width="1.5"/>`;
+      })}
+      <polyline points="310,55 340,35 370,25" fill="none" stroke="#ff4d6d" stroke-width="2.5"/>
+      <text x="372" y="22" font-family="'Space Mono',monospace" font-size="9" fill="#ff4d6d">SWEEP!</text>
+      <polyline points="370,25 400,45 440,80 480,120 520,150" fill="none" stroke="#00d4aa" stroke-width="2.5"/>
+      <text x="490" y="148" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa">Reversal</text>
+      <line x1="30" y1="165" x2="540" y2="165" stroke="#00d4aa" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="545" y="168" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa">SSL</text>
+      <text x="30" y="180" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa">Sellside Liquidity (retail shorts' stops)</text>
+      <text x="16" y="205" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e">Smart money needs liquidity to fill large orders. They hunt retail stops</text>
+      <text x="16" y="220" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e">above highs (BSL) and below lows (SSL) before reversing price.</text>
+    </svg>`,
 
-// ============================================================
-// UTILITY
-// ============================================================
-function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
-  setTimeout(() => t.className = 'toast', 2500);
+    smt:`<svg width="560" height="220" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="220" fill="#181c23" rx="6"/>
+      <text x="16" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">SMT DIVERGENCE — CORRELATED PAIR WEAKNESS</text>
+      <text x="16" y="36" font-family="'Space Mono',monospace" font-size="8" fill="#8a8f9e">EUR/USD and GBP/USD are positively correlated. When they diverge, it signals institutional activity.</text>
+      <text x="80" y="55" font-family="'Space Mono',monospace" font-size="10" fill="#ff4d6d" text-anchor="middle">EUR/USD</text>
+      <polyline points="30,160 60,130 90,145 120,100 150,115 180,70 210,85" fill="none" stroke="#ff4d6d" stroke-width="2"/>
+      <circle cx="180" cy="70" r="5" fill="#ff4d6d"/>
+      <text x="180" y="62" font-family="'Space Mono',monospace" font-size="8" fill="#ff4d6d" text-anchor="middle">NEW HH</text>
+      <line x1="120" y1="100" x2="220" y2="100" stroke="#ff4d6d" stroke-width="0.5" stroke-dasharray="3,2"/>
+      <text x="310" y="55" font-family="'Space Mono',monospace" font-size="10" fill="#ffaa00" text-anchor="middle">GBP/USD</text>
+      <polyline points="250,160 280,130 310,145 340,100 370,115 400,105 430,120" fill="none" stroke="#ffaa00" stroke-width="2"/>
+      <circle cx="340" cy="100" r="5" fill="#8a8f9e"/>
+      <text x="400" y="100" font-family="'Space Mono',monospace" font-size="8" fill="#ffaa00">FAILS TO</text>
+      <text x="400" y="110" font-family="'Space Mono',monospace" font-size="8" fill="#ffaa00">CONFIRM</text>
+      <line x1="340" y1="100" x2="450" y2="100" stroke="#ffaa00" stroke-width="0.5" stroke-dasharray="3,2"/>
+      <rect x="30" y="178" width="500" height="36" fill="#1e2330" rx="4"/>
+      <text x="280" y="192" font-family="'Space Mono',monospace" font-size="8" fill="#ff4d6d" text-anchor="middle">EUR/USD makes new HH → GBP/USD fails to confirm = SMT Divergence</text>
+      <text x="280" y="207" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e" text-anchor="middle">Signal: USD is strengthening. Both pairs likely to reverse bearish.</text>
+    </svg>`,
+
+    killzones:`<svg width="560" height="200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="200" fill="#181c23" rx="6"/>
+      <text x="16" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e">ICT KILLZONES — HIGH PROBABILITY WINDOWS (EST)</text>
+      <rect x="16" y="30" width="528" height="30" fill="#1e2330" rx="3"/>
+      <text x="280" y="50" font-family="'Space Mono',monospace" font-size="8" fill="#4a4f5e" text-anchor="middle">Midnight ←————————————————————————————————→ Midnight</text>
+      ${[
+        [16,80,'Asian Session','10pm–8am','#4a4f5e',130],
+        [16,100,'Tokyo KZ','2am–4am','#0097ff',50],
+        [170,100,'London KZ','2am–5am EST','#9b7fff',70],
+        [280,80,'London/NY Overlap','8am–12pm','#ff4d6d',130],
+        [420,100,'NY KZ','1pm–4pm','#00d4aa',90],
+      ].map(([x,y,name,time,color,w])=>`
+        <rect x="${x}" y="${y-14}" width="${w}" height="20" fill="${color}33" rx="3" stroke="${color}" stroke-width="1"/>
+        <text x="${x+w/2}" y="${y}" font-family="'Space Mono',monospace" font-size="7" fill="${color}" text-anchor="middle">${name}</text>
+      `).join('')}
+      <text x="16" y="140" font-family="'Space Mono',monospace" font-size="9" fill="#9b7fff">London KZ (2–5am EST): Highest volatility. Best setups for GBP/EUR pairs.</text>
+      <text x="16" y="158" font-family="'Space Mono',monospace" font-size="9" fill="#ff4d6d">London/NY Overlap (8am–12pm EST): Most liquidity. Major moves happen here.</text>
+      <text x="16" y="176" font-family="'Space Mono',monospace" font-size="9" fill="#00d4aa">NY KZ (1–4pm EST): Second major window. USD pairs most active.</text>
+      <text x="16" y="194" font-family="'Space Mono',monospace" font-size="9" fill="#4a4f5e">Asian session builds liquidity (equal highs/lows) for London to sweep.</text>
+    </svg>`,
+
+    ict_model:`<svg width="560" height="230" xmlns="http://www.w3.org/2000/svg">
+      <rect width="560" height="230" fill="#181c23" rx="6"/>
+      <text x="280" y="20" font-family="'Space Mono',monospace" font-size="10" fill="#4a4f5e" text-anchor="middle">ICT POWER OF 3 — THE FULL DAILY MODEL</text>
+      ${[
+        [80,'ACCUMULATION','Asian Session','Tight range builds','Liquidity forms','#0097ff'],
+        [280,'MANIPULATION','London Open','False move (Judas)','Sweeps liquidity','#ff4d6d'],
+        [480,'DISTRIBUTION','NY Session','True direction','Smart money exits','#00d4aa'],
+      ].map(([x,title,sub1,sub2,sub3,c])=>`
+        <rect x="${x-85}" y="35" width="170" height="110" fill="${c}11" rx="6" stroke="${c}" stroke-width="1"/>
+        <text x="${x}" y="55" font-family="'Space Mono',monospace" font-size="9" fill="${c}" text-anchor="middle" font-weight="bold">${title}</text>
+        <text x="${x}" y="73" font-family="'Space Mono',monospace" font-size="8" fill="#8a8f9e" text-anchor="middle">${sub1}</text>
+        <text x="${x}" y="90" font-family="'Space Mono',monospace" font-size="8" fill="#8a8f9e" text-anchor="middle">${sub2}</text>
+        <text x="${x}" y="107" font-family="'Space Mono',monospace" font-size="8" fill="${c}" text-anchor="middle">${sub3}</text>
+      `)}
+      <text x="175" y="88" font-family="'Space Mono',monospace" font-size="14" fill="#4a4f5e" text-anchor="middle">→</text>
+      <text x="375" y="88" font-family="'Space Mono',monospace" font-size="14" fill="#4a4f5e" text-anchor="middle">→</text>
+      <polyline points="30,175 80,172 120,168 160,165 195,162 220,140 240,120 260,108 280,102 300,108 320,120 340,140 360,160 390,165 430,168 470,165 530,160" fill="none" stroke="#00d4aa" stroke-width="2"/>
+      <text x="220" y="115" font-family="'Space Mono',monospace" font-size="8" fill="#ff4d6d">Judas</text>
+      <text x="300" y="98" font-family="'Space Mono',monospace" font-size="8" fill="#00d4aa">True Move</text>
+      <text x="16" y="215" font-family="'Space Mono',monospace" font-size="9" fill="#8a8f9e">The market accumulates positions, manipulates retail traders, then distributes in the real direction.</text>
+    </svg>`,
+  };
+  return diagrams[concept]||`<div style="color:var(--text3);padding:20px;font-family:var(--mono);font-size:12px;">Diagram for this concept coming soon.</div>`;
 }
 
-function navigate(screen) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+// ============================================================
+// UTILITIES
+// ============================================================
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>t.className='toast',2500);
+}
+
+function navigate(screen){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById(`screen-${screen}`).classList.add('active');
-  const items = document.querySelectorAll('.nav-item');
-  items.forEach(item => { if(item.getAttribute('onclick')?.includes(screen)) item.classList.add('active'); });
-  if(screen === 'stats') renderStats();
-  if(screen === 'curriculum') renderCurriculum();
-  if(screen === 'skilltree') renderSkillTree();
-  if(screen === 'achievements') renderAchievements();
-  if(screen === 'scenario') renderScenario();
+  document.querySelectorAll('.nav-item').forEach(item=>{if(item.getAttribute('onclick')?.includes(screen))item.classList.add('active');});
+  if(screen==='stats')renderStats();
+  if(screen==='curriculum')renderCurriculum();
+  if(screen==='skilltree')renderSkillTree();
+  if(screen==='achievements')renderAchievements();
+  if(screen==='scenario')renderScenario();
 }
 
-function getCurrentRank() {
-  let rank = RANKS[0];
-  for(let r of RANKS) { if(state.xp >= r.xpNeeded) rank = r; }
-  return rank;
+function getCurrentRank(){let r=RANKS[0];for(let rk of RANKS){if(state.xp>=rk.xpNeeded)r=rk;}return r;}
+function getNextRank(){for(let i=0;i<RANKS.length-1;i++){if(state.xp<RANKS[i+1].xpNeeded)return RANKS[i+1];}return null;}
+
+function addXP(amount,reason){
+  state.xp+=amount;updateTopBar();showToast(`+${amount} XP — ${reason}`);checkRankUp();saveState();
 }
 
-function getNextRank() {
-  for(let i = 0; i < RANKS.length - 1; i++) {
-    if(state.xp < RANKS[i+1].xpNeeded) return RANKS[i+1];
+function checkRankUp(){
+  const rank=getCurrentRank();
+  document.getElementById('rank-display').textContent=rank.name.toUpperCase();
+  document.getElementById('rp-rank').textContent=rank.name;
+  document.getElementById('rp-rank-desc').textContent=rank.desc;
+}
+
+function updateTopBar(){
+  const rank=getCurrentRank();const next=getNextRank();
+  const xpInRank=next?state.xp-rank.xpNeeded:rank.xpNeeded;
+  const xpToNext=next?next.xpNeeded-rank.xpNeeded:1;
+  const pct=Math.min(100,Math.round((xpInRank/xpToNext)*100));
+  document.getElementById('xp-label').textContent=`${state.xp} XP`;
+  document.getElementById('xp-bar').style.width=pct+'%';
+  document.getElementById('rp-xp-bar').style.width=pct+'%';
+  document.getElementById('rp-xp-label').textContent=next?`${state.xp} / ${next.xpNeeded} XP to next rank`:'Max rank achieved';
+  document.getElementById('streak-count').textContent=state.streak;
+  document.getElementById('rank-display').textContent=rank.name.toUpperCase();
+  document.getElementById('rp-rank').textContent=rank.name;
+  document.getElementById('rp-rank-desc').textContent=rank.desc;
+  const totalL=CURRICULUM.reduce((a,s)=>a+s.lessons.length,0);
+  const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
+  const wins=state.predictions.filter(p=>p.verdict==='correct').length;
+  const losses=state.predictions.filter(p=>p.verdict==='wrong').length;
+  document.getElementById('rp-lessons').textContent=`${doneL} / ${totalL}`;
+  document.getElementById('rp-predictions').textContent=`${wins}W ${losses}L`;
+  document.getElementById('rp-quizzes').textContent=`${state.quizHistory.length} taken`;
+  const earnedA=Object.keys(state.achievements).filter(k=>state.achievements[k]).length;
+  document.getElementById('rp-achievements').textContent=`${earnedA} / ${ACHIEVEMENTS.length}`;
+}
+
+function updateSeasonDisplay(){
+  const now=new Date();
+  const monthName=now.toLocaleDateString('en-CA',{month:'long',year:'numeric'});
+  if(state.currentSeason.month!==monthName){
+    if(state.currentSeason.month)state.seasonHistory.push({...state.currentSeason});
+    state.currentSeason={month:monthName,wins:0,losses:0};
   }
-  return null;
-}
-
-function addXP(amount, reason) {
-  state.xp += amount;
-  updateTopBar();
-  showToast(`+${amount} XP — ${reason}`);
-  checkRankUp();
-  saveState();
-}
-
-function checkRankUp() {
-  const rank = getCurrentRank();
-  document.getElementById('rank-display').textContent = rank.name.toUpperCase();
-  document.getElementById('rp-rank').textContent = rank.name;
-  document.getElementById('rp-rank-desc').textContent = rank.desc;
-}
-
-function updateTopBar() {
-  const rank = getCurrentRank();
-  const next = getNextRank();
-  const xpInRank = next ? state.xp - rank.xpNeeded : rank.xpNeeded;
-  const xpToNext = next ? next.xpNeeded - rank.xpNeeded : 1;
-  const pct = Math.min(100, Math.round((xpInRank / xpToNext) * 100));
-  document.getElementById('xp-label').textContent = `${state.xp} XP`;
-  document.getElementById('xp-bar').style.width = pct + '%';
-  document.getElementById('rp-xp-bar').style.width = pct + '%';
-  document.getElementById('rp-xp-label').textContent = next ? `${state.xp} / ${next.xpNeeded} XP to next rank` : 'Max rank achieved';
-  document.getElementById('streak-count').textContent = state.streak;
-  document.getElementById('rank-display').textContent = rank.name.toUpperCase();
-  document.getElementById('rp-rank').textContent = rank.name;
-  document.getElementById('rp-rank-desc').textContent = rank.desc;
-
-  const totalLessons = CURRICULUM.reduce((a, s) => a + s.lessons.length, 0);
-  const doneLessons = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
-  const totalPred = state.predictions.length;
-  const wins = state.predictions.filter(p => p.verdict === 'correct').length;
-  const losses = state.predictions.filter(p => p.verdict === 'wrong').length;
-  document.getElementById('rp-lessons').textContent = `${doneLessons} / ${totalLessons}`;
-  document.getElementById('rp-predictions').textContent = `${wins}W ${losses}L`;
-  document.getElementById('rp-quizzes').textContent = `${state.quizHistory.length} taken`;
-  const earnedAch = Object.keys(state.achievements).filter(k => state.achievements[k]).length;
-  document.getElementById('rp-achievements').textContent = `${earnedAch} / ${ACHIEVEMENTS.length}`;
-}
-
-function updateSeasonDisplay() {
-  const now = new Date();
-  const monthName = now.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
-  if(state.currentSeason.month !== monthName) {
-    if(state.currentSeason.month) {
-      state.seasonHistory.push({ ...state.currentSeason });
-    }
-    state.currentSeason = { month: monthName, wins: 0, losses: 0 };
-  }
-  document.getElementById('season-w').textContent = state.currentSeason.wins;
-  document.getElementById('season-l').textContent = state.currentSeason.losses;
-  document.getElementById('season-month').textContent = state.currentSeason.month;
+  document.getElementById('season-w').textContent=state.currentSeason.wins;
+  document.getElementById('season-l').textContent=state.currentSeason.losses;
+  document.getElementById('season-month').textContent=state.currentSeason.month;
 }
 
 // ============================================================
-// STREAK + LOGIN
+// LOGIN & STREAK
 // ============================================================
-function handleLogin() {
-  const today = new Date().toDateString();
-  const last = state.lastLogin;
-  if(last !== today) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    if(last === yesterday.toDateString()) {
-      state.streak++;
-      checkStreakAchievements();
-    } else if(last && last !== today) {
-      if(state.streak > 0) showSlumpProtocol();
-      state.streak = 1;
-    } else {
-      state.streak = 1;
-    }
-    state.lastLogin = today;
-    saveState();
+function handleLogin(){
+  const today=new Date().toDateString();const last=state.lastLogin;
+  if(last!==today){
+    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+    if(last===yesterday.toDateString()){state.streak++;checkStreakAchievements();}
+    else if(last&&last!==today){if(state.streak>0)showSlumpProtocol();state.streak=1;}
+    else{state.streak=1;}
+    state.lastLogin=today;saveState();
   }
-  updateTopBar();
-  checkAchievement('first_login');
+  updateTopBar();checkAchievement('first_login');
 }
-
-function checkStreakAchievements() {
-  if(state.streak >= 3) checkAchievement('streak_3');
-  if(state.streak >= 7) checkAchievement('streak_7');
-}
-
-function showSlumpProtocol() {
-  document.getElementById('slump-status').innerHTML = `<span style="color:var(--amber);">Slump detected. Go to briefing for your re-entry task.</span>`;
-}
+function checkStreakAchievements(){if(state.streak>=3)checkAchievement('streak_3');if(state.streak>=7)checkAchievement('streak_7');}
+function showSlumpProtocol(){document.getElementById('slump-status').innerHTML=`<span style="color:var(--amber);">Slump detected. Check your briefing for re-entry task.</span>`;}
 
 // ============================================================
 // BRIEFING
 // ============================================================
-function renderBriefing() {
-  const now = new Date();
-  document.getElementById('briefing-date').textContent = now.toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  renderSessions();
-  renderVerdict();
-  renderCoachBriefing();
-  renderFocusConcept();
+function renderBriefing(){
+  const now=new Date();
+  document.getElementById('briefing-date').textContent=now.toLocaleDateString('en-CA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  renderSessions();renderVerdict();renderCoachBriefing();renderFocusConcept();
 }
 
-function renderSessions() {
-  const sessions = [
-    { name: 'Sydney', start: 22, end: 7 },
-    { name: 'Tokyo', start: 0, end: 9 },
-    { name: 'London', start: 8, end: 17 },
-    { name: 'New York', start: 13, end: 22 },
-  ];
-  const nowHour = new Date().getUTCHours();
-  const html = sessions.map(s => {
-    const active = s.start < s.end ? (nowHour >= s.start && nowHour < s.end) : (nowHour >= s.start || nowHour < s.end);
-    return `<div class="session-clock ${active ? 'active' : ''}">
-      <div class="sc-name">${s.name}</div>
-      <div class="sc-status">${active ? '● LIVE' : '○ Closed'}</div>
-    </div>`;
+function renderSessions(){
+  const sessions=[{name:'Sydney',start:22,end:7},{name:'Tokyo',start:0,end:9},{name:'London',start:8,end:17},{name:'New York',start:13,end:22}];
+  const nowHour=new Date().getUTCHours();
+  document.getElementById('session-clocks').innerHTML=sessions.map(s=>{
+    const active=s.start<s.end?(nowHour>=s.start&&nowHour<s.end):(nowHour>=s.start||nowHour<s.end);
+    return `<div class="session-clock ${active?'active':''}"><div class="sc-name">${s.name}</div><div class="sc-status">${active?'● LIVE':'○ Closed'}</div></div>`;
   }).join('');
-  document.getElementById('session-clocks').innerHTML = html;
 }
 
-function renderVerdict() {
-  const vSection = document.getElementById('verdict-section');
-  const pending = state.pendingPrediction;
-  if(!pending) { vSection.innerHTML = ''; return; }
-  const today = new Date().toDateString();
-  const predDate = new Date(pending.date).toDateString();
-  if(predDate === today) { vSection.innerHTML = ''; return; }
-
-  // Resolve yesterday's prediction
-  const actual = PAIRS_OUTCOME[Math.floor(Math.random() * 2)];
-  const correct = actual.toLowerCase() === pending.bias.toLowerCase();
-  const verdict = correct ? 'correct' : 'wrong';
-
-  state.predictions.push({ ...pending, actual, verdict, resolvedDate: today });
-  state.pendingPrediction = null;
-  if(correct) {
-    state.currentSeason.wins++;
-    addXP(50, 'Correct prediction');
-    checkAchievement('first_correct');
-  } else {
-    state.currentSeason.losses++;
-  }
-  const totalPred = state.predictions.length;
-  if(totalPred >= 10) checkAchievement('predictions_10');
-  const wins = state.predictions.filter(p => p.verdict === 'correct').length;
-  if(totalPred >= 10 && wins/totalPred >= 0.6) checkAchievement('winrate_60');
-
-  updateSeasonDisplay();
-  saveState();
-
-  vSection.innerHTML = `<div class="verdict-banner ${verdict}">
-    <div class="verdict-title" style="color:${correct ? 'var(--green)' : 'var(--red)'}">
-      ${correct ? '✓ Correct Call' : '✗ Wrong Call'} — ${pending.pair} was ${actual}
+function renderVerdict(){
+  const vSection=document.getElementById('verdict-section');
+  const pending=state.pendingPrediction;
+  if(!pending){vSection.innerHTML='';return;}
+  const today=new Date().toDateString();
+  const predDate=new Date(pending.date).toDateString();
+  if(predDate===today){vSection.innerHTML='';return;}
+  const actual=['Bullish','Bearish'][Math.floor(Math.random()*2)];
+  const correct=actual.toLowerCase()===pending.bias.toLowerCase();
+  const verdict=correct?'correct':'wrong';
+  state.predictions.push({...pending,actual,verdict,resolvedDate:today});
+  state.pendingPrediction=null;
+  if(correct){state.currentSeason.wins++;addXP(50,'Correct prediction');checkAchievement('first_correct');}
+  else{state.currentSeason.losses++;}
+  if(state.predictions.length>=10)checkAchievement('predictions_10');
+  const w=state.predictions.filter(p=>p.verdict==='correct').length;
+  if(state.predictions.length>=10&&w/state.predictions.length>=0.6)checkAchievement('winrate_60');
+  updateSeasonDisplay();saveState();
+  vSection.innerHTML=`<div class="verdict-banner ${verdict}">
+    <div class="verdict-title" style="color:${correct?'var(--green)':'var(--red)'}">
+      ${correct?'✓ Correct Call':'✗ Wrong Call'} — ${pending.pair} was ${actual}
     </div>
-    <div class="verdict-body">
-      Your prediction: <strong>${pending.bias}</strong> — Actual outcome: <strong>${actual}</strong><br>
-      ${correct ? 'Your read was right. +50 XP added. Keep building that edge.' : 'Price disagreed with you this time. Review your reasoning below — the market is the best teacher.'}
-      <br><span style="font-size:11px;color:var(--text3);font-family:var(--mono);">Your reasoning: "${pending.reasoning}"</span>
-    </div>
+    <div class="verdict-body">Your prediction: <strong>${pending.bias}</strong> — Actual: <strong>${actual}</strong><br>
+    ${correct?'Your read was right. +50 XP earned. Keep building that edge.':'Price disagreed. Review your reasoning and study the concept again.'}<br>
+    <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">"${pending.reasoning}"</span></div>
   </div>`;
 }
 
-async function renderCoachBriefing() {
-  const el = document.getElementById('coach-briefing-msg');
-  const doneLessons = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
-  const wins = state.predictions.filter(p => p.verdict === 'correct').length;
-  const total = state.predictions.length;
-  const prompt = `You are a forex trading coach in a gamified learning terminal. The trader's stats: ${doneLessons} lessons completed, ${wins}W ${total-wins}L prediction record, ${state.streak} day streak. Write a SHORT (2-3 sentence) motivating daily briefing message. Be direct, specific to their progress, and end with one actionable focus for today. No greetings. No fluff.`;
-  try {
-    const res = await callClaude(prompt);
-    el.innerHTML = `<div class="coach-msg">${res}</div>`;
-  } catch(e) {
-    el.innerHTML = `<div class="coach-msg">Markets wait for no one. Your streak is on the line — make today count. Head to the Scenario Engine and make your call.</div>`;
-  }
+async function renderCoachBriefing(){
+  const el=document.getElementById('coach-briefing-msg');
+  const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
+  const wins=state.predictions.filter(p=>p.verdict==='correct').length;
+  const total=state.predictions.length;
+  const prompt=`You are a forex trading coach. Trader stats: ${doneL} lessons done, ${wins}W ${total-wins}L predictions, ${state.streak} day streak. Write a SHORT (2-3 sentences) sharp daily briefing. Be specific to their progress. End with one actionable focus. No greetings or fluff.`;
+  try{const res=await callClaude(prompt);el.innerHTML=`<div class="coach-msg">${res}</div>`;}
+  catch(e){el.innerHTML=`<div class="coach-msg">Markets wait for no one. Your streak is on the line — make today count. Head to the Scenario Engine and make your call.</div>`;}
 }
 
-function renderFocusConcept() {
-  const doneLessons = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
-  let focus = { name: 'What is Forex?', desc: 'Start with the fundamentals in the BabyPips curriculum.' };
-  if(doneLessons >= 10) focus = { name: 'Market Structure', desc: 'Focus on identifying swing highs, swing lows, and the direction of trend.' };
-  if(doneLessons >= 20) focus = { name: 'Break of Structure (BOS)', desc: 'Practice identifying when structure breaks and what it signals about order flow.' };
-  if(doneLessons >= 30) focus = { name: 'Fair Value Gaps', desc: 'Study how imbalances form and how price returns to fill them.' };
-  if(doneLessons >= 40) focus = { name: 'SMT Divergence', desc: 'Compare correlated pairs to spot institutional divergence signals.' };
-  if(doneLessons >= 50) focus = { name: 'ICT Killzones', desc: 'Master London and New York open timing for high-probability entries.' };
-  document.getElementById('focus-concept').textContent = focus.name;
-  document.getElementById('focus-desc').textContent = focus.desc;
+function renderFocusConcept(){
+  const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
+  let focus={name:'What is Forex?',desc:'Start with the fundamentals in the BabyPips curriculum.'};
+  if(doneL>=10)focus={name:'Market Structure',desc:'Identify swing highs, swing lows, and the direction of trend.'};
+  if(doneL>=20)focus={name:'Break of Structure (BOS)',desc:'Practice spotting when structure breaks and what it signals.'};
+  if(doneL>=30)focus={name:'Fair Value Gaps',desc:'Study how imbalances form and how price returns to fill them.'};
+  if(doneL>=40)focus={name:'SMT Divergence',desc:'Compare correlated pairs to spot institutional divergence signals.'};
+  if(doneL>=50)focus={name:'ICT Killzones',desc:'Master London and New York open timing for high-probability entries.'};
+  document.getElementById('focus-concept').textContent=focus.name;
+  document.getElementById('focus-desc').textContent=focus.desc;
 }
 
 // ============================================================
 // SCENARIO ENGINE
 // ============================================================
-function getTodaysScenario() {
-  const dayIndex = Math.floor(Date.now() / 86400000) % SCENARIOS.length;
-  return SCENARIOS[dayIndex];
-}
+function getTodaysScenario(){return SCENARIOS[Math.floor(Date.now()/86400000)%SCENARIOS.length];}
+let selectedBias=null;
 
-function renderScenario() {
-  const content = document.getElementById('scenario-content');
-  const pending = state.pendingPrediction;
-  const today = new Date().toDateString();
-
-  if(pending && new Date(pending.date).toDateString() === today) {
-    content.innerHTML = `<div class="submitted-overlay">
+function renderScenario(){
+  const content=document.getElementById('scenario-content');
+  const pending=state.pendingPrediction;
+  const today=new Date().toDateString();
+  if(pending&&new Date(pending.date).toDateString()===today){
+    content.innerHTML=`<div class="submitted-overlay">
       <div style="font-size:48px;margin-bottom:16px;">🔒</div>
       <div class="screen-title" style="margin-bottom:8px;">Call Submitted</div>
-      <div style="font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.8;">
+      <div style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.8;">
         You called <strong style="color:${pending.bias==='Bullish'?'var(--green)':'var(--red)'}">${pending.bias}</strong> on <strong>${pending.pair}</strong>.<br>
-        Come back tomorrow morning to see if you were right.<br>
-        Your reasoning: <em>"${pending.reasoning}"</em>
+        Come back tomorrow to see the verdict.<br><em>"${pending.reasoning}"</em>
       </div>
       <div class="tag tag-amber" style="font-size:12px;padding:6px 14px;">Verdict arrives on next login</div>
     </div>`;
-    document.getElementById('scenario-badge').style.display = 'none';
-    return;
+    document.getElementById('scenario-badge').style.display='none';return;
   }
-
-  const s = getTodaysScenario();
-  content.innerHTML = `
+  const s=getTodaysScenario();
+  const chart=getScenarioChart(s.chartType);
+  content.innerHTML=`
     <div class="card">
       <div class="card-label">Today's Setup — <span class="tag tag-purple">${s.concept}</span></div>
       <div class="pair-display">${s.pair}</div>
-      <div class="card-body" style="margin-top:8px;">${s.context}</div>
+      <div class="card-body" style="margin:8px 0 12px;">${s.context}</div>
+      <div class="chart-wrap">
+        <div class="chart-label-row">
+          <span class="chart-label">Price Action Chart — 15min</span>
+          <span class="chart-pair">${s.pair}</span>
+        </div>
+        ${chart}
+      </div>
     </div>
     <div class="card">
       <div class="card-label">The Question</div>
@@ -840,47 +1048,39 @@ function renderScenario() {
       </div>
       <div style="margin-bottom:10px;">
         <div class="card-label" style="margin-bottom:6px;">Your Reasoning (required)</div>
-        <textarea id="reasoning-input" rows="4" placeholder="What confluences are you seeing? Why this bias? Be specific — the AI coach will review this tomorrow..."></textarea>
+        <textarea id="reasoning-input" rows="3" placeholder="What confluences are you seeing? Why this bias? Be specific..."></textarea>
       </div>
       <button class="btn btn-primary" onclick="submitPrediction('${s.pair}')">Submit Call →</button>
-    </div>
-  `;
+    </div>`;
 }
 
-let selectedBias = null;
-function selectBias(bias) {
-  selectedBias = bias;
-  document.getElementById('bias-bull').classList.toggle('selected', bias === 'Bullish');
-  document.getElementById('bias-bear').classList.toggle('selected', bias === 'Bearish');
+function selectBias(bias){
+  selectedBias=bias;
+  document.getElementById('bias-bull').classList.toggle('selected',bias==='Bullish');
+  document.getElementById('bias-bear').classList.toggle('selected',bias==='Bearish');
 }
 
-function submitPrediction(pair) {
-  if(!selectedBias) { showToast('Select a bias first', 'error'); return; }
-  const reasoning = document.getElementById('reasoning-input').value.trim();
-  if(reasoning.length < 20) { showToast('Add more reasoning (min 20 chars)', 'error'); return; }
-
-  state.pendingPrediction = { pair, bias: selectedBias, reasoning, date: new Date().toISOString() };
-  addXP(10, 'Prediction submitted');
-  checkAchievement('first_prediction');
-  selectedBias = null;
-  saveState();
-  renderScenario();
+function submitPrediction(pair){
+  if(!selectedBias){showToast('Select a bias first','error');return;}
+  const reasoning=document.getElementById('reasoning-input').value.trim();
+  if(reasoning.length<20){showToast('Add more reasoning (min 20 chars)','error');return;}
+  state.pendingPrediction={pair,bias:selectedBias,reasoning,date:new Date().toISOString()};
+  addXP(10,'Prediction submitted');checkAchievement('first_prediction');
+  selectedBias=null;saveState();renderScenario();
 }
 
 // ============================================================
 // CURRICULUM
 // ============================================================
-function renderCurriculum() {
-  const totalLessons = CURRICULUM.reduce((a, s) => a + s.lessons.length, 0);
-  const doneLessons = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
-  document.getElementById('curr-done').textContent = doneLessons;
-  document.getElementById('curr-total').textContent = totalLessons;
-  document.getElementById('curr-pct').textContent = Math.round((doneLessons/totalLessons)*100) + '%';
-
-  const list = document.getElementById('curriculum-list');
-  list.innerHTML = CURRICULUM.map(school => {
-    const schoolDone = school.lessons.filter((l, i) => state.lessonsDone[`${school.school}:${i}`]).length;
-    const pct = Math.round((schoolDone / school.lessons.length) * 100);
+function renderCurriculum(){
+  const totalL=CURRICULUM.reduce((a,s)=>a+s.lessons.length,0);
+  const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
+  document.getElementById('curr-done').textContent=doneL;
+  document.getElementById('curr-total').textContent=totalL;
+  document.getElementById('curr-pct').textContent=Math.round((doneL/totalL)*100)+'%';
+  document.getElementById('curriculum-list').innerHTML=CURRICULUM.map(school=>{
+    const schoolDone=school.lessons.filter((l,i)=>state.lessonsDone[`${school.school}:${i}`]).length;
+    const pct=Math.round((schoolDone/school.lessons.length)*100);
     return `<div class="school-block">
       <div class="school-header" onclick="toggleSchool('${school.school}')">
         <div class="school-name" style="color:${school.color}">${school.school}</div>
@@ -888,13 +1088,15 @@ function renderCurriculum() {
       </div>
       <div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${school.color}"></div></div>
       <div class="school-lessons" id="school-${school.school}" style="display:none;">
-        ${school.lessons.map((lesson, i) => {
-          const key = `${school.school}:${i}`;
-          const done = !!state.lessonsDone[key];
+        ${school.lessons.map((lesson,i)=>{
+          const key=`${school.school}:${i}`;const done=!!state.lessonsDone[key];
           return `<div class="lesson-row">
-            <div class="lesson-check ${done ? 'done' : ''}" onclick="toggleLesson('${school.school}', ${i}, '${lesson.replace(/'/g,"\\'")}')"></div>
-            <div class="lesson-name ${done ? 'done' : ''}">${lesson}</div>
-            ${done ? `<div class="lesson-quiz-btn" onclick="openQuiz('${lesson.replace(/'/g,"\\'")}')">Quiz →</div>` : ''}
+            <div class="lesson-check ${done?'done':''}" onclick="toggleLesson('${school.school}',${i},'${lesson.replace(/'/g,"\\'")}')"></div>
+            <div class="lesson-name ${done?'done':''}">${lesson}</div>
+            <div class="lesson-actions">
+              ${done?`<span class="lesson-btn" onclick="openQuiz('${lesson.replace(/'/g,"\\'")}')">Quiz →</span>`:''}
+              <span class="lesson-btn vis" onclick="openLessonVisual('${lesson.replace(/'/g,"\\'")}')">◈ Visual</span>
+            </div>
           </div>`;
         }).join('')}
       </div>
@@ -902,359 +1104,290 @@ function renderCurriculum() {
   }).join('');
 }
 
-function toggleSchool(name) {
-  const el = document.getElementById(`school-${name}`);
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
+function toggleSchool(name){const el=document.getElementById(`school-${name}`);el.style.display=el.style.display==='none'?'block':'none';}
 
-function toggleLesson(school, index, lessonName) {
-  const key = `${school}:${index}`;
-  const wasDone = !!state.lessonsDone[key];
-  state.lessonsDone[key] = !wasDone;
-
-  if(!wasDone) {
-    addXP(20, `Lesson completed: ${lessonName}`);
-    checkLessonAchievements();
-    saveState();
-    openQuiz(lessonName);
-  } else {
-    state.xp = Math.max(0, state.xp - 20);
-    saveState();
-    updateTopBar();
-  }
+function toggleLesson(school,index,lessonName){
+  const key=`${school}:${index}`;const wasDone=!!state.lessonsDone[key];
+  state.lessonsDone[key]=!wasDone;
+  if(!wasDone){addXP(20,`Lesson: ${lessonName}`);checkLessonAchievements();saveState();openQuiz(lessonName);}
+  else{state.xp=Math.max(0,state.xp-20);saveState();updateTopBar();}
   renderCurriculum();
 }
 
-function checkLessonAchievements() {
-  const done = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
+function checkLessonAchievements(){
+  const done=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
   checkAchievement('first_lesson');
-  if(done >= 10) checkAchievement('lessons_10');
-  if(done >= 25) checkAchievement('lessons_25');
+  if(done>=10)checkAchievement('lessons_10');
+  if(done>=25)checkAchievement('lessons_25');
+}
+
+// ============================================================
+// LESSON VISUAL (concept diagram from curriculum)
+// ============================================================
+const LESSON_CONCEPT_MAP={
+  'What is Forex?':'fundamentals','What is a Pip?':'fundamentals','What is Leverage?':'fundamentals',
+  'What is Margin?':'fundamentals','What is a Lot?':'fundamentals','What is a Spread?':'fundamentals',
+  'Market Structure Overview':'market_structure','Uptrend and Downtrend':'market_structure','Swing Highs and Lows':'market_structure',
+  'Break of Structure (BOS)':'bos','Change of Character (CHoCH)':'bos',
+  'Fair Value Gaps (FVG)':'fvg','Imbalances and Inefficiencies':'fvg',
+  'Liquidity Pools':'liquidity','Buyside and Sellside Liquidity':'liquidity','Stop Hunts and Sweeps':'liquidity',
+  'SMT Divergence':'smt',
+  'ICT Killzones':'killzones','London Open Strategy':'killzones','New York Open Strategy':'killzones',
+  'ICT Power of 3':'ict_model','Judas Swing':'ict_model',
+};
+
+function openLessonVisual(lessonName){
+  const concept=LESSON_CONCEPT_MAP[lessonName]||null;
+  const diagram=concept?getConceptDiagram(concept):`<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px;">No visual diagram available for "${lessonName}" yet. Coming in a future update.</div>`;
+  document.getElementById('visual-modal-title').textContent=`Visual — ${lessonName}`;
+  document.getElementById('visual-modal-body').innerHTML=`<div class="diagram-title">CONCEPT DIAGRAM</div>${diagram}`;
+  document.getElementById('visual-modal').classList.remove('hidden');
 }
 
 // ============================================================
 // QUIZ
 // ============================================================
-const QUIZ_BANK = {
-  'What is Forex?': { q: 'What does "Forex" stand for?', options: ['Foreign Exchange', 'Forward Exchange', 'Federal Exchange', 'Financial Exchange'], answer: 0, exp: 'Forex stands for Foreign Exchange — the global market where currencies are bought and sold.' },
-  'What is a Pip?': { q: 'For EUR/USD, if price moves from 1.1050 to 1.1060, how many pips did it move?', options: ['1 pip', '10 pips', '100 pips', '0.1 pips'], answer: 1, exp: 'A pip is the 4th decimal place for most pairs. 1.1050 to 1.1060 = 10 pips.' },
-  'What is Leverage?': { q: 'If you have $1,000 and use 100:1 leverage, what is your buying power?', options: ['$1,000', '$10,000', '$100,000', '$1,000,000'], answer: 2, exp: '100:1 leverage means $1,000 controls $100,000 in the market. Powerful but risky.' },
-  'Support and Resistance': { q: 'When a support level breaks, what does it typically become?', options: ['A new support level', 'A resistance level', 'A neutral zone', 'An order block'], answer: 1, exp: 'This is called "role reversal." Old support becomes new resistance once broken.' },
-  'Break of Structure (BOS)': { q: 'In an uptrend, what constitutes a bullish Break of Structure?', options: ['Price breaks below a swing low', 'Price breaks above a swing high', 'Price consolidates for 3 candles', 'Price touches a Fibonacci level'], answer: 1, exp: 'A BOS in an uptrend is when price breaks above a previous swing high, confirming bullish order flow.' },
-  'Fair Value Gaps (FVG)': { q: 'When does a Bullish Fair Value Gap form?', options: ['When a bearish candle has no overlap with surrounding candles', 'When a bullish candle has no overlap with surrounding candles', 'When price gaps at market open', 'When two candles close at the same level'], answer: 1, exp: 'A bullish FVG forms when a strong bullish candle leaves a gap — the candle before and after don\'t overlap. Price often returns to fill this imbalance.' },
-  'SMT Divergence': { q: 'EUR/USD makes a new swing high but GBP/USD fails to make a new high. What does this signal?', options: ['Both pairs are bullish', 'Potential bearish SMT divergence — USD may be strengthening', 'GBP/USD has a technical error', 'Both pairs will continue higher'], answer: 1, exp: 'SMT (Smart Money Technique) divergence between correlated pairs signals potential reversal. If EUR/USD leads higher but GBP/USD can\'t confirm, smart money may be selling.' },
-  'ICT Killzones': { q: 'Which time window is considered the London Killzone?', options: ['2:00 AM - 5:00 AM EST', '8:00 AM - 11:00 AM EST', '1:00 PM - 4:00 PM EST', '10:00 PM - 12:00 AM EST'], answer: 0, exp: 'The London Killzone runs approximately 2:00–5:00 AM EST, capturing the high-probability moves at the start of the London session.' },
-  'Liquidity Pools': { q: 'Where are buy-side liquidity pools typically found?', options: ['Below swing lows', 'Above swing highs', 'At round numbers only', 'Inside Fair Value Gaps'], answer: 1, exp: 'Buy-side liquidity pools sit above swing highs — that\'s where retail stop losses from short positions cluster. Smart money hunts these before reversing.' },
+const QUIZ_BANK={
+  'What is Forex?':{q:'What does "Forex" stand for?',options:['Foreign Exchange','Forward Exchange','Federal Exchange','Financial Exchange'],answer:0,exp:'Forex stands for Foreign Exchange — the global decentralised market where currencies are bought and sold.'},
+  'What is a Pip?':{q:'For EUR/USD, if price moves from 1.1050 to 1.1060, how many pips did it move?',options:['1 pip','10 pips','100 pips','0.1 pips'],answer:1,exp:'A pip is the 4th decimal place for most pairs. 1.1050 to 1.1060 is a 10 pip move.'},
+  'What is Leverage?':{q:'If you have $1,000 and use 100:1 leverage, what is your buying power?',options:['$1,000','$10,000','$100,000','$1,000,000'],answer:2,exp:'100:1 leverage means $1,000 controls $100,000. Powerful but it amplifies losses too.'},
+  'Support and Resistance':{q:'When a support level breaks, what does it typically become?',options:['A new support level','A resistance level','A neutral zone','An order block'],answer:1,exp:'Role reversal: old support becomes new resistance once broken — this is a core SMC concept.'},
+  'Break of Structure (BOS)':{q:'In an uptrend, what constitutes a bullish Break of Structure?',options:['Price breaks below a swing low','Price breaks above a previous swing high','Price consolidates for 3 candles','Price touches a Fibonacci level'],answer:1,exp:'A BOS in an uptrend is when price breaks above a previous swing high, confirming bullish order flow continues.'},
+  'Fair Value Gaps (FVG)':{q:'A Bullish FVG forms when...',options:['A bearish candle has no overlap with surrounding candles','A strong bullish candle leaves a gap that surrounding candles don\'t overlap','Price gaps at market open','Two candles close at the same price'],answer:1,exp:'A bullish FVG: the wick of candle 1 and wick of candle 3 don\'t overlap the body of the impulse candle. Price often returns to fill this imbalance.'},
+  'SMT Divergence':{q:'EUR/USD makes a new swing high but GBP/USD fails to make a new high. What does this signal?',options:['Both pairs are bullish','Potential bearish SMT divergence — USD may be strengthening','GBP/USD has a technical glitch','Both pairs will continue higher'],answer:1,exp:'SMT divergence between correlated pairs signals institutional activity. EUR/USD leading but GBP/USD failing to confirm = USD strength = bearish signal for both.'},
+  'ICT Killzones':{q:'Which time window is the London Killzone?',options:['2:00 AM - 5:00 AM EST','8:00 AM - 11:00 AM EST','1:00 PM - 4:00 PM EST','10:00 PM - 12:00 AM EST'],answer:0,exp:'The London Killzone runs ~2–5 AM EST, capturing high-probability moves at the start of the London session when institutional orders hit the market.'},
+  'Liquidity Pools':{q:'Where are buyside liquidity pools typically found?',options:['Below swing lows','Above swing highs where retail stops cluster','At round numbers only','Inside Fair Value Gaps'],answer:1,exp:'Buyside liquidity sits above swing highs — that\'s where retail short sellers place their stop losses. Smart money sweeps these before reversing.'},
+  'Change of Character (CHoCH)':{q:'What does a CHoCH (Change of Character) signal?',options:['Trend continuation','Potential trend reversal','Increased volume','A news event'],answer:1,exp:'CHoCH breaks the most recent opposing structure — e.g. in an uptrend, breaking below the last Higher Low signals the trend may be reversing.'},
 };
 
-let currentQuiz = null;
-let quizAnswered = false;
+let currentQuiz=null,quizAnswered=false,currentQuizLesson='';
 
-function openQuiz(lessonName) {
-  const quiz = QUIZ_BANK[lessonName];
-  if(!quiz) {
-    openAIQuiz(lessonName);
-    return;
+function switchQuizTab(tab){
+  document.querySelectorAll('.vis-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.vis-tab[onclick*="${tab}"]`).classList.add('active');
+  document.getElementById('quiz-tab-quiz').classList.toggle('hidden',tab!=='quiz');
+  document.getElementById('quiz-tab-visual').classList.toggle('hidden',tab!=='visual');
+  if(tab==='visual'){
+    const concept=LESSON_CONCEPT_MAP[currentQuizLesson]||null;
+    const diagram=concept?getConceptDiagram(concept):`<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px;">No diagram for this specific lesson yet.</div>`;
+    document.getElementById('quiz-tab-visual').innerHTML=`<div class="diagram-title">CONCEPT DIAGRAM — ${currentQuizLesson.toUpperCase()}</div>${diagram}`;
   }
-  currentQuiz = quiz;
-  quizAnswered = false;
-  document.getElementById('quiz-modal-title').textContent = `Quiz — ${lessonName}`;
-  document.getElementById('quiz-modal-body').innerHTML = `
+}
+
+function openQuiz(lessonName){
+  currentQuizLesson=lessonName;
+  const quiz=QUIZ_BANK[lessonName];
+  if(!quiz){openAIQuiz(lessonName);return;}
+  currentQuiz=quiz;quizAnswered=false;
+  document.getElementById('quiz-modal-title').textContent=`Quiz — ${lessonName}`;
+  document.getElementById('quiz-tab-visual').classList.add('hidden');
+  document.getElementById('quiz-tab-visual').innerHTML='';
+  document.getElementById('quiz-tab-quiz').classList.remove('hidden');
+  document.querySelectorAll('.vis-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.vis-tab[onclick*="quiz"]').classList.add('active');
+  document.getElementById('quiz-tab-quiz').innerHTML=`
     <div class="quiz-q">${quiz.q}</div>
-    <div class="quiz-options">
-      ${quiz.options.map((opt, i) => `<div class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">${opt}</div>`).join('')}
-    </div>
-  `;
+    <div class="quiz-options">${quiz.options.map((opt,i)=>`<div class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">${opt}</div>`).join('')}</div>`;
   document.getElementById('quiz-modal').classList.remove('hidden');
 }
 
-function answerQuiz(selected) {
-  if(quizAnswered) return;
-  quizAnswered = true;
-  const quiz = currentQuiz;
-  const correct = selected === quiz.answer;
-  document.querySelectorAll('.quiz-option').forEach((el, i) => {
-    if(i === quiz.answer) el.classList.add('correct');
-    else if(i === selected && !correct) el.classList.add('wrong');
+function answerQuiz(selected){
+  if(quizAnswered)return;quizAnswered=true;
+  const quiz=currentQuiz;const correct=selected===quiz.answer;
+  document.querySelectorAll('.quiz-option').forEach((el,i)=>{
+    if(i===quiz.answer)el.classList.add('correct');
+    else if(i===selected&&!correct)el.classList.add('wrong');
   });
-  state.quizHistory.push({ lesson: quiz.q, correct, date: new Date().toISOString() });
-  if(correct) addXP(30, 'Quiz correct');
-  const resultEl = document.createElement('div');
-  resultEl.className = `quiz-result ${correct ? 'correct' : 'wrong'}`;
-  resultEl.innerHTML = `<strong>${correct ? '✓ Correct!' : '✗ Not quite.'}</strong> ${quiz.exp}`;
-  document.getElementById('quiz-modal-body').appendChild(resultEl);
-  const btn = document.createElement('button');
-  btn.className = 'btn btn-primary'; btn.style.marginTop = '12px';
-  btn.textContent = 'Done'; btn.onclick = closeQuiz;
-  document.getElementById('quiz-modal-body').appendChild(btn);
-  saveState();
-  updateTopBar();
+  state.quizHistory.push({lesson:quiz.q,correct,date:new Date().toISOString()});
+  if(correct)addXP(30,'Quiz correct');
+  const resultEl=document.createElement('div');
+  resultEl.className=`quiz-result ${correct?'correct':'wrong'}`;
+  resultEl.innerHTML=`<strong>${correct?'✓ Correct!':'✗ Not quite.'}</strong> ${quiz.exp}`;
+  document.getElementById('quiz-tab-quiz').appendChild(resultEl);
+  if(!correct){
+    const hint=document.createElement('div');
+    hint.style.cssText='margin-top:10px;font-size:12px;color:var(--purple);font-family:var(--mono);cursor:pointer;';
+    hint.textContent='◈ View concept diagram to reinforce this →';
+    hint.onclick=()=>switchQuizTab('visual');
+    document.getElementById('quiz-tab-quiz').appendChild(hint);
+  }
+  const btn=document.createElement('button');
+  btn.className='btn btn-primary';btn.style.marginTop='12px';
+  btn.textContent='Done';btn.onclick=closeQuiz;
+  document.getElementById('quiz-tab-quiz').appendChild(btn);
+  saveState();updateTopBar();
 }
 
-async function openAIQuiz(lessonName) {
-  document.getElementById('quiz-modal-title').textContent = `Quiz — ${lessonName}`;
-  document.getElementById('quiz-modal-body').innerHTML = `<div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><span style="margin-left:8px;">Generating quiz question...</span></div>`;
+async function openAIQuiz(lessonName){
+  currentQuizLesson=lessonName;
+  document.getElementById('quiz-modal-title').textContent=`Quiz — ${lessonName}`;
+  document.getElementById('quiz-tab-quiz').innerHTML=`<div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><span style="margin-left:8px;">Generating quiz...</span></div>`;
+  document.getElementById('quiz-tab-visual').classList.add('hidden');
+  document.getElementById('quiz-tab-quiz').classList.remove('hidden');
   document.getElementById('quiz-modal').classList.remove('hidden');
-  try {
-    const prompt = `Generate a single multiple choice quiz question about the forex trading concept: "${lessonName}". 
-Return ONLY valid JSON in this exact format with no other text:
-{"q":"question text","options":["A","B","C","D"],"answer":0,"exp":"explanation"}
-answer is the index (0-3) of the correct option.`;
-    const raw = await callClaude(prompt);
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const quiz = JSON.parse(clean);
-    currentQuiz = quiz;
-    quizAnswered = false;
-    document.getElementById('quiz-modal-body').innerHTML = `
+  try{
+    const prompt=`Generate a single multiple choice quiz question about this forex concept: "${lessonName}". Return ONLY valid JSON, no other text: {"q":"question","options":["A","B","C","D"],"answer":0,"exp":"explanation"} where answer is the index 0-3 of the correct option.`;
+    const raw=await callClaude(prompt);
+    const clean=raw.replace(/\`\`\`json|\`\`\`/g,'').trim();
+    const quiz=JSON.parse(clean);
+    currentQuiz=quiz;quizAnswered=false;
+    document.getElementById('quiz-tab-quiz').innerHTML=`
       <div class="quiz-q">${quiz.q}</div>
-      <div class="quiz-options">
-        ${quiz.options.map((opt, i) => `<div class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">${opt}</div>`).join('')}
-      </div>`;
-  } catch(e) {
-    document.getElementById('quiz-modal-body').innerHTML = `<div class="card-body">Couldn't generate quiz right now. Try again later.</div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeQuiz()">Close</button>`;
+      <div class="quiz-options">${quiz.options.map((opt,i)=>`<div class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">${opt}</div>`).join('')}</div>`;
+  }catch(e){
+    document.getElementById('quiz-tab-quiz').innerHTML=`<div class="card-body" style="color:var(--red);">Couldn't generate quiz. Try again.</div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeQuiz()">Close</button>`;
   }
 }
 
-function closeQuiz() {
+function closeQuiz(){
   document.getElementById('quiz-modal').classList.add('hidden');
-  if(document.getElementById('screen-curriculum').classList.contains('active')) renderCurriculum();
+  if(document.getElementById('screen-curriculum').classList.contains('active'))renderCurriculum();
 }
 
 // ============================================================
 // SKILL TREE
 // ============================================================
-function renderSkillTree() {
-  const doneLessons = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
-  const schoolDone = {};
-  CURRICULUM.forEach(s => {
-    schoolDone[s.school] = s.lessons.filter((l, i) => state.lessonsDone[`${s.school}:${i}`]).length;
-  });
-
-  function isUnlocked(node) {
-    const [school, count] = node.req.split(':');
-    return (schoolDone[school] || 0) >= parseInt(count);
-  }
-
-  const html = SKILL_TREE.map((node, i) => {
-    const unlocked = isUnlocked(node);
-    const mastered = unlocked && (schoolDone[node.req.split(':')[0]] || 0) >= parseInt(node.req.split(':')[1]) + 3;
-    const cls = mastered ? 'mastered' : unlocked ? 'unlocked' : 'locked';
-    const status = mastered ? `<div class="skill-status" style="color:var(--accent)">✓ Mastered</div>` : unlocked ? `<div class="skill-status" style="color:var(--text2)">● In Progress</div>` : `<div class="skill-status" style="color:var(--text3)">○ Locked</div>`;
+function renderSkillTree(){
+  const schoolDone={};
+  CURRICULUM.forEach(s=>{schoolDone[s.school]=s.lessons.filter((l,i)=>state.lessonsDone[`${s.school}:${i}`]).length;});
+  function isUnlocked(node){const[school,count]=node.req.split(':');return(schoolDone[school]||0)>=parseInt(count);}
+  document.getElementById('skill-tree-content').innerHTML=SKILL_TREE.map((node,i)=>{
+    const unlocked=isUnlocked(node);
+    const mastered=unlocked&&(schoolDone[node.req.split(':')[0]]||0)>=parseInt(node.req.split(':')[1])+3;
+    const cls=mastered?'mastered':unlocked?'unlocked':'locked';
+    const status=mastered?`<div class="skill-status" style="color:var(--accent)">✓ Mastered</div>`:unlocked?`<div class="skill-status" style="color:var(--text2)">● In Progress</div>`:`<div class="skill-status" style="color:var(--text3)">○ Locked</div>`;
+    const visHint=unlocked?`<div class="skill-vis-hint">◈ Click to view diagram</div>`:'';
+    const onclick=unlocked?`onclick="openSkillVisual('${node.concept}','${node.name}')"`:'';
     return `<div class="skill-tier">
-      ${i > 0 ? '<div class="skill-arrow">↓</div>' : ''}
-      <div class="skill-node ${cls}">
+      ${i>0?'<div class="skill-arrow">↓</div>':''}
+      <div class="skill-node ${cls}" ${onclick}>
         <div class="skill-node-name">${node.name}</div>
         <div class="skill-node-sub">${node.sub}</div>
-        ${status}
+        ${status}${visHint}
       </div>
     </div>`;
   }).join('');
-  document.getElementById('skill-tree-content').innerHTML = html;
+}
+
+function openSkillVisual(concept,name){
+  const diagram=getConceptDiagram(concept);
+  document.getElementById('visual-modal-title').textContent=name;
+  document.getElementById('visual-modal-body').innerHTML=`<div class="diagram-title">CONCEPT DIAGRAM — ${name.toUpperCase()}</div>${diagram}`;
+  document.getElementById('visual-modal').classList.remove('hidden');
 }
 
 // ============================================================
 // AI COACH
 // ============================================================
-async function sendToCoach() {
-  const input = document.getElementById('coach-input');
-  const msg = input.value.trim();
-  if(!msg) return;
-  input.value = '';
-
-  const history = document.getElementById('coach-history');
-  history.innerHTML += `<div class="card" style="margin-bottom:8px;border-color:rgba(0,151,255,0.2);">
-    <div class="card-label" style="color:var(--accent2)">You</div>
-    <div class="card-body">${msg}</div>
-  </div>`;
-
-  const loadingId = 'loading-' + Date.now();
-  history.innerHTML += `<div class="card" id="${loadingId}" style="margin-bottom:8px;">
-    <div class="card-label">Coach</div>
-    <div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div></div>
-  </div>`;
-  history.scrollTop = history.scrollHeight;
-
-  const doneLessons = Object.keys(state.lessonsDone).filter(k => state.lessonsDone[k]).length;
-  const systemPrompt = `You are a Socratic forex trading coach in a gamified learning terminal. The trader has completed ${doneLessons} BabyPips lessons. They understand: pips, pairs, basic structure. They are learning SMC/ICT concepts (BOS, FVG, SMT divergence, killzones).
-
-Your coaching style:
-- NEVER just give the answer directly. Ask what they see first.
-- Challenge their reasoning. Ask "why?" and "what else?"
-- If they describe a setup, ask what confluences they spot before you comment.
-- Be direct and sharp, not fluffy. Max 150 words per response.
-- End every response with ONE specific question or challenge for them.`;
-
-  try {
-    const res = await callClaude(msg, systemPrompt);
-    document.getElementById(loadingId).innerHTML = `<div class="card-label">Coach</div><div class="ai-response">${res}</div>`;
-  } catch(e) {
-    document.getElementById(loadingId).innerHTML = `<div class="card-label">Coach</div><div class="card-body" style="color:var(--red)">Connection issue. Try again.</div>`;
-  }
-  history.scrollTop = history.scrollHeight;
+async function sendToCoach(){
+  const input=document.getElementById('coach-input');const msg=input.value.trim();if(!msg)return;
+  input.value='';
+  const history=document.getElementById('coach-history');
+  history.innerHTML+=`<div class="card" style="margin-bottom:8px;border-color:rgba(0,151,255,0.2);"><div class="card-label" style="color:var(--accent2)">You</div><div class="card-body">${msg}</div></div>`;
+  const loadingId='loading-'+Date.now();
+  history.innerHTML+=`<div class="card" id="${loadingId}" style="margin-bottom:8px;"><div class="card-label">Coach</div><div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div></div></div>`;
+  history.scrollTop=history.scrollHeight;
+  const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
+  const sys=`You are a Socratic forex trading coach. The trader has completed ${doneL} BabyPips lessons and is learning SMC/ICT (BOS, FVG, SMT divergence, killzones, order blocks). Style: Never just give the answer. Ask what they see first. Challenge reasoning. Ask "why?" and "what else?". Max 150 words. End with ONE specific question or challenge.`;
+  try{const res=await callClaude(msg,sys);document.getElementById(loadingId).innerHTML=`<div class="card-label">Coach</div><div class="ai-response">${res}</div>`;}
+  catch(e){document.getElementById(loadingId).innerHTML=`<div class="card-label">Coach</div><div class="card-body" style="color:var(--red)">Connection issue. Try again.</div>`;}
+  history.scrollTop=history.scrollHeight;
 }
 
 // ============================================================
 // STATS
 // ============================================================
-function renderStats() {
-  const preds = state.predictions;
-  const wins = preds.filter(p => p.verdict === 'correct').length;
-  const losses = preds.filter(p => p.verdict === 'wrong').length;
-  const total = preds.length;
-  const winRate = total > 0 ? Math.round((wins/total)*100) + '%' : '—';
-
-  document.getElementById('stat-overall').textContent = `${wins}W ${losses}L`;
-  document.getElementById('stat-winrate').textContent = winRate;
-  document.getElementById('stat-winrate').className = `stat-value ${wins/total >= 0.5 ? 'green' : 'red'}`;
-  document.getElementById('stat-streak').textContent = state.streak;
-
-  const bullPreds = preds.filter(p => p.bias === 'Bullish');
-  const bearPreds = preds.filter(p => p.bias === 'Bearish');
-  const bullW = bullPreds.filter(p => p.verdict === 'correct').length;
-  const bearW = bearPreds.filter(p => p.verdict === 'correct').length;
-  document.getElementById('stat-bull').textContent = `${bullW}W ${bullPreds.length-bullW}L`;
-  document.getElementById('stat-bull-rate').textContent = bullPreds.length > 0 ? Math.round((bullW/bullPreds.length)*100) + '% win rate' : '—';
-  document.getElementById('stat-bear').textContent = `${bearW}W ${bearPreds.length-bearW}L`;
-  document.getElementById('stat-bear-rate').textContent = bearPreds.length > 0 ? Math.round((bearW/bearPreds.length)*100) + '% win rate' : '—';
-
-  const tableEl = document.getElementById('prediction-history-table');
-  if(preds.length === 0) { tableEl.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:12px 0;">No predictions yet. Head to the Scenario Engine.</div>'; }
-  else {
-    const rows = [...preds].reverse().slice(0, 20).map(p => `<tr>
-      <td>${new Date(p.date).toLocaleDateString('en-CA')}</td>
-      <td>${p.pair}</td>
-      <td style="color:${p.bias==='Bullish'?'var(--green)':'var(--red)'}">${p.bias}</td>
-      <td style="color:${p.verdict==='correct'?'var(--green)':'var(--red)'}">${p.verdict === 'correct' ? '✓' : '✗'} ${p.actual}</td>
-    </tr>`).join('');
-    tableEl.innerHTML = `<table class="prediction-table"><thead><tr><th>Date</th><th>Pair</th><th>Your Call</th><th>Outcome</th></tr></thead><tbody>${rows}</tbody></table>`;
-  }
-
-  const quizW = state.quizHistory.filter(q => q.correct).length;
-  const quizTotal = state.quizHistory.length;
-  document.getElementById('stat-quizzes').textContent = quizTotal;
-  document.getElementById('stat-quiz-rate').textContent = quizTotal > 0 ? Math.round((quizW/quizTotal)*100) + '%' : '—';
-
-  const seasonEl = document.getElementById('season-history');
-  const allSeasons = [...state.seasonHistory, state.currentSeason].filter(s => s.month).reverse();
-  if(allSeasons.length === 0) { seasonEl.innerHTML = '<div style="font-size:13px;color:var(--text3);">No season history yet.</div>'; }
-  else {
-    seasonEl.innerHTML = allSeasons.map(s => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;">
-      <span style="color:var(--text2)">${s.month}</span>
-      <span style="color:${s.wins>=s.losses?'var(--green)':'var(--red)'}">${s.wins}W – ${s.losses}L</span>
-    </div>`).join('');
-  }
+function renderStats(){
+  const preds=state.predictions;const wins=preds.filter(p=>p.verdict==='correct').length;const losses=preds.length-wins;const total=preds.length;
+  document.getElementById('stat-overall').textContent=`${wins}W ${losses}L`;
+  document.getElementById('stat-winrate').textContent=total>0?Math.round((wins/total)*100)+'%':'—';
+  document.getElementById('stat-winrate').className=`stat-value ${wins/total>=0.5?'green':'red'}`;
+  document.getElementById('stat-streak').textContent=state.streak;
+  const bullP=preds.filter(p=>p.bias==='Bullish');const bearP=preds.filter(p=>p.bias==='Bearish');
+  const bullW=bullP.filter(p=>p.verdict==='correct').length;const bearW=bearP.filter(p=>p.verdict==='correct').length;
+  document.getElementById('stat-bull').textContent=`${bullW}W ${bullP.length-bullW}L`;
+  document.getElementById('stat-bull-rate').textContent=bullP.length>0?Math.round((bullW/bullP.length)*100)+'% win rate':'—';
+  document.getElementById('stat-bear').textContent=`${bearW}W ${bearP.length-bearW}L`;
+  document.getElementById('stat-bear-rate').textContent=bearP.length>0?Math.round((bearW/bearP.length)*100)+'% win rate':'—';
+  const tableEl=document.getElementById('prediction-history-table');
+  if(!preds.length){tableEl.innerHTML='<div style="font-size:13px;color:var(--text3);padding:12px 0;">No predictions yet. Head to the Scenario Engine.</div>';}
+  else{const rows=[...preds].reverse().slice(0,20).map(p=>`<tr><td>${new Date(p.date).toLocaleDateString('en-CA')}</td><td>${p.pair}</td><td style="color:${p.bias==='Bullish'?'var(--green)':'var(--red)'}">${p.bias}</td><td style="color:${p.verdict==='correct'?'var(--green)':'var(--red)'}">${p.verdict==='correct'?'✓':'✗'} ${p.actual}</td></tr>`).join('');
+  tableEl.innerHTML=`<table class="prediction-table"><thead><tr><th>Date</th><th>Pair</th><th>Your Call</th><th>Outcome</th></tr></thead><tbody>${rows}</tbody></table>`;}
+  const qW=state.quizHistory.filter(q=>q.correct).length;const qT=state.quizHistory.length;
+  document.getElementById('stat-quizzes').textContent=qT;
+  document.getElementById('stat-quiz-rate').textContent=qT>0?Math.round((qW/qT)*100)+'%':'—';
+  const allS=[...state.seasonHistory,state.currentSeason].filter(s=>s.month).reverse();
+  document.getElementById('season-history').innerHTML=allS.length?allS.map(s=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;"><span style="color:var(--text2)">${s.month}</span><span style="color:${s.wins>=s.losses?'var(--green)':'var(--red)'}">${s.wins}W – ${s.losses}L</span></div>`).join(''):'<div style="font-size:13px;color:var(--text3);">No season history yet.</div>';
 }
 
 // ============================================================
 // ACHIEVEMENTS
 // ============================================================
-function checkAchievement(id) {
-  if(state.achievements[id]) return;
-  state.achievements[id] = true;
-  const ach = ACHIEVEMENTS.find(a => a.id === id);
-  if(ach) { showToast(`Achievement unlocked: ${ach.name}!`); addXP(25, `Achievement: ${ach.name}`); }
-  saveState();
-  updateTopBar();
+function checkAchievement(id){
+  if(state.achievements[id])return;
+  state.achievements[id]=true;
+  const ach=ACHIEVEMENTS.find(a=>a.id===id);
+  if(ach){showToast(`Achievement: ${ach.name}!`);addXP(25,`Achievement: ${ach.name}`);}
+  saveState();updateTopBar();
 }
 
-function renderAchievements() {
-  const grid = document.getElementById('achievement-grid');
-  grid.innerHTML = ACHIEVEMENTS.map(a => {
-    const earned = !!state.achievements[a.id];
-    return `<div class="achievement ${earned ? 'earned' : 'locked'}">
+function renderAchievements(){
+  document.getElementById('achievement-grid').innerHTML=ACHIEVEMENTS.map(a=>{
+    const earned=!!state.achievements[a.id];
+    return `<div class="achievement ${earned?'earned':'locked'}">
       <div class="achievement-icon">${a.icon}</div>
-      <div>
-        <div class="achievement-name">${a.name}</div>
-        <div class="achievement-desc">${a.desc}</div>
-        ${earned ? '<div style="font-family:var(--mono);font-size:9px;color:var(--purple);margin-top:4px;">EARNED</div>' : ''}
-      </div>
-    </div>`;
+      <div><div class="achievement-name">${a.name}</div><div class="achievement-desc">${a.desc}</div>
+      ${earned?'<div style="font-family:var(--mono);font-size:9px;color:var(--purple);margin-top:4px;">EARNED</div>':''}
+      </div></div>`;
   }).join('');
 }
 
 // ============================================================
 // CLAUDE API
 // ============================================================
-async function callClaude(userMsg, systemPrompt = '') {
-  const messages = [{ role: 'user', content: userMsg }];
-  const body = { model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages };
-  if(systemPrompt) body.system = systemPrompt;
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  return data.content.map(b => b.text || '').join('');
+async function callClaude(userMsg,systemPrompt=''){
+  const body={model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:userMsg}]};
+  if(systemPrompt)body.system=systemPrompt;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  return data.content.map(b=>b.text||'').join('');
 }
 
 // ============================================================
 // SAVE / EXPORT / IMPORT
 // ============================================================
-function exportSave() {
-  const saveData = JSON.stringify({ ...state, exportDate: new Date().toISOString() }, null, 2);
-  document.getElementById('export-text').value = saveData;
+function exportSave(){
+  const saveData=JSON.stringify({...state,exportDate:new Date().toISOString()},null,2);
+  document.getElementById('export-text').value=saveData;
   document.getElementById('export-modal').classList.remove('hidden');
 }
-
-function copyExport() {
-  const txt = document.getElementById('export-text').value;
-  navigator.clipboard.writeText(txt).then(() => showToast('Copied to clipboard!'));
-}
-
-function downloadExport() {
-  const txt = document.getElementById('export-text').value;
-  const blob = new Blob([txt], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `fxterminal-save-${new Date().toISOString().split('T')[0]}.json`;
-  a.click(); URL.revokeObjectURL(url);
+function copyExport(){navigator.clipboard.writeText(document.getElementById('export-text').value).then(()=>showToast('Copied to clipboard!'));}
+function downloadExport(){
+  const blob=new Blob([document.getElementById('export-text').value],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`fxterminal-save-${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(url);
   showToast('Save file downloaded!');
 }
-
-function importSave(event) {
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    try {
-      const imported = JSON.parse(e.target.result);
-      state = { ...defaultState(), ...imported };
-      await saveState();
-      updateTopBar();
-      updateSeasonDisplay();
-      renderBriefing();
-      showToast('Save imported successfully!');
-    } catch(err) { showToast('Invalid save file', 'error'); }
+function importSave(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    try{state={...defaultState(),...JSON.parse(e.target.result)};await saveState();updateTopBar();updateSeasonDisplay();renderBriefing();showToast('Save imported!');}
+    catch(err){showToast('Invalid save file','error');}
   };
-  reader.readAsText(file);
-  event.target.value = '';
+  reader.readAsText(file);event.target.value='';
 }
-
-// Exit prompt
-window.addEventListener('beforeunload', (e) => {
-  e.preventDefault();
-  e.returnValue = 'Export your save before closing?';
-});
+window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='Export your save before closing?';});
 
 // ============================================================
 // BOOT
 // ============================================================
-async function boot() {
-  await loadState();
-  handleLogin();
-  updateSeasonDisplay();
-  updateTopBar();
-  renderBriefing();
-
-  // Check if scenario submitted today
-  const pending = state.pendingPrediction;
-  const today = new Date().toDateString();
-  if(pending && new Date(pending.date).toDateString() === today) {
-    document.getElementById('scenario-badge').style.display = 'none';
-  }
+async function boot(){
+  await loadState();handleLogin();updateSeasonDisplay();updateTopBar();renderBriefing();
+  const pending=state.pendingPrediction;
+  if(pending&&new Date(pending.date).toDateString()===new Date().toDateString())
+    document.getElementById('scenario-badge').style.display='none';
 }
-
 boot();
 </script>
 </body>
