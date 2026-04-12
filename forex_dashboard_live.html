@@ -108,10 +108,30 @@
   .lesson-check.done::after{content:'✓';font-size:10px;color:var(--bg);font-weight:700;}
   .lesson-name{font-size:13px;color:var(--text2);flex:1;}
   .lesson-name.done{color:var(--text3);text-decoration:line-through;}
-  .lesson-actions{display:flex;gap:6px;opacity:0;transition:opacity 0.15s;}
-  .lesson-row:hover .lesson-actions{opacity:1;}
-  .lesson-btn{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;white-space:nowrap;}
-  .lesson-btn.vis{color:var(--purple);}
+  .lesson-actions{display:flex;gap:6px;flex-shrink:0;}
+  .lesson-btn{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer;white-space:nowrap;padding:2px 6px;border:1px solid rgba(0,212,170,0.2);border-radius:3px;transition:all 0.15s;}
+  .lesson-btn:hover{background:rgba(0,212,170,0.1);}
+  .lesson-btn.vis{color:var(--purple);border-color:rgba(155,127,255,0.2);}
+  .lesson-btn.vis:hover{background:rgba(155,127,255,0.1);}
+  /* GLOSSARY */
+  .glossary-category{margin-bottom:20px;}
+  .glossary-cat-header{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+  .glossary-cat-count{font-size:9px;color:var(--text3);}
+  .glossary-entry{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:6px;cursor:pointer;transition:border-color 0.15s;}
+  .glossary-entry:hover{border-color:var(--border2);}
+  .glossary-entry.expanded{border-color:var(--accent);}
+  .glossary-entry-header{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .glossary-term{font-size:13px;font-weight:600;color:var(--text);}
+  .glossary-short{font-size:12px;color:var(--text2);flex:1;margin-left:12px;}
+  .glossary-tags{display:flex;gap:4px;flex-shrink:0;}
+  .glossary-body{margin-top:12px;display:none;}
+  .glossary-entry.expanded .glossary-body{display:block;}
+  .glossary-def{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:10px;}
+  .glossary-example{font-size:12px;color:var(--text3);background:var(--bg3);border-radius:4px;padding:8px 12px;margin-bottom:8px;line-height:1.7;border-left:2px solid var(--accent);}
+  .glossary-example-label{font-family:var(--mono);font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;}
+  .glossary-related{font-family:var(--mono);font-size:10px;color:var(--text3);}
+  .glossary-related span{color:var(--accent2);cursor:pointer;margin-right:6px;}
+  .glossary-vis-btn{font-family:var(--mono);font-size:10px;color:var(--purple);cursor:pointer;margin-top:8px;display:inline-block;}
   .progress-bar-wrap{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:6px;}
   .progress-bar{height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s ease;}
   .skill-tree{display:flex;flex-direction:column;gap:10px;}
@@ -207,6 +227,7 @@
         <div class="nav-label">Training</div>
         <div class="nav-item" onclick="navigate('curriculum')"><div class="nav-dot"></div>BabyPips Curriculum</div>
         <div class="nav-item" onclick="navigate('skilltree')"><div class="nav-dot"></div>Skill Tree</div>
+        <div class="nav-item" onclick="navigate('glossary')"><div class="nav-dot"></div>Master Glossary</div>
         <div class="nav-item" onclick="navigate('coach')"><div class="nav-dot"></div>AI Coach</div>
       </div>
       <div class="nav-section">
@@ -268,6 +289,14 @@
           <div class="stat-box"><div class="stat-label">Progress</div><div class="stat-value amber" id="curr-pct">0%</div></div>
         </div>
         <div id="curriculum-list"></div>
+      </div>
+
+      <!-- GLOSSARY -->
+      <div class="screen" id="screen-glossary">
+        <div class="screen-title">Master Glossary</div>
+        <div class="screen-sub">Every term, concept and confluence you need — searchable, with plain-language definitions and visual links.</div>
+        <input type="text" id="glossary-search" placeholder="Search terms... e.g. FVG, BOS, pip, killzone" oninput="filterGlossary()" style="margin-bottom:16px;">
+        <div id="glossary-list"></div>
       </div>
 
       <!-- SKILL TREE -->
@@ -865,6 +894,7 @@ function navigate(screen){
   if(screen==='skilltree')renderSkillTree();
   if(screen==='achievements')renderAchievements();
   if(screen==='scenario')renderScenario();
+  if(screen==='glossary')renderGlossary();
 }
 
 function getCurrentRank(){let r=RANKS[0];for(let rk of RANKS){if(state.xp>=rk.xpNeeded)r=rk;}return r;}
@@ -1094,7 +1124,7 @@ function renderCurriculum(){
             <div class="lesson-check ${done?'done':''}" onclick="toggleLesson('${school.school}',${i},'${lesson.replace(/'/g,"\\'")}')"></div>
             <div class="lesson-name ${done?'done':''}">${lesson}</div>
             <div class="lesson-actions">
-              ${done?`<span class="lesson-btn" onclick="openQuiz('${lesson.replace(/'/g,"\\'")}')">Quiz →</span>`:''}
+              <span class="lesson-btn" onclick="openQuiz('${lesson.replace(/'/g,"\\'")}')">Quiz</span>
               <span class="lesson-btn vis" onclick="openLessonVisual('${lesson.replace(/'/g,"\\'")}')">◈ Visual</span>
             </div>
           </div>`;
@@ -1378,6 +1408,117 @@ function importSave(event){
   reader.readAsText(file);event.target.value='';
 }
 window.addEventListener('beforeunload',e=>{e.preventDefault();e.returnValue='Export your save before closing?';});
+
+// ============================================================
+// MASTER GLOSSARY
+// ============================================================
+const GLOSSARY=[
+  // FUNDAMENTALS
+  {cat:'Fundamentals',term:'Forex',short:'Foreign Exchange market',def:'The global decentralised market where currencies are bought and sold. It is the largest financial market in the world, with over $7 trillion traded daily. Unlike stock markets, forex has no central exchange — it operates 24 hours a day, 5 days a week across major financial centres.',example:'You believe the Euro will strengthen against the US Dollar. You buy EUR/USD at 1.1000. If price rises to 1.1100, you made 100 pips profit.',related:['Pip','Currency Pair','Spread'],concept:null},
+  {cat:'Fundamentals',term:'Currency Pair',short:'Two currencies quoted against each other',def:'Forex is always traded in pairs. The first currency is the base currency (what you\'re buying or selling) and the second is the quote currency (what you\'re paying with). Major pairs always include USD. Minor pairs don\'t include USD. Exotic pairs include one emerging market currency.',example:'EUR/USD = Euro (base) vs US Dollar (quote). If EUR/USD is 1.1050, it means 1 Euro buys 1.1050 US Dollars.',related:['Major Pairs','Pip','Spread'],concept:'fundamentals'},
+  {cat:'Fundamentals',term:'Pip',short:'Smallest standard price movement',def:'A pip (percentage in point) is the fourth decimal place for most currency pairs — 0.0001. For JPY pairs, a pip is the second decimal place — 0.01. Pips are how traders measure profit and loss. Each pip has a dollar value depending on your lot size.',example:'EUR/USD moves from 1.1050 to 1.1060 = 10 pips. With a standard lot, each pip is worth approximately $10.',related:['Lot','Leverage','Spread'],concept:'fundamentals'},
+  {cat:'Fundamentals',term:'Lot',short:'Unit of trade size',def:'A lot is the standard unit of measurement for trade size in forex. Standard lot = 100,000 units of base currency. Mini lot = 10,000 units. Micro lot = 1,000 units. Nano lot = 100 units. Beginners typically trade micro or nano lots to manage risk.',example:'1 standard lot EUR/USD = 100,000 Euros. At 1.1000, that\'s $110,000 in buying power. With 100:1 leverage, you only need $1,100 margin.',related:['Pip','Leverage','Margin'],concept:'fundamentals'},
+  {cat:'Fundamentals',term:'Leverage',short:'Amplifies buying power using borrowed capital',def:'Leverage allows you to control a large position with a small deposit. Expressed as a ratio (e.g. 100:1), it means $1 of your money controls $100 in the market. Leverage amplifies both profits AND losses — a 1% move against you at 100:1 wipes your entire margin.',example:'With $1,000 and 100:1 leverage, you control $100,000. A 50 pip gain on a standard lot = $500 profit. A 50 pip loss = $500 loss.',related:['Margin','Lot','Risk Management'],concept:'fundamentals'},
+  {cat:'Fundamentals',term:'Margin',short:'Deposit required to open a leveraged position',def:'Margin is the amount of money your broker holds as collateral when you open a leveraged trade. It is NOT a fee — it is a security deposit returned when the trade closes. If your losses approach your margin level, you receive a margin call and positions may be closed automatically.',example:'Opening 1 standard lot EUR/USD at 100:1 leverage requires approximately $1,100 margin (1% of $110,000).',related:['Leverage','Lot','Margin Call'],concept:'fundamentals'},
+  {cat:'Fundamentals',term:'Spread',short:'Difference between buy and sell price — the broker\'s cut',def:'Every currency pair has two prices: the ask (buy price) and the bid (sell price). The spread is the difference between them, measured in pips. This is how most brokers make money. Tighter spreads = lower cost to trade. Major pairs like EUR/USD typically have very tight spreads (1-2 pips).',example:'EUR/USD bid: 1.1050 / ask: 1.1052 = 2 pip spread. When you buy, you immediately start 2 pips in the red.',related:['Pip','Broker','Major Pairs'],concept:'fundamentals'},
+  {cat:'Fundamentals',term:'Long / Short',short:'Buying vs selling a currency pair',def:'Going long means you buy the base currency expecting it to rise in value. Going short means you sell the base currency expecting it to fall. In forex you can profit in both directions — there is no "shorting" fee like in stocks.',example:'Bullish on EUR/USD? Go long (buy). Bearish on EUR/USD? Go short (sell). Both are equally accessible.',related:['Bullish','Bearish','Currency Pair'],concept:null},
+
+  // MARKET STRUCTURE
+  {cat:'Market Structure',term:'Market Structure',short:'The sequence of highs and lows that defines trend direction',def:'Market structure is the foundation of price action analysis. Price moves in waves — creating swing highs and swing lows. An uptrend is defined by Higher Highs (HH) and Higher Lows (HL). A downtrend is Lower Highs (LH) and Lower Lows (LL). Ranging markets make equal highs and lows.',example:'EUR/USD prints HH at 1.1100, pulls back to HL at 1.1050, then pushes to a new HH at 1.1150. This is bullish market structure.',related:['Break of Structure','Swing High','Swing Low','CHoCH'],concept:'market_structure'},
+  {cat:'Market Structure',term:'Swing High / Swing Low',short:'Turning points in price action',def:'A swing high is a candle (or series of candles) with lower highs on both sides — a visible peak. A swing low is a candle with higher lows on both sides — a visible trough. These are the building blocks of market structure. Smart money uses these levels to place orders.',example:'Price rallies to 1.1100, then two lower highs form on each side — that peak is a confirmed swing high and a key reference level.',related:['Market Structure','Break of Structure','Higher High'],concept:'market_structure'},
+  {cat:'Market Structure',term:'Break of Structure (BOS)',short:'Price breaks a previous swing high or low — trend continuation',def:'A BOS occurs when price breaks through a previous swing high (bullish BOS) or swing low (bearish BOS). This confirms the existing trend is continuing. In an uptrend, every break above a prior swing high is a bullish BOS. Smart money traders use BOS levels as entry or re-entry zones.',example:'Price is in an uptrend. It breaks above the previous swing high at 1.1100. This is a bullish BOS — confirmation that bulls are still in control.',related:['Market Structure','CHoCH','Order Block','Fair Value Gap'],concept:'bos'},
+  {cat:'Market Structure',term:'Change of Character (CHoCH)',short:'First sign the trend may be reversing',def:'A CHoCH is when price breaks the most recent swing point in the opposite direction to the current trend — the first structural sign of a potential reversal. In an uptrend, a CHoCH is when price breaks below the most recent Higher Low. It does not confirm a reversal alone — but it is the warning signal.',example:'Uptrend has been printing HH/HL. Then price breaks below the last HL — that is a CHoCH. The uptrend\'s structure has been violated.',related:['Break of Structure','Market Structure','Swing High'],concept:'bos'},
+  {cat:'Market Structure',term:'Higher High (HH)',short:'New peak above the previous peak — bullish',def:'A Higher High is when price makes a new swing high above the previous swing high. HHs are the signature of an uptrend. Each new HH shows buyers are progressively pushing price higher. When HHs stop forming and price fails to reach the prior high, that is an early warning of trend weakness.',related:['Higher Low','Market Structure','Break of Structure'],concept:'market_structure'},
+  {cat:'Market Structure',term:'Higher Low (HL)',short:'New trough above the previous trough — bullish',def:'A Higher Low forms when price pulls back but holds above the previous swing low. HLs confirm buyers are defending higher prices on every pullback. In a healthy uptrend you see a sequence of HH → HL → HH → HL. A Break below a HL triggers a CHoCH.',related:['Higher High','Market Structure','CHoCH'],concept:'market_structure'},
+  {cat:'Market Structure',term:'Premium vs Discount',short:'Where price is relative to a range — above or below midpoint',def:'Within any price range (from swing low to swing high), the midpoint (50% level) divides premium from discount. Price above the midpoint is in premium — considered expensive. Price below is in discount — considered cheap. Smart money buys in discount and sells in premium.',example:'Range: 1.1000 to 1.1200. Midpoint = 1.1100. Price at 1.1150 is in premium (sell zone). Price at 1.1050 is in discount (buy zone).',related:['Fair Value Gap','Order Block','Fibonacci'],concept:'market_structure'},
+
+  // SMC / ICT CONCEPTS
+  {cat:'SMC / ICT Concepts',term:'Fair Value Gap (FVG)',short:'A price imbalance — three-candle formation with no overlap',def:'An FVG forms when a strong impulse candle moves so fast that there is no overlap between the candle before it and the candle after it. This gap represents an area of price imbalance — orders were not efficiently filled. Price frequently returns to these zones to "fill" the gap before continuing.',example:'A strong bullish candle fires upward. The high of the candle before it and the low of the candle after it do not overlap — that gap between them is a bullish FVG.',related:['Break of Structure','Order Block','Imbalance','Liquidity'],concept:'fvg'},
+  {cat:'SMC / ICT Concepts',term:'Order Block (OB)',short:'Last bullish or bearish candle before a major move — institutional footprint',def:'An Order Block is the last opposite-coloured candle before a significant impulse move. It represents where institutional (smart money) orders were placed. A bullish OB is the last bearish candle before a strong bullish move. Price returns to these zones because smart money still has unfilled orders there.',example:'Price drops in a series of bearish candles. The last bearish candle before price explodes higher is the bullish Order Block. When price returns to that candle\'s range, institutions refill their long positions.',related:['Fair Value Gap','Break of Structure','Breaker Block'],concept:'bos'},
+  {cat:'SMC / ICT Concepts',term:'Breaker Block',short:'A failed order block that flips to opposing pressure',def:'A Breaker Block is a former Order Block that has been broken and now acts as a zone of opposing pressure. When a bullish OB fails to hold and price pushes through it, that zone becomes a bearish Breaker Block — a place where previously bullish orders are now trapped and institutions may sell.',related:['Order Block','Break of Structure','Mitigation'],concept:null},
+  {cat:'SMC / ICT Concepts',term:'Liquidity',short:'Clusters of stop losses that smart money targets',def:'Liquidity in the ICT/SMC framework refers to pools of resting orders — specifically stop losses placed by retail traders. Buyside liquidity (BSL) sits above swing highs where short sellers have stops. Sellside liquidity (SSL) sits below swing lows where long buyers have stops. Smart money hunts these pools to fill large orders.',example:'Price makes equal highs at 1.1100 three times. Each time retail shorts the level and places stops just above. Those stops are BSL — and smart money will sweep above 1.1100 before potentially reversing.',related:['Stop Hunt','Buyside Liquidity','Sellside Liquidity','Fair Value Gap'],concept:'liquidity'},
+  {cat:'SMC / ICT Concepts',term:'Buyside Liquidity (BSL)',short:'Stop losses sitting above swing highs',def:'BSL refers to buy stop orders and stop losses clustered above swing highs, equal highs, or round numbers. Traders shorting the market place their stop losses above these levels. Smart money sweeps above these highs to trigger those stops, use the volume to fill short positions, then drives price lower.',related:['Sellside Liquidity','Stop Hunt','Liquidity','Equal Highs'],concept:'liquidity'},
+  {cat:'SMC / ICT Concepts',term:'Sellside Liquidity (SSL)',short:'Stop losses sitting below swing lows',def:'SSL refers to sell stop orders and stop losses clustered below swing lows, equal lows, or round numbers. Traders who are long place their stops below these levels. Smart money sweeps below to trigger those stops, fill buy orders, then drives price higher.',related:['Buyside Liquidity','Stop Hunt','Liquidity','Equal Lows'],concept:'liquidity'},
+  {cat:'SMC / ICT Concepts',term:'Stop Hunt / Liquidity Sweep',short:'Price briefly breaks a level to trigger stops before reversing',def:'A stop hunt is when price quickly spikes through a key level (swing high, swing low, equal highs/lows) triggering retail stop losses, then immediately reverses. This is intentional — institutions need that volume of orders being triggered to fill their own large positions in the opposite direction.',example:'Price has equal lows at 1.1000. It spikes down to 1.0990, triggering every buy-stop below 1.1000, then reverses aggressively higher. The sweep of 1.1000 was the entry signal.',related:['Liquidity','Buyside Liquidity','Sellside Liquidity','Judas Swing'],concept:'liquidity'},
+  {cat:'SMC / ICT Concepts',term:'SMT Divergence',short:'Correlated pairs disagree — signals institutional activity',def:'SMT (Smart Money Technique) Divergence occurs when two positively correlated pairs (like EUR/USD and GBP/USD) fail to confirm each other\'s highs or lows. If EUR/USD makes a new swing high but GBP/USD does not, this suggests USD strength and a potential bearish reversal for both pairs.',example:'EUR/USD prints a new high at 1.1150. GBP/USD\'s most recent high is only at 1.2780 — lower than its previous high. This divergence signals smart money is selling EUR and GBP against USD.',related:['Correlated Pairs','Liquidity','Break of Structure'],concept:'smt'},
+  {cat:'SMC / ICT Concepts',term:'Imbalance',short:'Price moved too fast — inefficient candle with no overlap',def:'An imbalance is any area on the chart where price moved so quickly in one direction that there are unfilled orders remaining. Fair Value Gaps are the most precise form of imbalance. Price is drawn back to these areas to fill inefficiencies before continuing. Think of it as price needing to "go back and pick up what it missed."',related:['Fair Value Gap','Order Block'],concept:'fvg'},
+  {cat:'SMC / ICT Concepts',term:'Mitigation',short:'Price returning to a previously created zone to fill orders',def:'Mitigation occurs when price returns to an Order Block or Fair Value Gap to fill the institutional orders that were originally placed there. After mitigation, price often continues in the original direction because the orders have now been filled and the "unfinished business" at that zone is complete.',related:['Order Block','Fair Value Gap','Imbalance'],concept:'fvg'},
+
+  // ICT MODEL
+  {cat:'ICT Model',term:'ICT Killzone',short:'High-probability time windows for institutional trading',def:'Killzones are specific time windows when institutional traders are most active and the highest probability setups form. The main killzones are: Asian (10pm–8am EST), London (2am–5am EST), New York (7am–10am EST), and London Close (10am–12pm EST). Price during killzones tends to sweep liquidity and establish the day\'s direction.',example:'It is 2:30am EST. EUR/USD sweeps the Asian session low, forms a bullish FVG, and you enter long. This is a London Killzone setup — highest probability window.',related:['London Open','New York Open','Asian Session','Power of 3'],concept:'killzones'},
+  {cat:'ICT Model',term:'Power of 3 (PO3)',short:'Accumulation → Manipulation → Distribution',def:'The ICT Power of 3 describes how price moves in a three-phase daily model. Accumulation: price consolidates (Asian session), building liquidity on both sides. Manipulation: price makes a false move (Judas Swing) to sweep one side of liquidity. Distribution: price moves in the true direction for the day, often running through the NY session.',example:'Asian session: price ranges 1.1050–1.1070. London opens: price spikes down to 1.1040 (Judas Swing), sweeping lows. Then price rockets higher all day. The manipulation was the London sweep.',related:['Judas Swing','Asian Session','London Killzone','New York Killzone'],concept:'ict_model'},
+  {cat:'ICT Model',term:'Judas Swing',short:'False move at session open designed to trap retail traders',def:'A Judas Swing is a deliberate false move at the start of a major session (usually London or New York) that traps retail traders on the wrong side before the real move begins. If the day\'s true direction is up, the Judas Swing goes down first to sweep sellside liquidity, then reverses sharply higher.',example:'NY opens bullish. First 30 minutes: price drops 30 pips (Judas Swing), triggering long stop losses. Then price reverses and runs 100 pips higher for the rest of the session.',related:['Power of 3','Liquidity','Stop Hunt','New York Killzone'],concept:'ict_model'},
+  {cat:'ICT Model',term:'Silver Bullet Strategy',short:'ICT\'s 1-hour killzone setup using FVG entries',def:'The Silver Bullet is a specific ICT strategy that occurs during three windows: 3-4am EST, 10-11am EST, or 2-3pm EST. During these windows, price sweeps a liquidity level then creates a Fair Value Gap in the opposite direction. The FVG entry on the retracement is the Silver Bullet entry.',related:['Fair Value Gap','ICT Killzone','Judas Swing'],concept:'ict_model'},
+  {cat:'ICT Model',term:'Asian Session',short:'Low volatility consolidation — builds liquidity for London',def:'The Asian session runs approximately 7pm–4am EST. It is characterised by low volatility and consolidation, particularly for EUR and GBP pairs. This ranging price action builds equal highs and equal lows — pools of liquidity that the London session uses as its hunting grounds.',related:['ICT Killzone','Power of 3','Liquidity','London Killzone'],concept:'killzones'},
+  {cat:'ICT Model',term:'Daily Profile',short:'Recurring patterns in how price moves through each day',def:'ICT Daily Profiles are recurring templates for how price organises itself across different market conditions. Common profiles include Classic Bullish (morning low, afternoon high), Classic Bearish (morning high, afternoon low), and Consolidation (range-bound). Identifying the profile helps you know where to look for entries.',related:['Power of 3','Weekly Profile','Asian Session'],concept:'ict_model'},
+
+  // RISK MANAGEMENT
+  {cat:'Risk Management',term:'Risk-Reward Ratio (RR)',short:'Potential profit vs potential loss on a trade',def:'Risk-Reward ratio compares how much you stand to lose versus how much you stand to gain. A 1:2 RR means you risk $1 to make $2. Even with a 40% win rate, you can be profitable with a 1:2 RR. Most experienced traders aim for minimum 1:2 or 1:3 on their setups.',example:'You risk 20 pips (stop loss) to make 60 pips (take profit). That is a 1:3 risk-reward ratio. If this trade wins, you make 3x what you risked.',related:['Stop Loss','Take Profit','Position Sizing'],concept:null},
+  {cat:'Risk Management',term:'Stop Loss',short:'Pre-set exit level to limit your loss',def:'A stop loss is an order placed at a specific price to automatically close your trade if it moves against you. It is the most important tool in risk management. Never trade without a stop loss. Smart stop placement is behind a swing high/low, order block, or key structure level — not a round number.',example:'You go long EUR/USD at 1.1050. Your stop loss is placed at 1.1020 — just below the swing low that should hold if your analysis is correct.',related:['Risk-Reward Ratio','Take Profit','Position Sizing'],concept:null},
+  {cat:'Risk Management',term:'Position Sizing',short:'How many lots to trade based on your risk',def:'Position sizing determines how large your trade should be based on how much money you are willing to lose. The rule: risk 1-2% of your account per trade maximum. Calculate: (Account × Risk%) ÷ (Stop Loss in pips × Pip Value) = Lot size. Correct position sizing is what keeps you in the game.',example:'$5,000 account. Risk 1% = $50 max loss. Stop loss = 25 pips. At $10/pip (standard lot) that\'s $250/25 pips — you need a mini lot (0.2 lots).',related:['Stop Loss','Risk-Reward Ratio','Leverage'],concept:null},
+  {cat:'Risk Management',term:'Drawdown',short:'The peak-to-trough decline in your account balance',def:'Drawdown is how much your account has declined from its highest point. A 20% drawdown means you need a 25% gain just to break even. Managing drawdown is critical — the deeper you let it go, the harder it is to recover. Professional traders aim to keep max drawdown under 10-15%.',related:['Risk-Reward Ratio','Position Sizing','Psychology'],concept:null},
+
+  // TRADING SESSIONS
+  {cat:'Trading Sessions',term:'London Session',short:'Most volatile session — 8am to 5pm GMT',def:'The London session is the most important forex session, accounting for approximately 35% of daily forex volume. It overlaps with both the Asian session close and the New York session open. GBP, EUR, and CHF pairs are most active. The majority of high-impact setups form during the London open killzone (2–5am EST).',related:['ICT Killzone','New York Session','Asian Session'],concept:'killzones'},
+  {cat:'Trading Sessions',term:'New York Session',short:'Second most active — high volatility at open',def:'The New York session runs 8am–5pm EST and accounts for approximately 20% of daily forex volume. The most important window is the NY open (8–10am EST) when it overlaps with the London session. USD pairs are most active. Major economic data (NFP, CPI, Fed decisions) releases during this session.',related:['London Session','ICT Killzone','Economic Calendar'],concept:'killzones'},
+  {cat:'Trading Sessions',term:'Economic Calendar',short:'Schedule of news events that move markets',def:'The economic calendar lists scheduled news releases that can cause significant price movement. High-impact events include: Non-Farm Payrolls (NFP), Consumer Price Index (CPI), Federal Reserve interest rate decisions, GDP, and central bank speeches. Many traders avoid trading immediately before or after high-impact events.',example:'NFP releases every first Friday of the month at 8:30am EST. EUR/USD can move 100+ pips in minutes. You should either be already positioned or flat.',related:['New York Session','Volatility','Risk Management'],concept:null},
+];
+
+let glossaryExpanded={};
+
+function renderGlossary(){
+  const search=document.getElementById('glossary-search').value.toLowerCase();
+  const cats={};
+  GLOSSARY.filter(e=>{
+    if(!search)return true;
+    return e.term.toLowerCase().includes(search)||e.short.toLowerCase().includes(search)||e.def.toLowerCase().includes(search)||(e.cat||'').toLowerCase().includes(search);
+  }).forEach(e=>{
+    if(!cats[e.cat])cats[e.cat]=[];
+    cats[e.cat].push(e);
+  });
+  const list=document.getElementById('glossary-list');
+  if(!Object.keys(cats).length){list.innerHTML='<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px 0;">No terms match your search.</div>';return;}
+  list.innerHTML=Object.entries(cats).map(([cat,entries])=>`
+    <div class="glossary-category">
+      <div class="glossary-cat-header">
+        <span>${cat}</span>
+        <span class="glossary-cat-count">${entries.length} terms</span>
+      </div>
+      ${entries.map(e=>{
+        const id=e.term.replace(/\s+/g,'_');
+        const expanded=!!glossaryExpanded[id];
+        const catTag=`<span class="tag tag-purple" style="font-size:9px;">${e.cat}</span>`;
+        const visBtn=e.concept?`<div class="glossary-vis-btn" onclick="event.stopPropagation();openSkillVisual('${e.concept}','${e.term}')">◈ View diagram</div>`:'';
+        const relLinks=(e.related||[]).map(r=>`<span onclick="event.stopPropagation();searchGlossary('${r}')">${r}</span>`).join('');
+        return `<div class="glossary-entry ${expanded?'expanded':''}" id="gentry-${id}" onclick="toggleGlossaryEntry('${id}')">
+          <div class="glossary-entry-header">
+            <div class="glossary-term">${e.term}</div>
+            <div class="glossary-short">${e.short}</div>
+            <div class="glossary-tags">${catTag}</div>
+          </div>
+          <div class="glossary-body">
+            <div class="glossary-def">${e.def}</div>
+            ${e.example?`<div class="glossary-example"><div class="glossary-example-label">Example</div>${e.example}</div>`:''}
+            ${relLinks?`<div class="glossary-related">Related: ${relLinks}</div>`:''}
+            ${visBtn}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function toggleGlossaryEntry(id){
+  glossaryExpanded[id]=!glossaryExpanded[id];
+  const el=document.getElementById(`gentry-${id}`);
+  if(el)el.classList.toggle('expanded',!!glossaryExpanded[id]);
+}
+
+function filterGlossary(){renderGlossary();}
+
+function searchGlossary(term){
+  document.getElementById('glossary-search').value=term;
+  navigate('glossary');
+}
 
 // ============================================================
 // BOOT
