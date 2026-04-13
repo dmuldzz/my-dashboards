@@ -1015,9 +1015,22 @@ async function renderCoachBriefing(){
   const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
   const wins=state.predictions.filter(p=>p.verdict==='correct').length;
   const total=state.predictions.length;
+  if(!apiAvailable){
+    const msgs=[
+      `${doneL} lessons in. Keep the momentum — head to the Scenario Engine and make today's call.`,
+      `Your prediction record stands at ${wins}W ${total-wins}L. Every call builds your edge over time.`,
+      `Day ${state.streak} of your streak. Consistency is the skill. Open the curriculum and tick off one more lesson.`,
+      `Markets don't wait. Load up the Skill Tree and see what unlocks next.`,
+    ];
+    el.innerHTML=`<div class="coach-msg">${msgs[new Date().getDate()%msgs.length]}</div>`;
+    return;
+  }
   const prompt=`You are a forex trading coach. Trader stats: ${doneL} lessons done, ${wins}W ${total-wins}L predictions, ${state.streak} day streak. Write a SHORT (2-3 sentences) sharp daily briefing. Be specific to their progress. End with one actionable focus. No greetings or fluff.`;
   try{const res=await callClaude(prompt);el.innerHTML=`<div class="coach-msg">${res}</div>`;}
-  catch(e){el.innerHTML=`<div class="coach-msg">Markets wait for no one. Your streak is on the line — make today count. Head to the Scenario Engine and make your call.</div>`;}
+  catch(e){
+    const msgs=[`${doneL} lessons in. Keep the momentum going — head to the Scenario Engine.`,`${state.streak} day streak. Consistency is the edge. Make today's call.`];
+    el.innerHTML=`<div class="coach-msg">${msgs[new Date().getDate()%2]}</div>`;
+  }
 }
 
 function renderFocusConcept(){
@@ -1248,24 +1261,105 @@ function answerQuiz(selected){
   saveState();updateTopBar();
 }
 
-async function openAIQuiz(lessonName){
-  currentQuizLesson=lessonName;
-  document.getElementById('quiz-modal-title').textContent=`Quiz — ${lessonName}`;
-  document.getElementById('quiz-tab-quiz').innerHTML=`<div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><span style="margin-left:8px;">Generating quiz...</span></div>`;
-  document.getElementById('quiz-tab-visual').classList.add('hidden');
-  document.getElementById('quiz-tab-quiz').classList.remove('hidden');
-  document.getElementById('quiz-modal').classList.remove('hidden');
-  try{
-    const prompt=`Generate a single multiple choice quiz question about this forex concept: "${lessonName}". Return ONLY valid JSON, no other text: {"q":"question","options":["A","B","C","D"],"answer":0,"exp":"explanation"} where answer is the index 0-3 of the correct option.`;
-    const raw=await callClaude(prompt);
-    const clean=raw.replace(/\`\`\`json|\`\`\`/g,'').trim();
-    const quiz=JSON.parse(clean);
+// Extended quiz bank — covers all lessons without needing AI
+const QUIZ_BANK_EXT={
+  'What is Traded in Forex?':{q:'What is the most traded currency pair in the world?',options:['GBP/USD','USD/JPY','EUR/USD','AUD/USD'],answer:2,exp:'EUR/USD accounts for roughly 28% of all forex trading volume — it is the most liquid pair with the tightest spreads.'},
+  'Who Trades Forex?':{q:'Which of these is the largest participant in the forex market?',options:['Retail traders','Hedge funds','Central banks and commercial banks','Insurance companies'],answer:2,exp:'Central banks and large commercial banks dominate forex volume. Retail traders represent only a small fraction of the total market.'},
+  'When Can You Trade Forex?':{q:'When is the forex market closed?',options:['Weekends (Saturday–Sunday)','Every night at midnight EST','During US holidays only','The forex market never closes'],answer:0,exp:'The forex market is open 24 hours a day, 5 days a week. It closes Friday evening EST and reopens Sunday evening EST.'},
+  'What is a Lot?':{q:'How many units of currency does a micro lot represent?',options:['100,000','10,000','1,000','100'],answer:2,exp:'Micro lot = 1,000 units. Mini lot = 10,000 units. Standard lot = 100,000 units. Beginners should start with micro lots.'},
+  'What is Margin?':{q:'What happens when your account equity drops below the required margin level?',options:['Your broker sends a gift','You receive a margin call and positions may be closed','You automatically get more leverage','Nothing happens until you log in'],answer:1,exp:'A margin call occurs when losses eat into your margin deposit. If you can\'t top up, the broker closes your positions to protect themselves.'},
+  'Types of Forex Orders':{q:'Which order type executes immediately at the current market price?',options:['Limit order','Stop order','Market order','OCO order'],answer:2,exp:'A market order executes instantly at the best available price. Limit and stop orders are pending — they wait for price to reach a specified level.'},
+  'Major, Minor and Exotic Pairs':{q:'Which of these is a minor (cross) pair?',options:['EUR/USD','GBP/JPY','USD/CHF','USD/CAD'],answer:1,exp:'Minor pairs (crosses) don\'t include USD. GBP/JPY is a cross pair. EUR/USD, USD/CHF and USD/CAD all include USD so they are major pairs.'},
+  'How to Read a Forex Quote':{q:'If EUR/USD is quoted at 1.1050, what does this mean?',options:['1 USD buys 1.1050 Euros','1 Euro buys 1.1050 US Dollars','The spread is 1.1050 pips','EUR/USD moved 1.1050 pips today'],answer:1,exp:'The first currency (EUR) is the base. The quote tells you how many of the second currency (USD) one unit of the base buys. 1 EUR = 1.1050 USD.'},
+  'Long or Short?':{q:'If you believe GBP/USD will fall in value, what do you do?',options:['Buy (go long) GBP/USD','Sell (go short) GBP/USD','Buy USD/GBP','Hold and wait'],answer:1,exp:'Going short means selling the base currency (GBP) against the quote currency (USD). You profit if GBP weakens against USD.'},
+  'Bulls vs Bears':{q:'What does a "bearish" market mean?',options:['Prices are rising','Prices are falling or expected to fall','The market is closed','High volatility with no direction'],answer:1,exp:'Bearish = negative / falling prices. Bulls push prices up, bears drag prices down. These terms apply to any market direction.'},
+  'Demo Trading Account':{q:'What is the primary purpose of a demo account?',options:['To make real profits while learning','To practise trading with virtual money without real risk','To get a lower spread than live accounts','To access more currency pairs'],answer:1,exp:'Demo accounts use virtual money so you can practise entries, exits, platform controls, and strategy without risking real capital. Essential for beginners.'},
+  'What Moves the Forex Market?':{q:'Which factor has the most direct influence on a currency\'s value?',options:['Social media sentiment','A country\'s interest rates and economic health','The number of retail traders on a platform','Time of day'],answer:1,exp:'Interest rates are the primary driver of currency value. Higher rates attract foreign capital seeking yield, strengthening the currency. Economic data (GDP, employment, inflation) shapes rate expectations.'},
+  'Economic Indicators':{q:'What does the Non-Farm Payrolls (NFP) report measure?',options:['US inflation rate','US unemployment benefit claims','Number of jobs added to the US economy excluding farming','US trade deficit'],answer:2,exp:'NFP measures the number of jobs added or lost in the US economy in the previous month, excluding farm workers. It releases the first Friday of each month and is one of the biggest USD movers.'},
+  'Currency Correlations':{q:'EUR/USD and GBP/USD are positively correlated. What does this mean?',options:['They always move in opposite directions','They tend to move in the same direction','They have the same pip value','One pair follows the other with a 1-hour delay'],answer:1,exp:'Positive correlation means the pairs tend to move together. This is the basis of SMT Divergence — when they stop moving together, it signals institutional activity.'},
+  'Interest Rates and Forex':{q:'A central bank raises interest rates unexpectedly. What typically happens to that country\'s currency?',options:['It weakens immediately','It strengthens as foreign capital flows in seeking higher yield','It stays flat — rates don\'t affect forex','It weakens first then strengthens'],answer:1,exp:'Higher interest rates = better return for investors holding that currency. Capital flows in from abroad to earn that yield, increasing demand for the currency and pushing its value up.'},
+  'Japanese Candlestick Basics':{q:'What does a large bullish (green) candlestick body indicate?',options:['Price opened and closed at the same level','Price closed significantly higher than it opened — strong buying pressure','The spread was very wide','Price is about to reverse'],answer:1,exp:'The candlestick body shows the range between open and close. A large green body = price moved strongly upward from open to close, showing significant buying pressure.'},
+  'Trend Lines':{q:'How many points are needed to draw a valid trend line?',options:['At least 1','At least 2 (confirmed by a 3rd touch)','Exactly 4','At least 10'],answer:1,exp:'Two points draw the line; a third touch confirms it\'s valid. The more times price respects a trend line, the more significant it becomes.'},
+  'Chart Patterns':{q:'A Head and Shoulders pattern signals what type of move?',options:['Bullish continuation','Bearish reversal','Sideways consolidation','Breakout in either direction'],answer:1,exp:'Head and Shoulders is a classic bearish reversal pattern. It has three peaks — a higher middle peak (head) flanked by two lower peaks (shoulders). Breaking the neckline confirms the reversal.'},
+  'Fibonacci Retracements':{q:'Which Fibonacci level is most commonly respected as a retracement zone in forex?',options:['23.6%','38.2%','61.8%','78.6%'],answer:2,exp:'The 61.8% level (the "Golden Ratio") is the most widely watched and respected Fibonacci retracement. It aligns frequently with Order Blocks and Fair Value Gaps.'},
+  'Moving Averages':{q:'When the 50 EMA crosses above the 200 EMA, what is this called?',options:['Death Cross','Golden Cross','EMA Divergence','Trend Flip'],answer:1,exp:'A Golden Cross occurs when a shorter MA crosses above a longer MA — a bullish signal. The opposite (50 crossing below 200) is a Death Cross — bearish signal.'},
+  'Bollinger Bands':{q:'What does it mean when Bollinger Bands squeeze tightly together?',options:['High volatility — a big move just happened','Low volatility — a breakout may be approaching','Price is ranging and will never break out','The trend is very strong'],answer:1,exp:'Bollinger Band squeeze = low volatility compression. Volatility cycles between expansion and contraction. A tight squeeze often precedes a significant breakout in either direction.'},
+  'MACD':{q:'What does the MACD histogram measure?',options:['Price momentum and direction','The distance between the MACD line and the signal line','Volume of trades','The difference between open and close'],answer:1,exp:'The MACD histogram shows the distance between the MACD line and signal line. When histogram bars grow, momentum is increasing. When they shrink, momentum is fading.'},
+  'RSI':{q:'An RSI reading above 70 typically indicates what?',options:['The market is oversold — buy signal','The market is overbought — potential pullback ahead','Strong trend — keep buying','A guaranteed reversal'],answer:1,exp:'RSI above 70 = overbought territory. This means price has risen sharply and may be due for a pullback or pause. But overbought can stay overbought in strong trends — use with other confluence.'},
+  'Stochastic':{q:'The Stochastic oscillator measures what?',options:['Volume relative to price','Where the current close is relative to a recent high-low range','The rate of price change over time','The distance between two moving averages'],answer:1,exp:'Stochastic compares the closing price to its price range over a set period. It oscillates between 0-100. Above 80 = overbought, below 20 = oversold.'},
+  'Market Structure Overview':{q:'In a healthy uptrend, what sequence of price action should you see?',options:['Lower Highs and Lower Lows','Equal Highs and Equal Lows','Higher Highs and Higher Lows','Higher Highs and Lower Lows'],answer:2,exp:'HH + HL = uptrend. Each new high is higher than the last, and each pullback holds above the previous low. This is the fundamental definition of bullish market structure.'},
+  'Uptrend and Downtrend':{q:'When does a downtrend officially begin according to market structure?',options:['When price falls 50 pips in a day','When a series of Lower Highs and Lower Lows forms','When the RSI drops below 50','When the 200 MA is pointing down'],answer:1,exp:'Downtrend = LH + LL. Each rally is weaker than the last (LH) and each sell-off reaches a new low (LL). This is the structure that smart money uses to plan short positions.'},
+  'Swing Highs and Lows':{q:'A swing high is confirmed when...',options:['Price makes a new all-time high','A candle has lower highs on both the left and right side','Three consecutive green candles form','The RSI reaches 80'],answer:1,exp:'A swing high = a visible peak with lower highs surrounding it on both sides. It takes at least one lower candle on each side to confirm the peak. This is a key reference point for structure analysis.'},
+  'Internal vs External Range':{q:'In ICT/SMC, what is the "external range" of a price swing?',options:['The range within a consolidation','The high and low of the overall swing — the most recent swing high and low','The range of the Asian session','The range between two order blocks'],answer:1,exp:'External range = the most recent swing high to swing low (or vice versa). The internal range is smaller structures within that swing. External levels are higher timeframe liquidity targets.'},
+  'Supply and Demand':{q:'What distinguishes an ICT Order Block from a traditional supply/demand zone?',options:['Order blocks are always on higher timeframes','An Order Block is the specific last opposing candle before an impulse — not a broad zone','Order blocks only work on EUR/USD','Supply and demand zones are more accurate than order blocks'],answer:1,exp:'Traditional supply/demand zones are broad areas. An Order Block is precise — it\'s the specific last bearish candle before a bullish explosion (bullish OB) or last bullish candle before a bearish drop (bearish OB).'},
+  'Order Blocks':{q:'Where does price typically go after mitigating (touching) a bullish order block?',options:['It always reverses lower','It continues higher, as the institutional orders have now been filled','It consolidates for an extended period','It sweeps to the nearest FVG first'],answer:1,exp:'After price returns to mitigate an OB, the institutional orders placed there are filled. With those orders satisfied, smart money can then drive price in the original direction.'},
+  'Breaker Blocks':{q:'When does a bullish Order Block become a bearish Breaker Block?',options:['After price touches it three times','When price breaks below the OB\'s low, invalidating it as support','When the RSI drops below 50','After a week has passed'],answer:1,exp:'An OB becomes a Breaker when it fails to hold. A bullish OB that gets broken through becomes a bearish Breaker — the trapped longs from that zone now represent selling pressure on any return.'},
+  'Smart Money Concepts (SMC) Intro':{q:'What is the core premise of Smart Money Concepts (SMC)?',options:['Retail traders are always right and should be followed','Large institutions intentionally move price to hunt retail stop losses before reversing','Technical indicators predict price perfectly','Volume is the only reliable signal'],answer:1,exp:'SMC is built on the idea that large institutions (smart money) manipulate price to trigger retail stops and fill their own large orders — creating the liquidity sweeps, false breaks, and reversals we see on charts.'},
+  'Imbalances and Inefficiencies':{q:'Why does price return to fill an imbalance (FVG)?',options:['It is a random coincidence','Price seeks to fill inefficient areas where orders were not properly matched during a fast move','Technical analysts force it to happen','Market makers program it'],answer:1,exp:'When price moves too fast, orders on one side go unfilled. The market is efficient over time — price returns to those zones to fill outstanding orders, creating the FVG mitigation we trade.'},
+  'Buyside and Sellside Liquidity':{q:'Equal highs on a chart represent what type of liquidity?',options:['Sellside liquidity — stop losses of long traders','Buyside liquidity — stop losses of short traders','A strong resistance zone with no liquidity','An order block formation'],answer:1,exp:'Equal highs (double tops, triple tops) are a cluster of sell stop orders from traders shorting the level. These are BSL — and smart money will often sweep above these equal highs before reversing lower.'},
+  'Stop Hunts and Sweeps':{q:'How do you identify a genuine liquidity sweep vs a regular breakout?',options:['Sweeps always happen on Mondays','A sweep wicks sharply through a level and closes back inside — a breakout closes convincingly outside','Sweeps only occur on 1-minute charts','Volume is always high during a sweep'],answer:1,exp:'A sweep: price briefly spikes through a level (taking stops), then rapidly closes back inside the range. A breakout: price closes convincingly through the level with follow-through. The wick tell-tale is the key.'},
+  'London Open Strategy':{q:'What is the typical London open strategy sequence?',options:['Enter any trade at exactly 8am GMT','Wait for price to sweep Asian session liquidity, form an FVG or OB, then enter in the opposite direction','Always trade in the direction of the previous day\'s close','Avoid trading the London open entirely'],answer:1,exp:'London open strategy: identify Asian session highs and lows (liquidity), wait for London to sweep one side, look for an FVG or OB forming on the 15m, enter when price retraces into that zone.'},
+  'New York Open Strategy':{q:'At the NY open (8:30am EST), what should you be watching for?',options:['The Asian session high and low only','A Judas Swing (false move) in the first 30 minutes that traps traders before the real move','The previous week\'s high','Only NFP data'],answer:1,exp:'NY open Judas Swing: price often makes a false move in one direction in the first 30 minutes, sweeping liquidity. Then it reverses and runs in the true direction for the rest of the session. This is Power of 3 in action.'},
+  'ICT Power of 3':{q:'What are the three phases of ICT\'s Power of 3 model?',options:['Open, High, Low','Consolidation, Expansion, Retracement','Accumulation, Manipulation, Distribution','Entry, Management, Exit'],answer:2,exp:'Accumulation (Asian range building), Manipulation (Judas Swing sweeping liquidity), Distribution (true directional move running through the session). This template repeats daily and weekly.'},
+  'Judas Swing':{q:'In a bullish day, when does the Judas Swing typically occur?',options:['At the Asian session close','At the London or NY open — a false drop before the real move higher','At the end of the trading day','After NFP data releases'],answer:1,exp:'The Judas Swing in a bullish day = a drop at session open that sweeps sellside liquidity. This traps late shorts, fills smart money buy orders, then price reverses aggressively higher for the rest of the session.'},
+  'Silver Bullet Strategy':{q:'During which specific time window does the Silver Bullet strategy occur?',options:['Any time of day','3-4am, 10-11am, or 2-3pm EST only','Only during NFP weeks','The Asian session exclusively'],answer:1,exp:'ICT\'s Silver Bullet only occurs during three 1-hour windows: 3-4am EST (London open), 10-11am EST (NY mid-session), 2-3pm EST (afternoon). Outside these windows, the setup does not qualify.'},
+  'Weekly Profiles':{q:'What does a "Classic Bullish" weekly profile look like?',options:['Price opens high and closes low','Price makes the weekly low early in the week, then trends higher to close near the weekly high','Price moves sideways all week','Price makes equal highs and lows'],answer:1,exp:'Classic Bullish weekly: the low forms Monday or Tuesday during the manipulation phase (sweeping SSL), then price distributes higher through Wednesday–Friday. Knowing the profile helps you align with the weekly bias.'},
+  'Daily Profiles':{q:'If you identify a Classic Bearish daily profile, when is the best time to look for short entries?',options:['At the daily close','During the morning manipulation (Judas Swing higher) before the real move down','At midnight EST','Only after NFP'],answer:1,exp:'Classic Bearish daily: morning rally (Judas Swing) sweeps BSL, then price reverses and distributes lower. You want to be short after the morning high is in — not chasing the initial rally.'},
+  'Building a Trading Plan':{q:'What is the most important element of a trading plan?',options:['Having at least 20 different strategies','Clearly defined entry criteria, risk per trade, and conditions to NOT trade','Checking 10 different indicators before entry','Trading every day regardless of conditions'],answer:1,exp:'A trading plan forces consistency. Without defined rules — when to enter, how much to risk, when to stay out — every trade becomes an emotional decision. The plan removes guesswork.'},
+  'Risk Management Rules':{q:'Professional traders typically risk what percentage of their account per trade?',options:['10-20% to grow quickly','50% on high-confidence setups','1-2% maximum per trade','5% per trade minimum'],answer:2,exp:'1-2% per trade is the professional standard. At 1%, you can lose 50 trades in a row and still have half your account. At 10%, ten consecutive losses wipes you out. Small risk per trade is what keeps you in the game.'},
+  'Trade Journal Discipline':{q:'What is the primary benefit of keeping a detailed trade journal?',options:['It impresses your broker','It identifies patterns in your performance — what works, what doesn\'t, and psychological tendencies','It automatically improves your win rate','It reduces your spreads'],answer:1,exp:'A journal is your feedback loop. Over time you\'ll see your win rate by session, by pair, by setup type, by emotional state. This data lets you eliminate what doesn\'t work and do more of what does.'},
+  'Psychology of Losing':{q:'After three consecutive losing trades, what is the correct response?',options:['Double your position size to recover losses faster','Take a break, review your journal, and only re-enter when your plan gives a valid signal','Switch to a completely different strategy immediately','Trade more frequently to get back to breakeven'],answer:1,exp:'Revenge trading is the fastest way to blow an account. After a losing streak: stop, breathe, review — did you follow your plan? If yes, losses are part of the game. If no, fix the process before trading again.'},
+  'Developing Your Edge':{q:'What defines a trading "edge"?',options:['A strategy that wins 100% of the time','A setup or approach that wins often enough over a large sample size to be profitable after all costs','Any indicator that gives signals','A secret strategy no one else knows'],answer:1,exp:'An edge is a statistical advantage over time. It doesn\'t mean winning every trade — it means your wins are large enough and frequent enough that your account grows over 100+ trades. Edge comes from consistency and backtesting.'},
+};
+
+function getQuizForLesson(lessonName){
+  return QUIZ_BANK[lessonName]||QUIZ_BANK_EXT[lessonName]||null;
+}
+
+function openQuizFallback(lessonName){
+  // Build a generic conceptual question from the glossary if available
+  const glossaryEntry=GLOSSARY.find(e=>e.term.toLowerCase()===lessonName.toLowerCase()||lessonName.toLowerCase().includes(e.term.toLowerCase()));
+  if(glossaryEntry){
+    const quiz={
+      q:`Which of these best describes "${glossaryEntry.term}"?`,
+      options:[
+        glossaryEntry.short,
+        'A type of forex order used to exit trades',
+        'A moving average crossover signal',
+        'A measure of broker liquidity'
+      ],
+      answer:0,
+      exp:glossaryEntry.def.slice(0,200)+'...'
+    };
     currentQuiz=quiz;quizAnswered=false;
     document.getElementById('quiz-tab-quiz').innerHTML=`
       <div class="quiz-q">${quiz.q}</div>
       <div class="quiz-options">${quiz.options.map((opt,i)=>`<div class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">${opt}</div>`).join('')}</div>`;
-  }catch(e){
-    document.getElementById('quiz-tab-quiz').innerHTML=`<div class="card-body" style="color:var(--red);">Couldn't generate quiz. Try again.</div><button class="btn btn-ghost" style="margin-top:12px" onclick="closeQuiz()">Close</button>`;
+  } else {
+    document.getElementById('quiz-tab-quiz').innerHTML=`
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7;">No pre-built quiz for <strong>${lessonName}</strong> yet.<br>Open the Glossary or Skill Tree to study this concept, then come back.</div>
+      <button class="btn btn-ghost" onclick="closeQuiz();navigate('glossary')">Open Glossary →</button>
+      <button class="btn btn-ghost" style="margin-left:8px;" onclick="closeQuiz()">Close</button>`;
+  }
+}
+
+function openQuiz(lessonName){
+  currentQuizLesson=lessonName;
+  const quiz=getQuizForLesson(lessonName);
+  document.getElementById('quiz-modal-title').textContent=`Quiz — ${lessonName}`;
+  document.getElementById('quiz-tab-visual').classList.add('hidden');
+  document.getElementById('quiz-tab-visual').innerHTML='';
+  document.getElementById('quiz-tab-quiz').classList.remove('hidden');
+  document.querySelectorAll('.vis-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector('.vis-tab[onclick*="quiz"]').classList.add('active');
+  document.getElementById('quiz-modal').classList.remove('hidden');
+  if(quiz){
+    currentQuiz=quiz;quizAnswered=false;
+    document.getElementById('quiz-tab-quiz').innerHTML=`
+      <div class="quiz-q">${quiz.q}</div>
+      <div class="quiz-options">${quiz.options.map((opt,i)=>`<div class="quiz-option" onclick="answerQuiz(${i})" id="qopt-${i}">${opt}</div>`).join('')}</div>`;
+  } else {
+    openQuizFallback(lessonName);
   }
 }
 
@@ -1314,13 +1408,20 @@ async function sendToCoach(){
   input.value='';
   const history=document.getElementById('coach-history');
   history.innerHTML+=`<div class="card" style="margin-bottom:8px;border-color:rgba(0,151,255,0.2);"><div class="card-label" style="color:var(--accent2)">You</div><div class="card-body">${msg}</div></div>`;
+  if(!apiAvailable){
+    history.innerHTML+=`<div class="card" style="margin-bottom:8px;border-color:rgba(255,170,0,0.2);">
+      <div class="card-label" style="color:var(--amber)">Coach — Offline Mode</div>
+      <div class="card-body">The AI Coach requires the terminal to be open inside Claude.ai — not on an external hosted URL. Open this file directly in Claude chat to enable live coaching. In the meantime, use the Glossary and Skill Tree for concept support.</div>
+    </div>`;
+    history.scrollTop=history.scrollHeight;return;
+  }
   const loadingId='loading-'+Date.now();
   history.innerHTML+=`<div class="card" id="${loadingId}" style="margin-bottom:8px;"><div class="card-label">Coach</div><div class="ai-loading"><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div><div class="ai-loading-dot"></div></div></div>`;
   history.scrollTop=history.scrollHeight;
   const doneL=Object.keys(state.lessonsDone).filter(k=>state.lessonsDone[k]).length;
   const sys=`You are a Socratic forex trading coach. The trader has completed ${doneL} BabyPips lessons and is learning SMC/ICT (BOS, FVG, SMT divergence, killzones, order blocks). Style: Never just give the answer. Ask what they see first. Challenge reasoning. Ask "why?" and "what else?". Max 150 words. End with ONE specific question or challenge.`;
   try{const res=await callClaude(msg,sys);document.getElementById(loadingId).innerHTML=`<div class="card-label">Coach</div><div class="ai-response">${res}</div>`;}
-  catch(e){document.getElementById(loadingId).innerHTML=`<div class="card-label">Coach</div><div class="card-body" style="color:var(--red)">Connection issue. Try again.</div>`;}
+  catch(e){document.getElementById(loadingId).innerHTML=`<div class="card-label" style="color:var(--amber)">Coach — Offline</div><div class="card-body">AI Coach is only available inside Claude.ai. Open the terminal directly in this chat to use it.</div>`;}
   history.scrollTop=history.scrollHeight;
 }
 
@@ -1373,14 +1474,33 @@ function renderAchievements(){
 }
 
 // ============================================================
-// CLAUDE API
+// CLAUDE API — with graceful degradation for CORS/hosting issues
 // ============================================================
+let apiAvailable=true;
+
 async function callClaude(userMsg,systemPrompt=''){
-  const body={model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:userMsg}]};
-  if(systemPrompt)body.system=systemPrompt;
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const data=await res.json();
-  return data.content.map(b=>b.text||'').join('');
+  if(!apiAvailable)throw new Error('API unavailable');
+  try{
+    const body={model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:userMsg}]};
+    if(systemPrompt)body.system=systemPrompt;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      if(res.status===403||res.status===0)apiAvailable=false;
+      throw new Error(`API error ${res.status}`);
+    }
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    return data.content.map(b=>b.text||'').join('');
+  }catch(e){
+    if(e.message.includes('CORS')||e.message.includes('fetch')||e.message.includes('Failed to fetch')){
+      apiAvailable=false;
+    }
+    throw e;
+  }
 }
 
 // ============================================================
