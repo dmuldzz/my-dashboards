@@ -1,4 +1,6 @@
-// Proxy v5 — updated 2026-03-31 — improved headers to fix RSS 403s
+// Proxy v6 — updated for 3401 V4 AI features
+// Change from v5: injects ANTHROPIC_API_KEY from Vercel env variable
+// Add to Vercel: Settings → Environment Variables → ANTHROPIC_API_KEY = sk-ant-...
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -37,7 +39,7 @@ export default async function handler(req, res) {
     'finance.yahoo.com',
     'sports.yahoo.com',
  
-    // Anthropic
+    // Anthropic — for 3401 AI features
     'api.anthropic.com',
  
     // NEWS SOURCES
@@ -63,6 +65,16 @@ export default async function handler(req, res) {
     'reddit.com',
     'api.rss2json.com',
     'www.dailyfaceoff.com',
+ 
+    // Weather
+    'api.open-meteo.com',
+ 
+    // RedFlagDeals
+    'forums.redflagdeals.com',
+    'www.redflagdeals.com',
+ 
+    // MLB
+    'statsapi.mlb.com',
   ];
  
   let parsedUrl;
@@ -79,8 +91,8 @@ export default async function handler(req, res) {
   }
  
   try {
-    // Detect RSS requests — they need browser-style headers or many servers 403
     const isRSS = targetUrl.includes('/feed') || targetUrl.includes('rss') || targetUrl.includes('feedburner');
+    const isAnthropic = hostname === 'api.anthropic.com';
  
     const headers = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
@@ -101,10 +113,18 @@ export default async function handler(req, res) {
  
     if (req.headers['content-type']) headers['content-type'] = req.headers['content-type'];
  
-    // Inject Anthropic headers server-side
-    if (hostname === 'api.anthropic.com') {
-      headers['x-api-key'] = '';
+    // ── Anthropic AI: inject API key from environment variable ──
+    // Add ANTHROPIC_API_KEY to Vercel: Settings → Environment Variables
+    if (isAnthropic) {
+      if (!process.env.ANTHROPIC_API_KEY) {
+        return res.status(500).json({
+          error: 'ANTHROPIC_API_KEY not set in Vercel environment variables. ' +
+                 'Go to Vercel → Your Project → Settings → Environment Variables and add it.'
+        });
+      }
+      headers['x-api-key'] = process.env.ANTHROPIC_API_KEY;
       headers['anthropic-version'] = '2023-06-01';
+      headers['content-type'] = 'application/json';
     }
  
     const fetchOptions = { headers, redirect: 'follow', method: req.method };
@@ -121,7 +141,7 @@ export default async function handler(req, res) {
       return res.status(response.status).json({
         error: 'Upstream error',
         status: response.status,
-        detail: errText.substring(0, 200),
+        detail: errText.substring(0, 500),
       });
     }
  
@@ -136,4 +156,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Proxy fetch failed', message: error.message });
   }
 }
- 
