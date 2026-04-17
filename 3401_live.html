@@ -92,13 +92,29 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* ===================== HOME ===================== */
 #tab-home{overflow:hidden;}
 #home-surface{
-  height:100%;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  position:relative;padding:0 48px;gap:0;
+  position:absolute;inset:0;
+  /* Nothing in normal flow — all children are absolutely positioned */
+}
+
+/* Search block — dead center of the screen */
+#hp-center{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:100%;max-width:480px;
+  display:flex;flex-direction:column;align-items:center;
+}
+
+/* Terminal pills — just below the search block */
+#home-terminals{
+  position:absolute;
+  top:calc(50% + 80px);
+  left:50%;transform:translateX(-50%);
+  display:flex;gap:7px;justify-content:center;
+  flex-wrap:wrap;white-space:nowrap;
 }
 
 /* Command center */
-#hp-center{display:flex;flex-direction:column;align-items:center;width:100%;max-width:480px;}
 #cmd-outer{width:100%;position:relative;}
 #cmd-in{
   width:100%;background:transparent;border:none;
@@ -145,11 +161,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .criw.u{color:var(--danger);}
 .criw.s{color:var(--warn);}
 
-/* Terminal pills — below command bar */
-#home-terminals{
-  display:flex;gap:7px;justify-content:center;
-  margin-top:18px;flex-wrap:wrap;
-}
+/* Terminal pills — handled by absolute positioning in home section above */
 .t-pill{
   display:flex;align-items:center;padding:5px 16px;
   background:transparent;border:1px solid var(--border);
@@ -163,8 +175,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 }
 .t-pill:hover .t-pill-name{color:var(--amber);}
 
-/* What Needs You */
-#home-needs{width:100%;max-width:480px;margin-top:28px;}
+/* What Needs You — controlled via inline style in HTML */
 .home-needs-lbl{
   font-family:var(--mono);font-size:7px;letter-spacing:0.32em;
   text-transform:uppercase;color:var(--brown3);margin-bottom:10px;
@@ -182,12 +193,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .niw.u{color:var(--danger);}
 .niw.s{color:var(--warn);}
 
-/* Bottom bar — fixed to bottom */
+/* Bottom bar — truly pinned to bottom of screen */
 #home-bottom{
   position:absolute;bottom:0;left:0;right:0;
   display:flex;align-items:flex-end;justify-content:space-between;
-  padding:0 44px 28px;
+  padding:0 44px 28px;pointer-events:none;
 }
+#home-bottom>*{pointer-events:auto;}
 #home-left-block{text-align:left;min-width:160px;}
 .home-meta-row{
   font-family:var(--mono);font-size:8px;letter-spacing:0.12em;
@@ -1403,7 +1415,7 @@ export default async function handler(req, res) {
         <div id="home-terminals"></div>
 
         <!-- What Needs You — absolute so it doesn't push layout -->
-        <div id="home-needs" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,60px);width:100%;max-width:480px;">
+        <div id="home-needs" style="position:absolute;top:calc(50% + 130px);left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:none;">
           <div class="home-needs-lbl">What needs you</div>
           <div id="home-needs-list"></div>
         </div>
