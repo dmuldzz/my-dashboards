@@ -95,7 +95,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   height:100%;display:flex;flex-direction:column;
   align-items:center;justify-content:center;
   position:relative;padding:0 48px;gap:0;
-  padding-bottom:80px;
 }
 
 /* Command center */
@@ -1403,13 +1402,13 @@ export default async function handler(req, res) {
         <!-- Terminal pills — below search -->
         <div id="home-terminals"></div>
 
-        <!-- What Needs You -->
-        <div id="home-needs" style="display:none;">
+        <!-- What Needs You — absolute so it doesn't push layout -->
+        <div id="home-needs" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,60px);width:100%;max-width:480px;">
           <div class="home-needs-lbl">What needs you</div>
           <div id="home-needs-list"></div>
         </div>
 
-        <!-- Bottom row: workout+goal (left) | habits (center) | sessions (right) -->
+        <!-- Bottom bar — absolute, always at bottom -->
         <div id="home-bottom">
           <div id="home-left-block">
             <div class="home-wod-val" id="home-wod">—</div>
@@ -1418,10 +1417,9 @@ export default async function handler(req, res) {
           <div id="home-habits"></div>
           <div id="home-right-block">
             <div id="home-sessions"></div>
-            <!-- AI Pulse tucked into right block -->
-            <div class="home-ai-pulse" id="home-ai-pulse" style="display:none;margin-top:10px;text-align:right;max-width:220px;">
+            <div class="home-ai-pulse" id="home-ai-pulse" style="display:none;margin-top:8px;text-align:right;max-width:200px;">
               <div class="home-ai-pulse-label" style="justify-content:flex-end;"><div class="home-ai-pulse-dot"></div>Intelligence</div>
-              <div class="home-ai-pulse-text" id="home-ai-pulse-text" style="font-size:11px;text-align:right;">—</div>
+              <div class="home-ai-pulse-text" id="home-ai-pulse-text" style="font-size:11px;text-align:right;line-height:1.5;">—</div>
             </div>
           </div>
         </div>
@@ -2539,48 +2537,55 @@ function startGhost(){
 function stopGhost(){if(ghostAnim){cancelAnimationFrame(ghostAnim);ghostAnim=null;}const c=el('ghost-canvas');if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}}
 
 /* ============================================================
-   AI CORE — supports direct + proxy modes
+   AI CORE — uses existing proxy at /api/proxy?url=
    ============================================================ */
 const AI_MODEL='claude-sonnet-4-20250514';
-let USE_PROXY=localStorage.getItem('3401_ai_proxy')==='1';
+const ANTHROPIC_ENDPOINT='https://api.anthropic.com/v1/messages';
+// Your existing proxy already whitelists api.anthropic.com
+// We route through it using the ?url= pattern it expects
+const AI_PROXY_URL='/api/proxy?url='+encodeURIComponent(ANTHROPIC_ENDPOINT);
+
+let USE_PROXY=localStorage.getItem('3401_ai_proxy')!=='0'; // default ON since proxy exists
 
 function activateProxy(){
   localStorage.setItem('3401_ai_proxy','1');
   USE_PROXY=true;
-  if(el('proxy-mode-label'))el('proxy-mode-label').textContent='Proxy mode ✓ Active';
-  alert('Proxy mode activated. AI features will now route through /api/ai.js');
+  if(el('proxy-mode-label'))el('proxy-mode-label').textContent='Proxy ✓ Active — AI features enabled';
+  alert('Proxy activated. AI features are now enabled.');
 }
 
 async function callAI(systemPrompt,userMsg,maxTokens=600){
   const payload={model:AI_MODEL,max_tokens:maxTokens,system:systemPrompt,messages:[{role:'user',content:userMsg}]};
-  const endpoint=USE_PROXY?'/api/ai':'https://api.anthropic.com/v1/messages';
-  const headers={'Content-Type':'application/json'};
-  if(!USE_PROXY){headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';}
   try{
-    const res=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(payload)});
-    if(!res.ok)throw new Error('HTTP '+res.status);
+    const res=await fetch(AI_PROXY_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!res.ok){const t=await res.text();throw new Error('HTTP '+res.status+': '+t.slice(0,120));}
     const data=await res.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
     return data.content?.[0]?.text||'—';
   }catch(e){
-    if(!USE_PROXY){
-      return'⚠ CORS blocked. Type "aisetup" for the 2-min fix to enable AI features.';
-    }
-    return'AI unavailable. Check your /api/ai.js proxy and ANTHROPIC_API_KEY env variable.';
+    console.error('AI error:',e);
+    return'⚠ AI unavailable: '+e.message+'. Check proxy setup (type "aisetup").';
   }
 }
 
 async function callAIMultiTurn(system,messages,maxTokens=400){
   const payload={model:AI_MODEL,max_tokens:maxTokens,system,messages};
-  const endpoint=USE_PROXY?'/api/ai':'https://api.anthropic.com/v1/messages';
-  const headers={'Content-Type':'application/json'};
-  if(!USE_PROXY){headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';}
   try{
-    const res=await fetch(endpoint,{method:'POST',headers,body:JSON.stringify(payload)});
+    const res=await fetch(AI_PROXY_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
+    if(data.error)throw new Error(data.error.message||JSON.stringify(data.error));
     return data.content?.[0]?.text||'—';
   }catch(e){
-    return USE_PROXY?'AI unavailable. Check proxy setup.':'⚠ Type "aisetup" in the command bar to enable AI features.';
+    return'⚠ AI unavailable: '+e.message;
   }
 }
 
